@@ -19,5 +19,6 @@ android {
 
 dependencies {
     compile 'com.android.support:support-v4:20.0.0'
+    compile 'org.altbeacon:android-beacon-library:2+@aar'
     compile files('libs/JSON4J.jar')
 }
