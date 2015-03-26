@@ -96,16 +96,16 @@ private static final String INTERNAL_TAG = "PZBeaconSensorService";
         }
 
         Log.d(INTERNAL_TAG, "Command = "+command+"; "+pzAdapter);
-        try {
-            if (command.equals("START_SCANNING")){
-                    proximityUUIDs.addAll(pzAdapter.retrieveProximityUUIDsSync());
-
-            } else if (command.equals("STOP_SCANNING")){
-                proximityUUIDs.removeAll(pzAdapter.retrieveProximityUUIDsSync());
-            }
-        } catch (Exception e) {
-            Log.d(INTERNAL_TAG, "Failed to init proximity UUIDs: " + e.getMessage());
-        }
+//        try {
+//            if (command.equals("START_SCANNING")){
+//                    proximityUUIDs.addAll(pzAdapter.retrieveProximityUUIDsSync());
+//
+//            } else if (command.equals("STOP_SCANNING")){
+//                proximityUUIDs.removeAll(pzAdapter.retrieveProximityUUIDsSync());
+//            }
+//        } catch (Exception e) {
+//            Log.d(INTERNAL_TAG, "Failed to init proximity UUIDs: " + e.getMessage());
+//        }
 
         if (proximityUUIDs.isEmpty()) {
             Log.d(INTERNAL_TAG, "Proximity UUIDs list is empty - no need of scanning --> stop service");
@@ -148,9 +148,9 @@ private static final String INTERNAL_TAG = "PZBeaconSensorService";
             SharedPreferences settings = getSharedPreferences(SHARD_PREFERENCES_NAME, 0);
             proximityUUIDs = settings.getStringSet(SHARD_PREFERENCES_UUIDS_LIST, new HashSet<String>());
             String pzAdapterURL = settings.getString(SHARD_PREFERENCES_PZ_ADAPTER_URL, null);
-            if (pzAdapterURL != null) {
-                pzAdapter = new PZAPIAdapter(new URL(pzAdapterURL));
-            }
+//            if (pzAdapterURL != null) {
+//                pzAdapter = new PZAPIAdapter(new URL(pzAdapterURL));
+//            }
         } catch (Exception e) {
             throw new Exception("Un expected Exception while restoring Preferences");
         }
@@ -161,11 +161,9 @@ private static final String INTERNAL_TAG = "PZBeaconSensorService";
         SharedPreferences settings = getSharedPreferences(SHARD_PREFERENCES_NAME, 0);
         SharedPreferences.Editor editor = settings.edit();
         editor.remove(SHARD_PREFERENCES_UUIDS_LIST); // workaround for an android bug that resets the shard preferences for StringSet
-        editor.commit();
         editor.putStringSet(SHARD_PREFERENCES_UUIDS_LIST, proximityUUIDs);
-        editor.commit();
         editor.putString(SHARD_PREFERENCES_PZ_ADAPTER_URL, pzAdapter.getServerURL().toString());
-        editor.commit();
+        editor.apply();
     }
     private String getDeviceDescriptor() throws Exception {
         return getBluetoothMacAddress();
@@ -263,22 +261,22 @@ private static final String INTERNAL_TAG = "PZBeaconSensorService";
         }
 
         PZAPICompletionHandler completionHandler = (new PZAPICompletionHandler() {
-            @Override
-            public void onComplete(Object result, Exception e) {
-                if (e != null)
-                     Log.d(INTERNAL_TAG, "notification massage sent to server with error\n " + e.getMessage());
-                else{
-                    if (delegate != null) {
-                        delegate.updatePZLocation(beacons);
-                    }
-                }
+                    @Override
+                    public void onComplete(Object result, Exception e) {
+                        if (e != null)
+                            Log.d(INTERNAL_TAG, "notification massage sent to server with error\n " + e.getMessage());
+                        else{
+                            if (delegate != null) {
+                                delegate.updatePZLocation(beacons);
+                            }
+                        }
             }
             });
-            if (pzAdapter != null) {
-                pzAdapter.sendNotificationMessageAsync(new PZNotificationMessage(deviceId, beacons), completionHandler);
-            } else {
-                Log.d(INTERNAL_TAG, "PZAdapter have not been initialized\n ");
-            }
+//            if (pzAdapter != null) {
+//                pzAdapter.sendNotificationMessageAsync(new PZNotificationMessage(deviceId, beacons), completionHandler);
+//            } else {
+//                Log.d(INTERNAL_TAG, "PZAdapter have not been initialized\n ");
+//            }
     }
     private void scanStopAndUpdatePZ() {
         // stop scanning after SCAN_PERIOD and than update Presence Insights
