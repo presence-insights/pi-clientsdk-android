@@ -15,7 +15,7 @@ import java.net.URL;
 /**
  * Created by natalies on 22/09/2014.
  */
-public class PZAPIAdapter implements Serializable {
+public class PIAPIAdapter implements Serializable {
 
     static final String JSON_Zone_Id = "id";
     static final String JSON_Zone_Type = "type";
@@ -47,7 +47,7 @@ public class PZAPIAdapter implements Serializable {
     private URL serverURL;
     private URL connectorURL;
 
-    public PZAPIAdapter(URL serverURL, URL connectorURL){
+    public PIAPIAdapter(URL serverURL, URL connectorURL){
         this.serverURL = serverURL;
         this.connectorURL = connectorURL;
     }
@@ -77,7 +77,7 @@ public class PZAPIAdapter implements Serializable {
     /*
         Public GET methods
      */
-    public void getTenants(PZAPICompletionHandler completionHandler) {
+    public void getTenants(PIAPICompletionHandler completionHandler) {
         String tenants = String.format("%s/tenants", this.serverURL);
         try {
             URL url = new URL(tenants);
@@ -86,7 +86,7 @@ public class PZAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getTenant(String tenantCode, PZAPICompletionHandler completionHandler) {
+    public void getTenant(String tenantCode, PIAPICompletionHandler completionHandler) {
         String tenant = String.format("%s/tenants/%s", this.serverURL, tenantCode);
         try {
             URL url = new URL(tenant);
@@ -96,7 +96,7 @@ public class PZAPIAdapter implements Serializable {
         }
     }
 
-    public void getOrgs(String tenantCode, PZAPICompletionHandler completionHandler) {
+    public void getOrgs(String tenantCode, PIAPICompletionHandler completionHandler) {
         String orgs = String.format("%s/tenants/%s/orgs", this.serverURL, tenantCode);
         try {
             URL url = new URL(orgs);
@@ -105,7 +105,7 @@ public class PZAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getOrg(String tenantCode, String orgCode, PZAPICompletionHandler completionHandler) {
+    public void getOrg(String tenantCode, String orgCode, PIAPICompletionHandler completionHandler) {
         String org = String.format("%s/tenants/%s/orgs/%s", this.serverURL, tenantCode, orgCode);
         try {
             URL url = new URL(org);
@@ -115,7 +115,7 @@ public class PZAPIAdapter implements Serializable {
         }
     }
 
-    public void getSites(String tenantCode, String orgCode, PZAPICompletionHandler completionHandler) {
+    public void getSites(String tenantCode, String orgCode, PIAPICompletionHandler completionHandler) {
         String sites = String.format("%s/tenants/%s/orgs/%s/sites", this.serverURL, tenantCode, orgCode);
         try {
             URL url = new URL(sites);
@@ -124,7 +124,7 @@ public class PZAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getSite(String tenantCode, String orgCode, String siteCode, PZAPICompletionHandler completionHandler) {
+    public void getSite(String tenantCode, String orgCode, String siteCode, PIAPICompletionHandler completionHandler) {
         String site = String.format("%s/tenants/%s/orgs/%s/sites/%s", this.serverURL, tenantCode, orgCode, siteCode);
         try {
             URL url = new URL(site);
@@ -134,7 +134,7 @@ public class PZAPIAdapter implements Serializable {
         }
     }
 
-    public void getFloors(String tenantCode, String orgCode, String siteCode, PZAPICompletionHandler completionHandler) {
+    public void getFloors(String tenantCode, String orgCode, String siteCode, PIAPICompletionHandler completionHandler) {
         String floors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors", this.serverURL, tenantCode, orgCode, siteCode);
         try {
             URL url = new URL(floors);
@@ -143,7 +143,7 @@ public class PZAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getFloor(String tenantCode, String orgCode, String siteCode, String floorCode, PZAPICompletionHandler completionHandler) {
+    public void getFloor(String tenantCode, String orgCode, String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
         String floor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s", this.serverURL, tenantCode, orgCode, siteCode, floorCode);
         try {
             URL url = new URL(floor);
@@ -153,7 +153,7 @@ public class PZAPIAdapter implements Serializable {
         }
     }
 
-    public void getDevices(String tenantCode, String orgCode, PZAPICompletionHandler completionHandler) {
+    public void getDevices(String tenantCode, String orgCode, PIAPICompletionHandler completionHandler) {
         String devices = String.format("%s/tenants/%s/orgs/%s/devices", this.serverURL, tenantCode, orgCode);
         try {
             URL url = new URL(devices);
@@ -162,7 +162,7 @@ public class PZAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getDevice(String tenantCode, String orgCode, String deviceCode, PZAPICompletionHandler completionHandler) {
+    public void getDevice(String tenantCode, String orgCode, String deviceCode, PIAPICompletionHandler completionHandler) {
         String device = String.format("%s/tenants/%s/orgs/%s/devices/%s", this.serverURL, tenantCode, orgCode, deviceCode);
         try {
             URL url = new URL(device);
@@ -172,7 +172,7 @@ public class PZAPIAdapter implements Serializable {
         }
     }
 
-    public void getZones(String tenantCode, String orgCode, String siteCode, String floorCode, PZAPICompletionHandler completionHandler) {
+    public void getZones(String tenantCode, String orgCode, String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
         String zones = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones", this.serverURL, tenantCode, orgCode, siteCode, floorCode);
         try {
             URL url = new URL(zones);
@@ -181,7 +181,7 @@ public class PZAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getZone(String tenantCode, String orgCode, String siteCode, String floorCode, String zoneCode, PZAPICompletionHandler completionHandler) {
+    public void getZone(String tenantCode, String orgCode, String siteCode, String floorCode, String zoneCode, PIAPICompletionHandler completionHandler) {
         String zone = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones/%s", this.serverURL, tenantCode, orgCode, siteCode, floorCode, zoneCode);
         try {
             URL url = new URL(zone);
@@ -191,13 +191,13 @@ public class PZAPIAdapter implements Serializable {
         }
     }
 
-    public void getBeacons(String tenant, String orgCode, PZAPICompletionHandler completionHandler) {
+    public void getBeacons(String tenant, String orgCode, PIAPICompletionHandler completionHandler) {
         // TODO for next iteration, if we want this functionality
     }
-    public void getBeacons(String tenantCode, String orgCode, String siteCode, PZAPICompletionHandler completionHandler) {
+    public void getBeacons(String tenantCode, String orgCode, String siteCode, PIAPICompletionHandler completionHandler) {
         // TODO for next iteration, if we want this functionality
     }
-    public void getBeacons(String tenantCode, String orgCode, String siteCode, String floorCode, PZAPICompletionHandler completionHandler) {
+    public void getBeacons(String tenantCode, String orgCode, String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
         String beacons = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons", this.serverURL, tenantCode, orgCode, siteCode, floorCode);
         try {
             URL url = new URL(beacons);
@@ -206,10 +206,10 @@ public class PZAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getBeaconsAdjacentTo(String tenantCode, String orgCode, String beaconCode, PZAPICompletionHandler completionHandler) {
+    public void getBeaconsAdjacentTo(String tenantCode, String orgCode, String beaconCode, PIAPICompletionHandler completionHandler) {
         // TODO for next iteration, if we want this functionality
     }
-    public void getBeacon(String tenantCode, String orgCode, String siteCode, String floorCode, String beaconCode, PZAPICompletionHandler completionHandler) {
+    public void getBeacon(String tenantCode, String orgCode, String siteCode, String floorCode, String beaconCode, PIAPICompletionHandler completionHandler) {
         String beacon = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons/%s", this.serverURL, tenantCode, orgCode, siteCode, floorCode, beaconCode);
         try {
             URL url = new URL(beacon);
@@ -218,11 +218,11 @@ public class PZAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getBeaconById(String tenantCode, String orgCode, String proximityUUID, String major, String minor, PZAPICompletionHandler completionHandler) {
+    public void getBeaconById(String tenantCode, String orgCode, String proximityUUID, String major, String minor, PIAPICompletionHandler completionHandler) {
         // TODO for next iteration, if we want this functionality
     }
 
-    public void getSensors(String tenantCode, String orgCode, String siteCode, String floorCode, PZAPICompletionHandler completionHandler) {
+    public void getSensors(String tenantCode, String orgCode, String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
         String sensors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors", this.serverURL, tenantCode, orgCode, siteCode, floorCode);
         try {
             URL url = new URL(sensors);
@@ -231,7 +231,7 @@ public class PZAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getSensor(String tenantCode, String orgCode, String siteCode, String floorCode, String sensorCode, PZAPICompletionHandler completionHandler) {
+    public void getSensor(String tenantCode, String orgCode, String siteCode, String floorCode, String sensorCode, PIAPICompletionHandler completionHandler) {
         String sensor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors/%s", this.serverURL, tenantCode, orgCode, siteCode, floorCode, sensorCode);
         try {
             URL url = new URL(sensor);
@@ -241,7 +241,7 @@ public class PZAPIAdapter implements Serializable {
         }
     }
 
-    public void getFloorMap(String tenantCode, String orgCode, String siteCode, String floorCode, PZAPICompletionHandler completionHandler) {
+    public void getFloorMap(String tenantCode, String orgCode, String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
         String map = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/map", this.serverURL, tenantCode, orgCode, siteCode, floorCode);
         try {
             URL url = new URL(map);
@@ -251,24 +251,24 @@ public class PZAPIAdapter implements Serializable {
         }
     }
 
-    public void getProximityUUIDs(String tenantCode, String orgCode, PZAPICompletionHandler completionHandler) {
+    public void getProximityUUIDs(String tenantCode, String orgCode, PIAPICompletionHandler completionHandler) {
         // TODO do not currently have a solution for this... well kinda
     }
 
     /*
         REST Helpers
      */
-    private void GET(URL url, PZAPICompletionHandler completionHandler) {
+    private void GET(URL url, PIAPICompletionHandler completionHandler) {
         new AsyncTask<Object, Void, String>(){
             private Exception exceptionToBeThrown;
-            private PZAPICompletionHandler completionHandler;
+            private PIAPICompletionHandler completionHandler;
             private URL url;
             private int responseCode = 0;
             private HttpURLConnection connection = null;
             @Override
             protected String doInBackground(Object... params) {
                 url = (URL) params[0];
-                completionHandler = (PZAPICompletionHandler) params[1];
+                completionHandler = (PIAPICompletionHandler) params[1];
 
                 // attempt GET from url
                 try {
@@ -316,17 +316,17 @@ public class PZAPIAdapter implements Serializable {
 
         }.execute(url, completionHandler);
     }
-    private void GET_IMAGE(URL url, PZAPICompletionHandler completionHandler) {
+    private void GET_IMAGE(URL url, PIAPICompletionHandler completionHandler) {
         new AsyncTask<Object, Void, Bitmap>(){
             Exception exceptionToBeThrown;
-            PZAPICompletionHandler completionHandler;
+            PIAPICompletionHandler completionHandler;
             URL url;
             int responseCode = 0;
             HttpURLConnection connection = null;
             @Override
             protected Bitmap doInBackground(Object... params) {
                 url = (URL) params[0];
-                completionHandler = (PZAPICompletionHandler) params[1];
+                completionHandler = (PIAPICompletionHandler) params[1];
 
                 // attempt GET from url
                 try {
@@ -366,17 +366,17 @@ public class PZAPIAdapter implements Serializable {
 
         }.execute(url, completionHandler);
     }
-    private void POST(URL url, JSONObject payload, PZAPICompletionHandler completionHandler) {
+    private void POST(URL url, JSONObject payload, PIAPICompletionHandler completionHandler) {
         new AsyncTask<Object, Void, String>(){
             private Exception exceptionToBeThrown;
-            private PZAPICompletionHandler completionHandler;
+            private PIAPICompletionHandler completionHandler;
             private URL url;
             private int responseCode = 0;
             private HttpURLConnection connection = null;
             @Override
             protected String doInBackground(Object... params) {
                 url = (URL) params[0];
-                completionHandler = (PZAPICompletionHandler) params[1];
+                completionHandler = (PIAPICompletionHandler) params[1];
 
                 // attempt POST to url
                 try {

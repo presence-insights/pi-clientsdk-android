@@ -11,14 +11,13 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
-import java.net.URL;
 import java.util.*;
 
 /**
  * Created by natalies on 20/11/2014.
  */
 public class PZBeaconSensorService extends Service {
-    private PZAPIAdapter pzAdapter;
+    private PIAPIAdapter pzAdapter;
     private Set<String> proximityUUIDs;
     private PZBeaconSensorDelegate delegate = null;
     private static final String INTENT_PARAMETER_ADAPTER = "adapter";
@@ -86,7 +85,7 @@ private static final String INTERNAL_TAG = "PZBeaconSensorService";
         String command = new String();
 
         if (intent!=null && null != intent.getExtras()){
-            pzAdapter = (PZAPIAdapter)intent.getExtras().get(INTENT_PARAMETER_ADAPTER);
+            pzAdapter = (PIAPIAdapter)intent.getExtras().get(INTENT_PARAMETER_ADAPTER);
             command = intent.getExtras().getString(INTENT_PARAMETER_COMMAND);
             try {
                 delegate = (PZBeaconSensorDelegate) intent.getExtras().get(INTENT_PARAMETER_DELEGATE);
@@ -260,7 +259,7 @@ private static final String INTERNAL_TAG = "PZBeaconSensorService";
             return;
         }
 
-        PZAPICompletionHandler completionHandler = (new PZAPICompletionHandler() {
+        PIAPICompletionHandler completionHandler = (new PIAPICompletionHandler() {
                     @Override
                     public void onComplete(Object result, Exception e) {
                         if (e != null)

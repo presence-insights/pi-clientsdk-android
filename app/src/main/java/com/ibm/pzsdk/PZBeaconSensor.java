@@ -17,12 +17,12 @@ public class PZBeaconSensor extends BroadcastReceiver {
     private static final String INTERNAL_TAG = "PZBeaconSensor";
 
     private Activity activity;
-    private PZAPIAdapter pzAdapter;
+    private PIAPIAdapter pzAdapter;
     private PZBeaconSensorDelegate delegate;
 
     public PZBeaconSensor() {}
 
-    public PZBeaconSensor(PZAPIAdapter adapter, Activity activity, PZBeaconSensorDelegate delegate) {
+    public PZBeaconSensor(PIAPIAdapter adapter, Activity activity, PZBeaconSensorDelegate delegate) {
         this.pzAdapter = adapter;
         this.activity = activity;
         this.delegate = delegate;
