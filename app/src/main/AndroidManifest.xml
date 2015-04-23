@@ -23,15 +23,8 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-        
-        <service android:name=".PZBeaconSensorService"/>
+
         <service android:name=".PIBeaconSensorService"/>
-		<!-- Declaring broadcast receiver for BOOT_COMPLETED event -->
-		<receiver android:name=".PZBeaconSensor" android:enabled="true" android:exported="false">
-			<intent-filter>
-				<action android:name="android.intent.action.BOOT_COMPLETED"/>
-			</intent-filter>
-		</receiver>
 
     </application>
 

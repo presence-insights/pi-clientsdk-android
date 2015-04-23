@@ -4,8 +4,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 
+import com.ibm.json.java.JSONObject;
+
 import org.apache.http.HttpStatus;
-import org.json.JSONObject;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -75,7 +76,7 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /*
-        Public GET methods
+        Public Management GET methods
      */
     public void getTenants(PIAPICompletionHandler completionHandler) {
         String tenants = String.format("%s/tenants", this.serverURL);
@@ -252,7 +253,26 @@ public class PIAPIAdapter implements Serializable {
     }
 
     public void getProximityUUIDs(String tenantCode, String orgCode, PIAPICompletionHandler completionHandler) {
-        // TODO do not currently have a solution for this... well kinda
+        String proximityUUIDs = String.format("%s/tenants/%s/orgs/%s/views/proximityUUID", this.serverURL, tenantCode, orgCode);
+        try {
+            URL url = new URL(proximityUUIDs);
+            GET(url, completionHandler);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /*
+        Beacon Connector Methods
+     */
+    public void sendBeaconNotificationMessage(String tenantCode, String orgCode, JSONObject payload, PIAPICompletionHandler completionHandler) {
+        String bnm = String.format("%s/tenants/%s/orgs/%s", this.connectorURL, tenantCode, orgCode);
+        try {
+            URL url = new URL(bnm);
+            POST(url, payload, completionHandler);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
     }
 
     /*
@@ -371,12 +391,14 @@ public class PIAPIAdapter implements Serializable {
             private Exception exceptionToBeThrown;
             private PIAPICompletionHandler completionHandler;
             private URL url;
+            private JSONObject payload;
             private int responseCode = 0;
             private HttpURLConnection connection = null;
             @Override
             protected String doInBackground(Object... params) {
                 url = (URL) params[0];
-                completionHandler = (PIAPICompletionHandler) params[1];
+                payload = (JSONObject) params[1];
+                completionHandler = (PIAPICompletionHandler) params[2];
 
                 // attempt POST to url
                 try {
@@ -386,8 +408,14 @@ public class PIAPIAdapter implements Serializable {
                     connection.setRequestProperty("Content-Type", "application/json");
                     connection.setRequestProperty("Accept", "application/json");
                     connection.setRequestMethod("POST");
-                    connection.setDoInput(true);
+                    connection.setDoOutput(true);
                     connection.connect();
+
+                    // send payload
+                    OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
+                    out.write(payload.toString());
+                    out.close();
+
                     responseCode = connection.getResponseCode();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -423,7 +451,7 @@ public class PIAPIAdapter implements Serializable {
                 completionHandler.onComplete(result, exceptionToBeThrown);
             }
 
-        }.execute(url, completionHandler);
+        }.execute(url, payload, completionHandler);
     }
 }
 

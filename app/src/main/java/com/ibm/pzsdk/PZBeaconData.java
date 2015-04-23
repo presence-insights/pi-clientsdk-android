@@ -28,7 +28,7 @@ public class PZBeaconData {
 	private LinkedList<TimedRSSI>rssiList = new LinkedList<TimedRSSI>();
 	private double accuracy;
 	private String proximity;
-    private int state; /* Presence Zonce Protocol:  1 - Enter,  0 - Update, -1 - Exit */
+    private int state; /* Presence Zone Protocol:  1 - Enter,  0 - Update, -1 - Exit */
 	
 	public PZBeaconData(String uuid, int major, int minor) {
 		super();

@@ -14,23 +14,29 @@ public class PIBeaconSensor {
     private static final String INTENT_PARAMETER_DELEGATE = "delegate";
     private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
     private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
+    private static final String INTENT_PARAMETER_TENANT = "tenant";
+    private static final String INTENT_PARAMETER_ORG = "org";
 
-    private String mConnectorURL;
     private PIAPIAdapter mAdapter;
+    private final String mTenant;
+    private final String mOrg;
 
     public long sendInterval = 2000;
 
     private Context mContext;
 
-    public PIBeaconSensor(Context context, String connectorURL, PIAPIAdapter adapter) {
+    public PIBeaconSensor(Context context, PIAPIAdapter adapter, String tenant, String org) {
         this.mContext = context;
-        this.mConnectorURL = connectorURL;
         this.mAdapter = adapter;
+        this.mTenant = tenant;
+        this.mOrg = org;
     }
 
     public void start() {
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(INTENT_PARAMETER_ADAPTER, mAdapter);
+        intent.putExtra(INTENT_PARAMETER_TENANT, mTenant);
+        intent.putExtra(INTENT_PARAMETER_ORG, mOrg);
         intent.putExtra(INTENT_PARAMETER_COMMAND, "START_SCANNING");
         mContext.startService(intent);
     }
