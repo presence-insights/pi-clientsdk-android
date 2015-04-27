@@ -28,7 +28,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private BeaconManager mBeaconManager;
     private Region demoEstimoteRegion = new Region("b9407f30-f5f8-466e-aff9-25556b57fe6d", null, null, null);
     private Set<String> proximityUUIDs = null;
-    private PZBeaconSensorDelegate delegate = null;
 
     private static final String INTENT_PARAMETER_ADAPTER = "adapter";
     private static final String INTENT_PARAMETER_COMMAND = "command";
@@ -74,11 +73,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             }
             if (extras.get(INTENT_PARAMETER_ORG) != null) {
                 mOrg = extras.getString(INTENT_PARAMETER_ORG);
-            }
-            if (extras.get(INTENT_PARAMETER_DELEGATE) != null) {
-                delegate = (PZBeaconSensorDelegate) intent.getExtras().get(INTENT_PARAMETER_DELEGATE);
-            } else {
-                delegate = null;
             }
             if (extras.getLong(INTENT_PARAMETER_SEND_INTERVAL, -1) > 0) {
                 sendInterval = extras.getLong(INTENT_PARAMETER_SEND_INTERVAL);
@@ -139,10 +133,10 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         if (proximityUUIDs == null || proximityUUIDs.isEmpty()) {
             mPiApiAdapter.getProximityUUIDs(mTenant, mOrg, new PIAPICompletionHandler() {
                 @Override
-                public void onComplete(Object result, Exception e) {
+                public void onComplete(PIAPIResult result) {
                     JSONArray uuids = null;
                     try {
-                        uuids = JSONArray.parse((String) result);
+                        uuids = JSONArray.parse((String) result.getResult());
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
@@ -170,7 +164,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         JSONObject payload = buildBeaconPayload(beacons);
         mPiApiAdapter.sendBeaconNotificationMessage(mTenant, mOrg, payload, new PIAPICompletionHandler() {
             @Override
-            public void onComplete(Object result, Exception e) {
+            public void onComplete(PIAPIResult result) {
                 log("completed sending beacon notification message");
             }
         });
