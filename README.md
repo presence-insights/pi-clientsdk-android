@@ -3,8 +3,8 @@
 ## Getting Started
 #### Setting up PIAPIAdapter
 
-    PIAPIAdapter mAdapter = new PIAPIAdapter(new URL("https://mobile.ng.bluemix.net:443/pi-config/v1"),
-                                             new URL("https://mobile.ng.bluemix.net:443/conn-beacon"),
+    PIAPIAdapter mAdapter = new PIAPIAdapter(new URL("https://www.url.com/pi-config/v1"),
+                                             new URL("https://www.url.com/conn-beacon"),
                                              "TenantCode",
                                              "OrgCode");
                                              
