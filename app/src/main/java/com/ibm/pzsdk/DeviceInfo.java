@@ -26,7 +26,15 @@ public abstract class DeviceInfo {
         this.mName = name;
     }
 
-    public abstract String getDescriptor();
+    protected abstract void setDescriptor();
+
+    public void setDescriptor(String descriptor) {
+        mDescriptor = descriptor;
+    }
+
+    public String getDescriptor() {
+        return mDescriptor;
+    }
 
     public String getType() {
         return mType;
@@ -60,7 +68,6 @@ public abstract class DeviceInfo {
     private boolean mRegistered;
 
     public DeviceInfo() {
-        mDescriptor = getDescriptor();
         mRegistered = false;
     }
 

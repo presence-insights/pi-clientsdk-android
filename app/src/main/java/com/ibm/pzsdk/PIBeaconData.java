@@ -52,11 +52,11 @@ public class PIBeaconData {
     }
 
     public String getDescriptor() {
-        return descriptor;
+        return deviceDescriptor;
     }
 
-    public void setDescriptor(String descriptor) {
-        this.descriptor = descriptor;
+    public void setDeviceDescriptor(String descriptor) {
+        deviceDescriptor = descriptor;
     }
 
     public String getDetectedTime() {
@@ -80,7 +80,7 @@ public class PIBeaconData {
     private int minor;
     private int accuracy;
     private int rssi;
-    private String descriptor;
+    private String deviceDescriptor;
     private String detectedTime;
     private String proximity;
 
@@ -89,7 +89,6 @@ public class PIBeaconData {
         this.major = b.getId2().toInt();
         this.minor = b.getId3().toInt();
         this.rssi = b.getRssi();
-        this.descriptor = b.getBluetoothAddress();
         this.detectedTime = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         this.proximity = getProximityFromBeacon(b);
     }
@@ -122,7 +121,7 @@ public class PIBeaconData {
         beacon.put("minor", minor);
         beacon.put("accuracy", accuracy);
         beacon.put("rssi", rssi);
-        beacon.put("descriptor", descriptor);
+        beacon.put("descriptor", deviceDescriptor);
         beacon.put("detectedTime", detectedTime);
         beacon.put("proximity", proximity);
         return beacon;

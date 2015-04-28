@@ -48,10 +48,14 @@ public class PIAPIAdapter implements Serializable {
 
     private URL serverURL;
     private URL connectorURL;
+    private String mTenantCode;
+    private String mOrgCode;
 
-    public PIAPIAdapter(URL serverURL, URL connectorURL){
+    public PIAPIAdapter(URL serverURL, URL connectorURL, String tenantCode, String orgCode){
         this.serverURL = serverURL;
         this.connectorURL = connectorURL;
+        mTenantCode = tenantCode;
+        mOrgCode = orgCode;
     }
 
     public URL getServerURL(){
@@ -89,11 +93,10 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant. - unique identifier for the tenant.
      * @param completionHandler - callback for APIs asynchronous calls. - callback for APIs asynchronous calls.
      */
-    public void getTenant(String tenantCode, PIAPICompletionHandler completionHandler) {
-        String tenant = String.format("%s/tenants/%s", this.serverURL, tenantCode);
+    public void getTenant(PIAPICompletionHandler completionHandler) {
+        String tenant = String.format("%s/tenants/%s", this.serverURL, mTenantCode);
         try {
             URL url = new URL(tenant);
             GET(url, completionHandler);
@@ -104,11 +107,10 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
      * @param completionHandler - callback for APIs asynchronous calls. - callback for APIs asynchronous calls.
      */
-    public void getOrgs(String tenantCode, PIAPICompletionHandler completionHandler) {
-        String orgs = String.format("%s/tenants/%s/orgs", this.serverURL, tenantCode);
+    public void getOrgs(PIAPICompletionHandler completionHandler) {
+        String orgs = String.format("%s/tenants/%s/orgs", this.serverURL, mTenantCode);
         try {
             URL url = new URL(orgs);
             GET(url, completionHandler);
@@ -119,12 +121,10 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getOrg(String tenantCode, String orgCode, PIAPICompletionHandler completionHandler) {
-        String org = String.format("%s/tenants/%s/orgs/%s", this.serverURL, tenantCode, orgCode);
+    public void getOrg(PIAPICompletionHandler completionHandler) {
+        String org = String.format("%s/tenants/%s/orgs/%s", this.serverURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(org);
             GET(url, completionHandler);
@@ -135,12 +135,10 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getSites(String tenantCode, String orgCode, PIAPICompletionHandler completionHandler) {
-        String sites = String.format("%s/tenants/%s/orgs/%s/sites", this.serverURL, tenantCode, orgCode);
+    public void getSites(PIAPICompletionHandler completionHandler) {
+        String sites = String.format("%s/tenants/%s/orgs/%s/sites", this.serverURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(sites);
             GET(url, completionHandler);
@@ -151,13 +149,11 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param siteCode - unique identifier for the site.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getSite(String tenantCode, String orgCode, String siteCode, PIAPICompletionHandler completionHandler) {
-        String site = String.format("%s/tenants/%s/orgs/%s/sites/%s", this.serverURL, tenantCode, orgCode, siteCode);
+    public void getSite(String siteCode, PIAPICompletionHandler completionHandler) {
+        String site = String.format("%s/tenants/%s/orgs/%s/sites/%s", this.serverURL, mTenantCode, mOrgCode, siteCode);
         try {
             URL url = new URL(site);
             GET(url, completionHandler);
@@ -168,13 +164,11 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param siteCode - unique identifier for the site.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getFloors(String tenantCode, String orgCode, String siteCode, PIAPICompletionHandler completionHandler) {
-        String floors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors", this.serverURL, tenantCode, orgCode, siteCode);
+    public void getFloors(String siteCode, PIAPICompletionHandler completionHandler) {
+        String floors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors", this.serverURL, mTenantCode, mOrgCode, siteCode);
         try {
             URL url = new URL(floors);
             GET(url, completionHandler);
@@ -185,14 +179,12 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param siteCode - unique identifier for the site.
      * @param floorCode - unique identifier for the floor.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getFloor(String tenantCode, String orgCode, String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
-        String floor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s", this.serverURL, tenantCode, orgCode, siteCode, floorCode);
+    public void getFloor(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
+        String floor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s", this.serverURL, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(floor);
             GET(url, completionHandler);
@@ -203,12 +195,10 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getDevices(String tenantCode, String orgCode, PIAPICompletionHandler completionHandler) {
-        String devices = String.format("%s/tenants/%s/orgs/%s/devices", this.serverURL, tenantCode, orgCode);
+    public void getDevices(PIAPICompletionHandler completionHandler) {
+        String devices = String.format("%s/tenants/%s/orgs/%s/devices", this.serverURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(devices);
             GET(url, completionHandler);
@@ -219,13 +209,11 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param deviceCode - unique identifier for the device.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getDevice(String tenantCode, String orgCode, String deviceCode, PIAPICompletionHandler completionHandler) {
-        String device = String.format("%s/tenants/%s/orgs/%s/devices/%s", this.serverURL, tenantCode, orgCode, deviceCode);
+    public void getDevice(String deviceCode, PIAPICompletionHandler completionHandler) {
+        String device = String.format("%s/tenants/%s/orgs/%s/devices/%s", this.serverURL, mTenantCode, mOrgCode, deviceCode);
         try {
             URL url = new URL(device);
             GET(url, completionHandler);
@@ -236,14 +224,12 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param siteCode - unique identifier for the site.
      * @param floorCode - unique identifier for the floor.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getZones(String tenantCode, String orgCode, String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
-        String zones = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones", this.serverURL, tenantCode, orgCode, siteCode, floorCode);
+    public void getZones(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
+        String zones = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones", this.serverURL, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(zones);
             GET(url, completionHandler);
@@ -254,15 +240,13 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param siteCode - unique identifier for the site.
      * @param floorCode - unique identifier for the floor.
      * @param zoneCode - unique identifier for the zone.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getZone(String tenantCode, String orgCode, String siteCode, String floorCode, String zoneCode, PIAPICompletionHandler completionHandler) {
-        String zone = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones/%s", this.serverURL, tenantCode, orgCode, siteCode, floorCode, zoneCode);
+    public void getZone(String siteCode, String floorCode, String zoneCode, PIAPICompletionHandler completionHandler) {
+        String zone = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones/%s", this.serverURL, mTenantCode, mOrgCode, siteCode, floorCode, zoneCode);
         try {
             URL url = new URL(zone);
             GET(url, completionHandler);
@@ -271,23 +255,21 @@ public class PIAPIAdapter implements Serializable {
         }
     }
 
-    public void getBeacons(String tenant, String orgCode, PIAPICompletionHandler completionHandler) {
+    public void getBeacons(PIAPICompletionHandler completionHandler) {
         // TODO for next iteration, if we want this functionality
     }
-    public void getBeacons(String tenantCode, String orgCode, String siteCode, PIAPICompletionHandler completionHandler) {
+    public void getBeacons(String siteCode, PIAPICompletionHandler completionHandler) {
         // TODO for next iteration, if we want this functionality
     }
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param siteCode - unique identifier for the site.
      * @param floorCode - unique identifier for the floor.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getBeacons(String tenantCode, String orgCode, String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
-        String beacons = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons", this.serverURL, tenantCode, orgCode, siteCode, floorCode);
+    public void getBeacons(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
+        String beacons = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons", this.serverURL, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(beacons);
             GET(url, completionHandler);
@@ -295,21 +277,19 @@ public class PIAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getBeaconsAdjacentTo(String tenantCode, String orgCode, String beaconCode, PIAPICompletionHandler completionHandler) {
+    public void getBeaconsAdjacentTo(String beaconCode, PIAPICompletionHandler completionHandler) {
         // TODO for next iteration, if we want this functionality
     }
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param siteCode - unique identifier for the site.
      * @param floorCode - unique identifier for the floor.
      * @param beaconCode - unique identifier for the beacon.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getBeacon(String tenantCode, String orgCode, String siteCode, String floorCode, String beaconCode, PIAPICompletionHandler completionHandler) {
-        String beacon = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons/%s", this.serverURL, tenantCode, orgCode, siteCode, floorCode, beaconCode);
+    public void getBeacon(String siteCode, String floorCode, String beaconCode, PIAPICompletionHandler completionHandler) {
+        String beacon = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons/%s", this.serverURL, mTenantCode, mOrgCode, siteCode, floorCode, beaconCode);
         try {
             URL url = new URL(beacon);
             GET(url, completionHandler);
@@ -317,20 +297,18 @@ public class PIAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getBeaconById(String tenantCode, String orgCode, String proximityUUID, String major, String minor, PIAPICompletionHandler completionHandler) {
+    public void getBeaconById(String proximityUUID, String major, String minor, PIAPICompletionHandler completionHandler) {
         // TODO for next iteration, if we want this functionality
     }
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param siteCode - unique identifier for the site.
      * @param floorCode - unique identifier for the floor.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getSensors(String tenantCode, String orgCode, String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
-        String sensors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors", this.serverURL, tenantCode, orgCode, siteCode, floorCode);
+    public void getSensors(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
+        String sensors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors", this.serverURL, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(sensors);
             GET(url, completionHandler);
@@ -341,15 +319,13 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param siteCode - unique identifier for the site.
      * @param floorCode - unique identifier for the floor.
      * @param sensorCode - unique identifier for the sensor.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getSensor(String tenantCode, String orgCode, String siteCode, String floorCode, String sensorCode, PIAPICompletionHandler completionHandler) {
-        String sensor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors/%s", this.serverURL, tenantCode, orgCode, siteCode, floorCode, sensorCode);
+    public void getSensor(String siteCode, String floorCode, String sensorCode, PIAPICompletionHandler completionHandler) {
+        String sensor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors/%s", this.serverURL, mTenantCode, mOrgCode, siteCode, floorCode, sensorCode);
         try {
             URL url = new URL(sensor);
             GET(url, completionHandler);
@@ -360,14 +336,12 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param siteCode - unique identifier for the site.
      * @param floorCode - unique identifier for the floor.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getFloorMap(String tenantCode, String orgCode, String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
-        String map = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/map", this.serverURL, tenantCode, orgCode, siteCode, floorCode);
+    public void getFloorMap(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
+        String map = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/map", this.serverURL, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(map);
             GET_IMAGE(url, completionHandler);
@@ -378,12 +352,10 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void getProximityUUIDs(String tenantCode, String orgCode, PIAPICompletionHandler completionHandler) {
-        String proximityUUIDs = String.format("%s/tenants/%s/orgs/%s/views/proximityUUID", this.serverURL, tenantCode, orgCode);
+    public void getProximityUUIDs(PIAPICompletionHandler completionHandler) {
+        String proximityUUIDs = String.format("%s/tenants/%s/orgs/%s/views/proximityUUID", this.serverURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(proximityUUIDs);
             GET(url, completionHandler);
@@ -394,13 +366,11 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param device - object with all the necessary information to register the device.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void registerDevice(String tenantCode, String orgCode, final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
-        final String registerDevice = String.format("%s/tenants/%s/orgs/%s/devices", this.serverURL, tenantCode, orgCode);
+    public void registerDevice(final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
+        final String registerDevice = String.format("%s/tenants/%s/orgs/%s/devices", this.serverURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(registerDevice);
             POST(url, device.toJSON(), new PIAPICompletionHandler() {
@@ -447,14 +417,12 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param device - object with all the necessary information to unregister the device.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void unregisterDevice(final String tenantCode, final String orgCode, final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
+    public void unregisterDevice(final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
         final URL server = this.serverURL;
-        String getDeviceObj = String.format("%s/tenants/%s/orgs/%s/devices?descriptor=%s", server, tenantCode, orgCode, device.getDescriptor());
+        String getDeviceObj = String.format("%s/tenants/%s/orgs/%s/devices?descriptor=%s", server, mTenantCode, mOrgCode, device.getDescriptor());
         try {
             URL url = new URL(getDeviceObj);
             GET(url, new PIAPICompletionHandler() {
@@ -474,7 +442,7 @@ public class PIAPIAdapter implements Serializable {
                             e.printStackTrace();
                         }
                         // call PUT
-                        String unregisterDevice = String.format("%s/tenants/%s/orgs/%s/devices/%s", server, tenantCode, orgCode, devicePayload.get("@code"));
+                        String unregisterDevice = String.format("%s/tenants/%s/orgs/%s/devices/%s", server, mTenantCode, mOrgCode, devicePayload.get("@code"));
                         URL putUrl = null;
                         try {
                             putUrl = new URL(unregisterDevice);
@@ -499,13 +467,11 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param tenantCode - unique identifier for the tenant.
-     * @param orgCode - unique identifier for the organization.
      * @param payload - TODO
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void sendBeaconNotificationMessage(String tenantCode, String orgCode, JSONObject payload, PIAPICompletionHandler completionHandler) {
-        String bnm = String.format("%s/tenants/%s/orgs/%s", this.connectorURL, tenantCode, orgCode);
+    public void sendBeaconNotificationMessage(JSONObject payload, PIAPICompletionHandler completionHandler) {
+        String bnm = String.format("%s/tenants/%s/orgs/%s", this.connectorURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(bnm);
             POST(url, payload, completionHandler);
@@ -625,10 +591,24 @@ public class PIAPIAdapter implements Serializable {
                 }
                 else {
                     try {
+                        StringBuilder sb = new StringBuilder();
+                        try {
+                            BufferedReader br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+                            String line;
+                            while ((line = br.readLine()) != null) {
+                                sb.append(line);
+                                sb.append("\n");
+                            }
+                            br.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                         Exception exception = new Exception("Response code error: " + responseCode);
                         result.setException(exception);
+                        result.setResult(sb.toString());
                         result.setResponseCode(responseCode);
-                        throw exception;                    } catch (Exception e) {
+                        throw exception;
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }

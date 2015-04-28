@@ -26,12 +26,13 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
     private PIAPIAdapter mPiApiAdapter;
     private BeaconManager mBeaconManager;
+    private String mDeviceId;
     private Region demoEstimoteRegion = new Region("b9407f30-f5f8-466e-aff9-25556b57fe6d", null, null, null);
     private Set<String> proximityUUIDs = null;
 
     private static final String INTENT_PARAMETER_ADAPTER = "adapter";
     private static final String INTENT_PARAMETER_COMMAND = "command";
-    private static final String INTENT_PARAMETER_DELEGATE = "delegate";
+    private static final String INTENT_PARAMETER_DEVICE_ID = "device_id";
     private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
     private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
     private static final String INTENT_PARAMETER_TENANT = "tenant";
@@ -40,9 +41,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private long sendInterval = 5000;
     private long lastSendTime = 0;
     private long currentTime = 0;
-
-    private String mTenant;
-    private String mOrg;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -68,11 +66,8 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             if (extras.get(INTENT_PARAMETER_ADAPTER) != null) {
                 mPiApiAdapter = (PIAPIAdapter) extras.get(INTENT_PARAMETER_ADAPTER);
             }
-            if (extras.get(INTENT_PARAMETER_TENANT) != null) {
-                mTenant = extras.getString(INTENT_PARAMETER_TENANT);
-            }
-            if (extras.get(INTENT_PARAMETER_ORG) != null) {
-                mOrg = extras.getString(INTENT_PARAMETER_ORG);
+            if (!extras.getString(INTENT_PARAMETER_DEVICE_ID, "").equals("")) {
+                mDeviceId = extras.getString(INTENT_PARAMETER_DEVICE_ID);
             }
             if (extras.getLong(INTENT_PARAMETER_SEND_INTERVAL, -1) > 0) {
                 sendInterval = extras.getLong(INTENT_PARAMETER_SEND_INTERVAL);
@@ -131,7 +126,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         });
 
         if (proximityUUIDs == null || proximityUUIDs.isEmpty()) {
-            mPiApiAdapter.getProximityUUIDs(mTenant, mOrg, new PIAPICompletionHandler() {
+            mPiApiAdapter.getProximityUUIDs(new PIAPICompletionHandler() {
                 @Override
                 public void onComplete(PIAPIResult result) {
                     JSONArray uuids = null;
@@ -162,7 +157,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private void sendBeaconNotification(Collection<Beacon> beacons) {
         log("sending beacon notification with this collection of beacons:");
         JSONObject payload = buildBeaconPayload(beacons);
-        mPiApiAdapter.sendBeaconNotificationMessage(mTenant, mOrg, payload, new PIAPICompletionHandler() {
+        mPiApiAdapter.sendBeaconNotificationMessage(payload, new PIAPICompletionHandler() {
             @Override
             public void onComplete(PIAPIResult result) {
                 log("completed sending beacon notification message");
@@ -176,6 +171,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
         for (Beacon b : beacons) {
             PIBeaconData data = new PIBeaconData(b);
+            data.setDeviceDescriptor(mDeviceId);
             beaconArray.add(data.getBeaconAsJson());
         }
         payload.put("bnm", beaconArray);

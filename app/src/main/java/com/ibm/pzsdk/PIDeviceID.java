@@ -16,6 +16,7 @@ import android.util.Log;
 public class PIDeviceID {
     private final String platform = "ANDROID"; //$NON-NLS-1$
     private String uuid;
+    private String macAddress;
     private String hardwareId;
     private String model;
     private String platformVersion;
@@ -46,19 +47,18 @@ public class PIDeviceID {
     private String calculateHardwareId() {
         String resultId = null;
         try {
-            String macAddr = null;
             PackageManager packageManager = context.getPackageManager();
             if (packageManager.hasSystemFeature(PackageManager.FEATURE_WIFI)) {
                 WifiManager wfManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
                 WifiInfo wifiinfo = wfManager.getConnectionInfo();
-                macAddr = wifiinfo.getMacAddress();
+                macAddress = wifiinfo.getMacAddress();
             } else {
                 Log.d(TAG, "Cannot access WIFI service for a more robust device id"); //$NON-NLS-1$
             }
             String uuid = Settings.Secure.getString(context.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
 
-            if (macAddr != null) {
-                uuid += macAddr;
+            if (macAddress != null) {
+                uuid += macAddress;
             }
             // Use a hashed UUID not exposing the device ANDROID_ID/Mac Address
             resultId = UUID.nameUUIDFromBytes(uuid.getBytes()).toString();
@@ -112,5 +112,9 @@ public class PIDeviceID {
      */
     void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public String getMacAddress() {
+        return macAddress;
     }
 }

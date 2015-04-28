@@ -16,7 +16,7 @@ public class PIBeaconSensor {
 
     private static final String INTENT_PARAMETER_ADAPTER = "adapter";
     private static final String INTENT_PARAMETER_COMMAND = "command";
-    private static final String INTENT_PARAMETER_DELEGATE = "delegate";
+    private static final String INTENT_PARAMETER_DEVICE_ID = "device_id";
     private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
     private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
     private static final String INTENT_PARAMETER_TENANT = "tenant";
@@ -25,8 +25,7 @@ public class PIBeaconSensor {
     private BluetoothAdapter mBluetoothAdapter;
 
     private PIAPIAdapter mAdapter;
-    private final String mTenant;
-    private final String mOrg;
+    private final String mDeviceId;
 
     public long mSendInterval = 5000;
 
@@ -36,14 +35,14 @@ public class PIBeaconSensor {
      *
      * @param context
      * @param adapter
-     * @param tenant
-     * @param org
      */
-    public PIBeaconSensor(Context context, PIAPIAdapter adapter, String tenant, String org) {
+    public PIBeaconSensor(Context context, PIAPIAdapter adapter) {
         this.mContext = context;
         this.mAdapter = adapter;
-        this.mTenant = tenant;
-        this.mOrg = org;
+
+        // get Device ID
+        PIDeviceID deviceID = new PIDeviceID(context);
+        mDeviceId = deviceID.getMacAddress();
 
         try {
 
@@ -73,8 +72,7 @@ public class PIBeaconSensor {
     public void start() {
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(INTENT_PARAMETER_ADAPTER, mAdapter);
-        intent.putExtra(INTENT_PARAMETER_TENANT, mTenant);
-        intent.putExtra(INTENT_PARAMETER_ORG, mOrg);
+        intent.putExtra(INTENT_PARAMETER_DEVICE_ID, mDeviceId);
         intent.putExtra(INTENT_PARAMETER_COMMAND, "START_SCANNING");
         mContext.startService(intent);
     }
@@ -115,6 +113,10 @@ public class PIBeaconSensor {
         intent.putExtra(INTENT_PARAMETER_BEACON_LAYOUT, layout);
         mContext.startService(intent);
     }
+
+    /*
+     * Bluetooth related methods
+     */
 
     private  boolean checkSupportBLE(){
         if (!mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
