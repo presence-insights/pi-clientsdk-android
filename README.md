@@ -50,7 +50,8 @@ From AltBeacon's [Github](https://github.com/AltBeacon/android-beacon-library), 
 
 #### PIDeviceInfo
 
-#### PIAPICompletionHandler
-
 #### DeviceInfo
+
+## Interfaces
+#### PIAPICompletionHandler
 
