@@ -19,17 +19,14 @@ public class PIBeaconSensor {
     private static final String INTENT_PARAMETER_DEVICE_ID = "device_id";
     private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
     private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
-    private static final String INTENT_PARAMETER_TENANT = "tenant";
-    private static final String INTENT_PARAMETER_ORG = "org";
 
     private BluetoothAdapter mBluetoothAdapter;
 
+    private Context mContext;
     private PIAPIAdapter mAdapter;
     private final String mDeviceId;
 
     public long mSendInterval = 5000;
-
-    private Context mContext;
 
     /**
      *
@@ -142,12 +139,12 @@ public class PIBeaconSensor {
     }
 
     /**
-     * enable bluetooth in case it's off(admin permission)
+     * enable bluetooth in case it's off (admin permission)
      */
     private boolean enableBLE(){
-        boolean response=true;
-        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
-            response=false;
+        boolean response = true;
+        if (!mBluetoothAdapter.isEnabled()) {
+            response = false;
             mBluetoothAdapter.enable();
         }
         return response;

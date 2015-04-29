@@ -365,7 +365,7 @@ public class PIAPIAdapter implements Serializable {
      * @param device - object with all the necessary information to register the device.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void registerDevice(final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
+    public void registerDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
         final String registerDevice = String.format("%s/tenants/%s/orgs/%s/devices", mServerURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(registerDevice);
@@ -416,7 +416,7 @@ public class PIAPIAdapter implements Serializable {
      * @param device - object with all the necessary information to unregister the device.
      * @param completionHandler - callback for APIs asynchronous calls.
      */
-    public void unregisterDevice(final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
+    public void unregisterDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
         String getDeviceObj = String.format("%s/tenants/%s/orgs/%s/devices?descriptor=%s", mServerURL, mTenantCode, mOrgCode, device.getDescriptor());
         try {
             URL url = new URL(getDeviceObj);
@@ -462,7 +462,7 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      *
-     * @param payload - TODO
+     * @param payload - a combination of PIBeaconData and the device descriptor
      * @param completionHandler - callback for APIs asynchronous calls.
      */
     public void sendBeaconNotificationMessage(JSONObject payload, PIAPICompletionHandler completionHandler) {
@@ -506,18 +506,24 @@ public class PIAPIAdapter implements Serializable {
                     e.printStackTrace();
                 }
 
-                // if all goes well, return payload
-                if(responseCode == HttpStatus.SC_OK) {
+                // build result object
+                if (responseCode != 0) {
                     StringBuilder sb = new StringBuilder();
+                    BufferedReader br;
+                    String line;
                     try {
-                        BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                        String line;
+                        if (responseCode >= HttpStatus.SC_OK && responseCode < HttpStatus.SC_BAD_REQUEST) {
+                            br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                        } else {
+                            br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+                        }
                         while ((line = br.readLine()) != null) {
                             sb.append(line);
                             sb.append("\n");
                         }
                         br.close();
                     } catch (IOException e) {
+                        result.setException(e);
                         e.printStackTrace();
                     }
                     result.setHeader(connection.getHeaderFields());
@@ -525,16 +531,7 @@ public class PIAPIAdapter implements Serializable {
                     result.setResponseCode(responseCode);
                     return result;
                 }
-                else {
-                    try {
-                        Exception exception = new Exception("Response code error: " + responseCode);
-                        result.setException(exception);
-                        result.setResponseCode(responseCode);
-                        throw exception;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+
                 return result;
             }
 
@@ -583,8 +580,7 @@ public class PIAPIAdapter implements Serializable {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                }
-                else {
+                } else {
                     try {
                         StringBuilder sb = new StringBuilder();
                         try {
@@ -654,20 +650,24 @@ public class PIAPIAdapter implements Serializable {
                     e.printStackTrace();
                 }
 
-                // if all goes well, sometimes empty, return payload
-                if(responseCode == HttpStatus.SC_OK ||
-                        responseCode == HttpStatus.SC_NO_CONTENT ||
-                        responseCode == HttpStatus.SC_CREATED) {
+                // build result object
+                if (responseCode != 0) {
                     StringBuilder sb = new StringBuilder();
+                    BufferedReader br;
+                    String line;
                     try {
-                        BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                        String line;
+                        if (responseCode >= HttpStatus.SC_OK && responseCode < HttpStatus.SC_BAD_REQUEST) {
+                            br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                        } else {
+                            br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+                        }
                         while ((line = br.readLine()) != null) {
                             sb.append(line);
                             sb.append("\n");
                         }
                         br.close();
                     } catch (IOException e) {
+                        result.setException(e);
                         e.printStackTrace();
                     }
                     result.setHeader(connection.getHeaderFields());
@@ -675,34 +675,7 @@ public class PIAPIAdapter implements Serializable {
                     result.setResponseCode(responseCode);
                     return result;
                 }
-                else if (responseCode == HttpStatus.SC_INTERNAL_SERVER_ERROR ||
-                        responseCode == HttpStatus.SC_CONFLICT) {
-                    StringBuilder sb = new StringBuilder();
-                    try {
-                        BufferedReader br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-                        String line;
-                        while ((line = br.readLine()) != null) {
-                            sb.append(line);
-                            sb.append("\n");
-                        }
-                        br.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    result.setHeader(connection.getHeaderFields());
-                    result.setResult(sb.toString());
-                    result.setResponseCode(responseCode);
-                    return result;
-                } else {
-                    try {
-                        Exception exception = new Exception("Response code error: " + responseCode);
-                        result.setException(exception);
-                        result.setResponseCode(responseCode);
-                        throw exception;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+
                 return result;
             }
 
@@ -750,34 +723,30 @@ public class PIAPIAdapter implements Serializable {
                     e.printStackTrace();
                 }
 
-                // if all goes well, return payload
-                if(responseCode == HttpStatus.SC_OK || responseCode == HttpStatus.SC_NO_CONTENT) {
+                // build result object
+                if (responseCode != 0) {
                     StringBuilder sb = new StringBuilder();
+                    BufferedReader br;
+                    String line;
                     try {
-                        BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                        String line;
+                        if (responseCode >= HttpStatus.SC_OK && responseCode < HttpStatus.SC_BAD_REQUEST) {
+                            br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                        } else {
+                            br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+                        }
                         while ((line = br.readLine()) != null) {
                             sb.append(line);
                             sb.append("\n");
                         }
                         br.close();
                     } catch (IOException e) {
+                        result.setException(e);
                         e.printStackTrace();
                     }
                     result.setHeader(connection.getHeaderFields());
                     result.setResult(sb.toString());
                     result.setResponseCode(responseCode);
                     return result;
-                }
-                else {
-                    try {
-                        Exception exception = new Exception("Response code error: " + responseCode);
-                        result.setException(exception);
-                        result.setResponseCode(responseCode);
-                        throw exception;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
                 }
                 return result;
             }
@@ -789,6 +758,3 @@ public class PIAPIAdapter implements Serializable {
         }.execute(url, payload, completionHandler);
     }
 }
-
-
-
