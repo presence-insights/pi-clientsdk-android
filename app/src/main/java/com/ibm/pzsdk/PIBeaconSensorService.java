@@ -17,17 +17,19 @@ import org.altbeacon.beacon.BeaconParser;
 import org.altbeacon.beacon.MonitorNotifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
+import org.apache.http.HttpStatus;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
 public class PIBeaconSensorService extends Service implements BeaconConsumer {
-    private String TAG = PIBeaconSensorService.class.getSimpleName();
+    private final String TAG = PIBeaconSensorService.class.getSimpleName();
 
     private PIAPIAdapter mPiApiAdapter;
     private BeaconManager mBeaconManager;
     private String mDeviceId;
-    private Region demoEstimoteRegion = new Region("b9407f30-f5f8-466e-aff9-25556b57fe6d", null, null, null);
+    private final Region demoEstimoteRegion = new Region("b9407f30-f5f8-466e-aff9-25556b57fe6d", null, null, null);
     private Set<String> proximityUUIDs = null;
 
     private static final String INTENT_PARAMETER_ADAPTER = "adapter";
@@ -35,8 +37,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private static final String INTENT_PARAMETER_DEVICE_ID = "device_id";
     private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
     private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
-    private static final String INTENT_PARAMETER_TENANT = "tenant";
-    private static final String INTENT_PARAMETER_ORG = "org";
 
     private long sendInterval = 5000;
     private long lastSendTime = 0;
@@ -47,13 +47,9 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         return null;
     }
 
-    // methods
-    public PIBeaconSensorService() {
-    }
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String command = "";
+        String command;
         Bundle extras = intent.getExtras();
 
         // lazily instantiate beacon manager
@@ -151,16 +147,21 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         try {
             mBeaconManager.startMonitoringBeaconsInRegion(region);
             mBeaconManager.startRangingBeaconsInRegion(region);
-        } catch (RemoteException re) {    }
+        } catch (RemoteException re) {
+            re.printStackTrace();
+        }
     }
 
     private void sendBeaconNotification(Collection<Beacon> beacons) {
-        log("sending beacon notification with this collection of beacons:");
         JSONObject payload = buildBeaconPayload(beacons);
+        log("sending beacon notification message");
         mPiApiAdapter.sendBeaconNotificationMessage(payload, new PIAPICompletionHandler() {
             @Override
             public void onComplete(PIAPIResult result) {
-                log("completed sending beacon notification message");
+                if (result.getResponseCode() >= HttpStatus.SC_BAD_REQUEST) {
+                    log("something went wrong with sending the bnm");
+                    log((String)result.getResult());
+                }
             }
         });
     }

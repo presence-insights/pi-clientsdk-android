@@ -1,30 +1,38 @@
 package com.ibm.pzsdk;
 
+import android.graphics.Bitmap;
+
+import com.ibm.json.java.JSONObject;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Created by hannigan on 4/24/15.
+ * This class provides a simple encapsulation of what is returned by the PIAPIAdapter, with a couple
+ * helper methods for casting the results from the API calls.
+ *
+ * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIAPIResult implements Serializable {
 
     /**
      * payload returned from API call
      */
-    Object result;
+    private Object result;
     /**
      * HTTP header
      */
-    Map<String, List<String>> header;
+    private Map<String, List<String>> header;
     /**
      * HTTP response code
      */
-    int responseCode;
+    private int responseCode;
     /**
      * Exception raised during API call
      */
-    Exception exception;
+    private Exception exception;
 
     /**
      * Default constructor
@@ -32,16 +40,16 @@ public class PIAPIResult implements Serializable {
     PIAPIResult() {}
 
     /**
+     * Constructor for simple result creation.
      *
-     * @param result
-     * @param responseCode
-     * @param e
+     * @param result payload returned from API call
+     * @param responseCode HTTP response code
      */
-    PIAPIResult(Object result, int responseCode, Exception e){this.result = result; this.responseCode = responseCode; this.exception = e;}
+    PIAPIResult(Object result, int responseCode){this.result = result; this.responseCode = responseCode;}
 
     /**
      *
-     * @return
+     * @return the payload as an Object
      */
     public Object getResult() {
         return result;
@@ -49,7 +57,36 @@ public class PIAPIResult implements Serializable {
 
     /**
      *
-     * @param result
+     * @return the payload casted to a String
+     */
+    public String getResultAsString() {
+        return (String) result;
+    }
+
+    /**
+     *
+     * @return the payload as Bitmap
+     */
+    public Bitmap getResultAsBitmap() {
+        return (Bitmap) result;
+    }
+
+    /**
+     *
+     * @return the payload as a JSON Object
+     */
+    public JSONObject getResultAsJson() {
+        try {
+            return JSONObject.parse((String)result);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     *
+     * @param result payload returned from API call
      */
     public void setResult(Object result) {
         this.result = result;
@@ -57,7 +94,7 @@ public class PIAPIResult implements Serializable {
 
     /**
      *
-     * @return
+     * @return HTTP header
      */
     public Map<String, List<String>> getHeader() {
         return header;
@@ -65,7 +102,7 @@ public class PIAPIResult implements Serializable {
 
     /**
      *
-     * @param header
+     * @param header HTTP Header
      */
     public void setHeader(Map<String, List<String>> header) {
         this.header = header;
@@ -73,7 +110,7 @@ public class PIAPIResult implements Serializable {
 
     /**
      *
-     * @return
+     * @return HTTP response code
      */
     public int getResponseCode() {
         return responseCode;
@@ -81,7 +118,7 @@ public class PIAPIResult implements Serializable {
 
     /**
      *
-     * @param responseCode
+     * @param responseCode HTTP response code
      */
     public void setResponseCode(int responseCode) {
         this.responseCode = responseCode;
@@ -89,7 +126,7 @@ public class PIAPIResult implements Serializable {
 
     /**
      *
-     * @return
+     * @return exception thrown during API call
      */
     public Exception getException() {
         return exception;
@@ -97,7 +134,7 @@ public class PIAPIResult implements Serializable {
 
     /**
      *
-     * @param exception
+     * @param exception exception thrown during API call
      */
     public void setException(Exception exception) {
         this.exception = exception;

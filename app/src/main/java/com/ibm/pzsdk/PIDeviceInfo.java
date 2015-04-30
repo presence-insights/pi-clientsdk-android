@@ -3,12 +3,21 @@ package com.ibm.pzsdk;
 import android.content.Context;
 
 /**
- * Created by hannigan on 4/24/15.
+ * This class provides the Presence Insights' implementation for device descriptor.
+ *
+ * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIDeviceInfo extends DeviceInfo {
 
+    /**
+     * Activity context
+     */
     private Context mContext;
 
+    /**
+     *
+     * @param context Activity Context
+     */
     public PIDeviceInfo(Context context) {
         super();
         mContext = context;

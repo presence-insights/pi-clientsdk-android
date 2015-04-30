@@ -9,10 +9,13 @@ import android.util.Log;
 import android.widget.Toast;
 
 /**
- * Created by hannigan on 3/26/2015.
+ * This class wraps the AltBeacon library's BeaconConsumer, and provides a simple interface to handle
+ * the communication to the PIBeaconSensorService.
+ *
+ * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIBeaconSensor {
-    private String TAG = PIBeaconSensor.class.getSimpleName();
+    private final String TAG = PIBeaconSensor.class.getSimpleName();
 
     private static final String INTENT_PARAMETER_ADAPTER = "adapter";
     private static final String INTENT_PARAMETER_COMMAND = "command";
@@ -21,17 +24,17 @@ public class PIBeaconSensor {
     private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
 
     private BluetoothAdapter mBluetoothAdapter;
-
-    private Context mContext;
-    private PIAPIAdapter mAdapter;
+    private final Context mContext;
+    private final PIAPIAdapter mAdapter;
     private final String mDeviceId;
-
-    public long mSendInterval = 5000;
+    private long mSendInterval = 5000;
 
     /**
+     * Default constructor
      *
-     * @param context
-     * @param adapter
+     * @param context Activity context
+     * @param adapter to handle sending of the beacon notification message
+     * @see com.ibm.pzsdk.PIAPIAdapter
      */
     public PIBeaconSensor(Context context, PIAPIAdapter adapter) {
         this.mContext = context;
@@ -54,7 +57,9 @@ public class PIBeaconSensor {
             // Make sure that BLE is on.
             if (!isBLEOn()) {
                 // If BLE is off, turned it on
-                enableBLE();
+                if(!enableBLE()) {
+                    Log.d(TAG, "Failed to start Bluetooth on this device.");
+                }
             }
 
         } catch (Exception e){
@@ -87,34 +92,32 @@ public class PIBeaconSensor {
     /**
      * Sets the interval in which the device reports its location.
      *
-     * @param sendInterval - send interval in ms
+     * @param sendInterval send interval in ms
      */
-    // TODO make sure this is working
-
     public void setSendInterval(long sendInterval) {
+        // TODO make sure this is working
         mSendInterval = sendInterval;
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(INTENT_PARAMETER_SEND_INTERVAL, mSendInterval);
         mContext.startService(intent);
     }
 
-    // must be called before starting the beacon sensor service
-
     /**
+     * Adds a new beacon advertisement layout.  By default, the AltBeacon library will only detect
+     * beacons meeting the AltBeacon specification.  Please see AltBeacon's BeaconParser#setBeaconLayout
+     * for a solid explanation of BLE advertisements.
      *
+     * MUST BE CALLED BEFORE start()!
      *
-     * @param layout
+     * @param beaconLayout the layout of the BLE advertisement
      */
-    public void addBeaconLayout(String layout) {
+    public void addBeaconLayout(String beaconLayout) {
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
-        intent.putExtra(INTENT_PARAMETER_BEACON_LAYOUT, layout);
+        intent.putExtra(INTENT_PARAMETER_BEACON_LAYOUT, beaconLayout);
         mContext.startService(intent);
     }
 
-    /*
-     * Bluetooth related methods
-     */
-
+    // confirm if the device supports BLE, if not it can't be used for detecting beacons
     private  boolean checkSupportBLE(){
         if (!mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Log.e(TAG, "ble_not_supported");
@@ -124,7 +127,8 @@ public class PIBeaconSensor {
         return true;
     }
 
-    private void initBluetoothAdapter()throws Exception{
+    // get the bluetooth adapter
+    private void initBluetoothAdapter() throws Exception{
         if(mBluetoothAdapter == null) {
             final BluetoothManager bluetoothManager =
                     (BluetoothManager) mContext.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -134,13 +138,13 @@ public class PIBeaconSensor {
         }
     }
 
+    // check to see if BLE is on
     private boolean isBLEOn(){
         return mBluetoothAdapter.isEnabled();
     }
 
-    /**
-     * enable bluetooth in case it's off (admin permission)
-     */
+
+    // enable bluetooth in case it's off (admin permission)
     private boolean enableBLE(){
         boolean response = true;
         if (!mBluetoothAdapter.isEnabled()) {

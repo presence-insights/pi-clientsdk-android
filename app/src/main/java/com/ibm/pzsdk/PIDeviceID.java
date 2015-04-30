@@ -11,7 +11,10 @@ import android.provider.Settings;
 import android.util.Log;
 
 /**
- * Created by bergerr on 4/24/2015.
+ * This class collects useful information about the current Android device.  PI uses it to collect
+ * the MAC Address for uniquely identifying a device.
+ *
+ * @author Ryan Berger and MobileFirst team
  */
 public class PIDeviceID {
     private final String platform = "ANDROID"; //$NON-NLS-1$
@@ -27,7 +30,7 @@ public class PIDeviceID {
     private static final String TAG = PIDeviceID.class.getCanonicalName();
 
     /**
-     *
+     * Default Constructor
      */
     PIDeviceID(Context context) {
         //Set the device model
@@ -44,8 +47,14 @@ public class PIDeviceID {
         }
     }
 
+    /**
+     * Calculates the uuid for this device using the MAC address and the Android ID.  It retrieves the
+     * MAC address from the WifiManager.
+     *
+     * @return uuid for device
+     */
     private String calculateHardwareId() {
-        String resultId = null;
+        String resultId;
         try {
             PackageManager packageManager = context.getPackageManager();
             if (packageManager.hasSystemFeature(PackageManager.FEATURE_WIFI)) {
@@ -81,39 +90,57 @@ public class PIDeviceID {
     }
 
     /**
+     *
      * @return The device model.
      */
     public String getModel() {
         return model;
     }
 
+    /**
+     *
+     * @return the device name ("platformName Version Model")
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     *
+     * @return the platform of the device (API level)
+     */
     public String getPlatform() {
         return platform;
     }
 
     /**
-     * @return The device platform version.
+     *
+     * @return The device platform version (API level)
      */
     public String getPlatformVersion() {
         return platformVersion;
     }
 
+    /**
+     *
+     * @return unique identifier of device
+     */
     public String getUuid() {
         return uuid;
     }
 
     /**
-     * @param uuid
-     *            the uuid to set
+     *
+     * @param uuid the uuid to set
      */
     void setUuid(String uuid) {
         this.uuid = uuid;
     }
 
+    /**
+     *
+     * @return the MAC address of the device
+     */
     public String getMacAddress() {
         return macAddress;
     }

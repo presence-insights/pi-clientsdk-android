@@ -15,7 +15,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * Created by natalies on 22/09/2014.
+ * This class provides an interface with the Presence Insights APIs.
+ *
+ * All methods return the API result as a String, unless otherwise specified.  I'm looking at you
+ * getFloorMap.
+ *
+ * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIAPIAdapter implements Serializable {
     private static final String TAG = PIAPIAdapter.class.getSimpleName();
@@ -44,15 +49,25 @@ public class PIAPIAdapter implements Serializable {
     static final String JSON_EntityFullLocation_Z = "z";
     static final String JSON_EntityFullLocation_Timestamp = "timestamp";
 
-    static final int READ_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
-    static final int CONNECTION_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
+    static final private int READ_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
+    static final private int CONNECTION_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
 
-    private Context mContext;
-    private String mServerURL;
-    private String mConnectorURL;
-    private String mTenantCode;
-    private String mOrgCode;
+    // mContext will be nice to have if we want to do any kind of UI actions for them.  For example,
+    // we could provide them the option to throw up a progress indicator while the async tasks are running.
+    private final Context mContext;
+    private final String mServerURL;
+    private final String mConnectorURL;
+    private final String mTenantCode;
+    private final String mOrgCode;
 
+    /**
+     * Constructor
+     *
+     * @param context Activity context
+     * @param hostname url
+     * @param tenantCode unique identifier for the tenant
+     * @param orgCode unique identifier for the organization
+     */
     public PIAPIAdapter(Context context, String hostname, String tenantCode, String orgCode){
         mContext = context;
         mServerURL = hostname + context.getString(R.string.management_server_path);
@@ -69,13 +84,10 @@ public class PIAPIAdapter implements Serializable {
                 '}';
     }
 
-    /*
-        Public Management GET methods
-     */
-
     /**
+     * Retrieves all the tenant documents
      *
-     * @param completionHandler - callback for APIs asynchronous calls. - callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getTenants(PIAPICompletionHandler completionHandler) {
         String tenants = String.format("%s/tenants", mServerURL);
@@ -88,8 +100,9 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves the specified tenant document
      *
-     * @param completionHandler - callback for APIs asynchronous calls. - callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getTenant(PIAPICompletionHandler completionHandler) {
         String tenant = String.format("%s/tenants/%s", mServerURL, mTenantCode);
@@ -102,8 +115,9 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves all the orgs of a tenant.  The tenant supplied in the PIAPIAdapter constructor.
      *
-     * @param completionHandler - callback for APIs asynchronous calls. - callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getOrgs(PIAPICompletionHandler completionHandler) {
         String orgs = String.format("%s/tenants/%s/orgs", mServerURL, mTenantCode);
@@ -116,8 +130,9 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves an org within a tenant.
      *
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getOrg(PIAPICompletionHandler completionHandler) {
         String org = String.format("%s/tenants/%s/orgs/%s", mServerURL, mTenantCode, mOrgCode);
@@ -130,8 +145,8 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
-     *
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * Retrieves all the sites of an organization.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getSites(PIAPICompletionHandler completionHandler) {
         String sites = String.format("%s/tenants/%s/orgs/%s/sites", mServerURL, mTenantCode, mOrgCode);
@@ -144,9 +159,10 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves a site of an organization.
      *
-     * @param siteCode - unique identifier for the site.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param siteCode unique identifier for the site.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getSite(String siteCode, PIAPICompletionHandler completionHandler) {
         String site = String.format("%s/tenants/%s/orgs/%s/sites/%s", mServerURL, mTenantCode, mOrgCode, siteCode);
@@ -159,9 +175,10 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves all the floors of a site.
      *
-     * @param siteCode - unique identifier for the site.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param siteCode unique identifier for the site.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getFloors(String siteCode, PIAPICompletionHandler completionHandler) {
         String floors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors", mServerURL, mTenantCode, mOrgCode, siteCode);
@@ -174,10 +191,11 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves a floor of a site.
      *
-     * @param siteCode - unique identifier for the site.
-     * @param floorCode - unique identifier for the floor.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param siteCode unique identifier for the site.
+     * @param floorCode unique identifier for the floor.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getFloor(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
         String floor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
@@ -190,8 +208,9 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves all devices of an organization.
      *
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getDevices(PIAPICompletionHandler completionHandler) {
         String devices = String.format("%s/tenants/%s/orgs/%s/devices", mServerURL, mTenantCode, mOrgCode);
@@ -204,9 +223,10 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves a device within an organization.
      *
-     * @param deviceCode - unique identifier for the device.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param deviceCode unique identifier for the device.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getDevice(String deviceCode, PIAPICompletionHandler completionHandler) {
         String device = String.format("%s/tenants/%s/orgs/%s/devices/%s", mServerURL, mTenantCode, mOrgCode, deviceCode);
@@ -219,10 +239,11 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves all the zones on a floor.
      *
-     * @param siteCode - unique identifier for the site.
-     * @param floorCode - unique identifier for the floor.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param siteCode unique identifier for the site.
+     * @param floorCode unique identifier for the floor.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getZones(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
         String zones = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
@@ -235,11 +256,12 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves a zone on a floor.
      *
-     * @param siteCode - unique identifier for the site.
-     * @param floorCode - unique identifier for the floor.
-     * @param zoneCode - unique identifier for the zone.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param siteCode unique identifier for the site.
+     * @param floorCode unique identifier for the floor.
+     * @param zoneCode unique identifier for the zone.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getZone(String siteCode, String floorCode, String zoneCode, PIAPICompletionHandler completionHandler) {
         String zone = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, zoneCode);
@@ -251,18 +273,12 @@ public class PIAPIAdapter implements Serializable {
         }
     }
 
-    public void getBeacons(PIAPICompletionHandler completionHandler) {
-        // TODO for next iteration, if we want this functionality
-    }
-    public void getBeacons(String siteCode, PIAPICompletionHandler completionHandler) {
-        // TODO for next iteration, if we want this functionality
-    }
-
     /**
+     * Retrieves all the beacons on a floor
      *
-     * @param siteCode - unique identifier for the site.
-     * @param floorCode - unique identifier for the floor.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param siteCode unique identifier for the site.
+     * @param floorCode unique identifier for the floor.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getBeacons(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
         String beacons = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
@@ -273,16 +289,14 @@ public class PIAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getBeaconsAdjacentTo(String beaconCode, PIAPICompletionHandler completionHandler) {
-        // TODO for next iteration, if we want this functionality
-    }
 
     /**
+     * Retrieves a beacon on a floor.
      *
-     * @param siteCode - unique identifier for the site.
-     * @param floorCode - unique identifier for the floor.
-     * @param beaconCode - unique identifier for the beacon.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param siteCode unique identifier for the site.
+     * @param floorCode unique identifier for the floor.
+     * @param beaconCode unique identifier for the beacon.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getBeacon(String siteCode, String floorCode, String beaconCode, PIAPICompletionHandler completionHandler) {
         String beacon = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, beaconCode);
@@ -293,15 +307,13 @@ public class PIAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    public void getBeaconById(String proximityUUID, String major, String minor, PIAPICompletionHandler completionHandler) {
-        // TODO for next iteration, if we want this functionality
-    }
 
     /**
+     * Retrieves all the sensors on a floor.
      *
-     * @param siteCode - unique identifier for the site.
-     * @param floorCode - unique identifier for the floor.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param siteCode unique identifier for the site.
+     * @param floorCode unique identifier for the floor.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getSensors(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
         String sensors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
@@ -314,11 +326,12 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves a sensor on a floor.
      *
-     * @param siteCode - unique identifier for the site.
-     * @param floorCode - unique identifier for the floor.
-     * @param sensorCode - unique identifier for the sensor.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param siteCode unique identifier for the site.
+     * @param floorCode unique identifier for the floor.
+     * @param sensorCode unique identifier for the sensor.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getSensor(String siteCode, String floorCode, String sensorCode, PIAPICompletionHandler completionHandler) {
         String sensor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, sensorCode);
@@ -331,10 +344,11 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves the map image of a floor.  Returned as a Bitmap.
      *
-     * @param siteCode - unique identifier for the site.
-     * @param floorCode - unique identifier for the floor.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param siteCode unique identifier for the site.
+     * @param floorCode unique identifier for the floor.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getFloorMap(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
         String map = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/map", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
@@ -347,8 +361,9 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves a list of proximity UUIDs from an organization.  Used for monitoring and ranging beacons in PIBeaconSensor.
      *
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void getProximityUUIDs(PIAPICompletionHandler completionHandler) {
         String proximityUUIDs = String.format("%s/tenants/%s/orgs/%s/views/proximityUUID", mServerURL, mTenantCode, mOrgCode);
@@ -361,9 +376,10 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Registers a device within an organization.
      *
-     * @param device - object with all the necessary information to register the device.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param device object with all the necessary information to register the device.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void registerDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
         final String registerDevice = String.format("%s/tenants/%s/orgs/%s/devices", mServerURL, mTenantCode, mOrgCode);
@@ -409,12 +425,12 @@ public class PIAPIAdapter implements Serializable {
             e.printStackTrace();
         }
     }
-    // TODO Handle unregistered Device flow
 
     /**
+     * Unregisters a device within an organization.
      *
-     * @param device - object with all the necessary information to unregister the device.
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param device object with all the necessary information to unregister the device.
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void unregisterDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
         String getDeviceObj = String.format("%s/tenants/%s/orgs/%s/devices?descriptor=%s", mServerURL, mTenantCode, mOrgCode, device.getDescriptor());
@@ -428,6 +444,8 @@ public class PIAPIAdapter implements Serializable {
                         JSONObject payload;
                         JSONArray devices;
                         JSONObject devicePayload = null;
+                        URL putUrl = null;
+                        String deviceCode = "";
                         try {
                             payload = JSONObject.parse((String) getResult.getResult());
                             devices = (JSONArray) payload.get("rows");
@@ -436,9 +454,12 @@ public class PIAPIAdapter implements Serializable {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
+
                         // call PUT
-                        String unregisterDevice = String.format("%s/tenants/%s/orgs/%s/devices/%s", mServerURL, mTenantCode, mOrgCode, devicePayload.get("@code"));
-                        URL putUrl = null;
+                        if (devicePayload.get("@code") != null) {
+                            deviceCode = (String) devicePayload.get("@code");
+                        }
+                        String unregisterDevice = String.format("%s/tenants/%s/orgs/%s/devices/%s", mServerURL, mTenantCode, mOrgCode, deviceCode);
                         try {
                             putUrl = new URL(unregisterDevice);
                         } catch (MalformedURLException e) {
@@ -456,14 +477,11 @@ public class PIAPIAdapter implements Serializable {
         }
     }
 
-    /*
-        Beacon Connector Methods
-     */
-
     /**
+     * Sends a beacon notification message to the beacon connector to report the device's location.
      *
-     * @param payload - a combination of PIBeaconData and the device descriptor
-     * @param completionHandler - callback for APIs asynchronous calls.
+     * @param payload a combination of PIBeaconData and the device descriptor
+     * @param completionHandler callback for APIs asynchronous calls.
      */
     public void sendBeaconNotificationMessage(JSONObject payload, PIAPICompletionHandler completionHandler) {
         String bnm = String.format("%s/tenants/%s/orgs/%s", mConnectorURL, mTenantCode, mOrgCode);
