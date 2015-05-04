@@ -39,19 +39,6 @@ From AltBeacon's [Github](https://github.com/AltBeacon/android-beacon-library), 
 
 
 
-## Classes
-#### PIAPIAdapter
+## Classes and Interfaces
 
-#### PIBeaconSensor
-
-#### PIAPIResult
-
-#### PIBeaconData
-
-#### PIDeviceInfo
-
-#### DeviceInfo
-
-## Interfaces
-#### PIAPICompletionHandler
-
+Have a look at the javadocs generated for this library, available in the `javadoc/` folder and launching `index.html`.

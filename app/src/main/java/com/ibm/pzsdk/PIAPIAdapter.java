@@ -3,6 +3,7 @@ package com.ibm.pzsdk;
 import android.content.Context;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
@@ -54,7 +55,7 @@ public class PIAPIAdapter implements Serializable {
 
     // mContext will be nice to have if we want to do any kind of UI actions for them.  For example,
     // we could provide them the option to throw up a progress indicator while the async tasks are running.
-    private final Context mContext;
+    private final transient Context mContext;
     private final String mServerURL;
     private final String mConnectorURL;
     private final String mTenantCode;
@@ -82,21 +83,6 @@ public class PIAPIAdapter implements Serializable {
                 "serverURL=" + mServerURL +
                 "connectorURL=" + mConnectorURL +
                 '}';
-    }
-
-    /**
-     * Retrieves all the tenant documents
-     *
-     * @param completionHandler callback for APIs asynchronous calls.
-     */
-    public void getTenants(PIAPICompletionHandler completionHandler) {
-        String tenants = String.format("%s/tenants", mServerURL);
-        try {
-            URL url = new URL(tenants);
-            GET(url, completionHandler);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -508,7 +494,6 @@ public class PIAPIAdapter implements Serializable {
             protected PIAPIResult doInBackground(Object... params) {
                 url = (URL) params[0];
                 completionHandler = (PIAPICompletionHandler) params[1];
-
                 // attempt GET from url
                 try {
                     connection = (HttpURLConnection) url.openConnection();

@@ -20,7 +20,10 @@ import org.altbeacon.beacon.Region;
 import org.apache.http.HttpStatus;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Set;
 
 public class PIBeaconSensorService extends Service implements BeaconConsumer {
@@ -167,11 +170,13 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     }
 
     private JSONObject buildBeaconPayload(Collection<Beacon> beacons) {
+        long detectedTime = System.currentTimeMillis();
         JSONObject payload = new JSONObject();
         JSONArray beaconArray = new JSONArray();
 
         for (Beacon b : beacons) {
             PIBeaconData data = new PIBeaconData(b);
+            data.setDetectedTime(detectedTime);
             data.setDeviceDescriptor(mDeviceId);
             beaconArray.add(data.getBeaconAsJson());
         }

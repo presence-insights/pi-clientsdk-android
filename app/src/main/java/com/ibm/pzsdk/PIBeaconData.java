@@ -22,11 +22,11 @@ public class PIBeaconData {
     /**
      * unique identifier within the proximity UUID space
      */
-    private int major;
+    private String major;
     /**
      * unique identifier within the major space
      */
-    private int minor;
+    private String minor;
     /**
      * in iBeacon speak, this means distance in meters
      */
@@ -40,9 +40,9 @@ public class PIBeaconData {
      */
     private String deviceDescriptor;
     /**
-     * time when the beacon was discovered in yyyy-MM-dd format
+     * time when the beacon was discovered in ms
      */
-    private String detectedTime;
+    private long detectedTime;
     /**
      * string representing the range of a beacon (immediate, near, far)
      */
@@ -68,7 +68,7 @@ public class PIBeaconData {
      *
      * @return unique identifier within the proximity UUID space
      */
-    public int getMajor() {
+    public String getMajor() {
         return major;
     }
 
@@ -76,7 +76,7 @@ public class PIBeaconData {
      *
      * @param major unique identifier within the proximity UUID space
      */
-    public void setMajor(int major) {
+    public void setMajor(String major) {
         this.major = major;
     }
 
@@ -84,7 +84,7 @@ public class PIBeaconData {
      *
      * @return unique identifier within the major space
      */
-    public int getMinor() {
+    public String getMinor() {
         return minor;
     }
 
@@ -92,7 +92,7 @@ public class PIBeaconData {
      *
      * @param minor unique identifier within the major space
      */
-    public void setMinor(int minor) {
+    public void setMinor(String minor) {
         this.minor = minor;
     }
 
@@ -146,17 +146,17 @@ public class PIBeaconData {
 
     /**
      *
-     * @return time when the beacon was discovered in yyyy-MM-dd format
+     * @return time when the beacon was discovered in ms
      */
-    public String getDetectedTime() {
+    public long getDetectedTime() {
         return detectedTime;
     }
 
     /**
      *
-     * @param detectedTime time when the beacon was discovered in yyyy-MM-dd format
+     * @param detectedTime time when the beacon was discovered in ms
      */
-    public void setDetectedTime(String detectedTime) {
+    public void setDetectedTime(long detectedTime) {
         this.detectedTime = detectedTime;
     }
 
@@ -182,11 +182,10 @@ public class PIBeaconData {
      */
     public PIBeaconData(Beacon beacon) {
         this.proximityUUID = beacon.getId1().toUuidString();
-        this.major = beacon.getId2().toInt();
-        this.minor = beacon.getId3().toInt();
+        this.major = beacon.getId2().toString();
+        this.minor = beacon.getId3().toString();
         this.rssi = beacon.getRssi();
         this.accuracy = beacon.getDistance();
-        this.detectedTime = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
         this.proximity = getProximityFromBeacon(beacon);
     }
 
@@ -198,8 +197,8 @@ public class PIBeaconData {
      */
     public PIBeaconData(String uuid, int major, int minor) {
         this.proximityUUID = uuid;
-        this.major = major;
-        this.minor = minor;
+        this.major = Integer.toString(major);
+        this.minor = Integer.toString(minor);
     }
 
     /**
@@ -229,15 +228,20 @@ public class PIBeaconData {
      * @return JSON Object of the beacon's data
      */
     public JSONObject getBeaconAsJson() {
-        JSONObject beacon = new JSONObject();
-        beacon.put("proximityUUID", proximityUUID);
-        beacon.put("major", major);
-        beacon.put("minor", minor);
-        beacon.put("rssi", rssi);
-        beacon.put("descriptor", deviceDescriptor);
-        beacon.put("detectedTime", detectedTime);
-        beacon.put("proximity", proximity);
-        return beacon;
+        JSONObject returnObj = new JSONObject();
+
+        JSONObject beaconData = new JSONObject();
+        beaconData.put("proximityUUID", proximityUUID);
+        beaconData.put("major", major);
+        beaconData.put("minor", minor);
+        beaconData.put("accuracy", accuracy);
+        beaconData.put("rssi", rssi);
+        beaconData.put("proximity", proximity);
+
+        returnObj.put("data", beaconData);
+        returnObj.put("descriptor", deviceDescriptor);
+        returnObj.put("detectedTime", detectedTime);
+        return returnObj;
     }
 
 }
