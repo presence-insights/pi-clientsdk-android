@@ -154,13 +154,20 @@ public abstract class DeviceInfo {
      * @return JSON Object with the device information added
      */
     public JSONObject addToJson(JSONObject payload) {
-        payload.put(JSON_DEVICE_DESCRIPTOR, mDescriptor);
-        payload.put(JSON_NAME, mName);
-        payload.put(JSON_REGISTRATION_TYPE, mType);
-        payload.put(JSON_REGISTERED, mRegistered);
+        // this is to ensure we do not overwrite the device descriptor when we are updating a document
+        if (payload.get(JSON_DEVICE_DESCRIPTOR) == null) {
+            payload.put(JSON_DEVICE_DESCRIPTOR, mDescriptor);
+        }
+        if (mName != null) {
+            payload.put(JSON_NAME, mName);
+        }
+        if (mType != null) {
+            payload.put(JSON_REGISTRATION_TYPE, mType);
+        }
         if (mData != null) {
             payload.put(JSON_DATA, mData);
         }
+        payload.put(JSON_REGISTERED, mRegistered);
 
         return payload;
     }

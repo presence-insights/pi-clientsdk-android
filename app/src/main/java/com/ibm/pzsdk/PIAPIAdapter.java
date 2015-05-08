@@ -3,6 +3,7 @@ package com.ibm.pzsdk;
 import android.content.Context;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.util.Base64;
 import android.util.Log;
 
 import com.ibm.json.java.JSONArray;
@@ -61,6 +62,9 @@ public class PIAPIAdapter implements Serializable {
     private final String mTenantCode;
     private final String mOrgCode;
 
+    private final String mBasicAuth;
+
+
     /**
      * Constructor
      *
@@ -69,8 +73,9 @@ public class PIAPIAdapter implements Serializable {
      * @param tenantCode unique identifier for the tenant
      * @param orgCode unique identifier for the organization
      */
-    public PIAPIAdapter(Context context, String hostname, String tenantCode, String orgCode){
+    public PIAPIAdapter(Context context, String username, String password, String hostname, String tenantCode, String orgCode){
         mContext = context;
+        mBasicAuth = generateBasicAuth(username, password);
         mServerURL = hostname + context.getString(R.string.management_server_path);
         mConnectorURL = hostname + context.getString(R.string.beacon_connector_path);
         mTenantCode = tenantCode;
@@ -362,7 +367,8 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
-     * Registers a device within an organization.
+     * Registers a device within an organization. If it already exists, this will still go through and update
+     * the document.
      *
      * @param device object with all the necessary information to register the device.
      * @param completionHandler callback for APIs asynchronous calls.
@@ -374,7 +380,7 @@ public class PIAPIAdapter implements Serializable {
             POST(url, device.toJSON(), new PIAPICompletionHandler() {
                 @Override
                 public void onComplete(PIAPIResult postResult) {
-
+                    Log.i(TAG, "");
                     if (postResult.getResponseCode() == HttpStatus.SC_CONFLICT) {
                         // call GET
                         try {
@@ -386,7 +392,7 @@ public class PIAPIAdapter implements Serializable {
                                         // build put payload
                                         JSONObject payload = null;
                                         try {
-                                            payload = JSONObject.parse((String)getResult.getResult());
+                                            payload = JSONObject.parse((String) getResult.getResult());
                                             device.addToJson(payload);
                                         } catch (IOException e) {
                                             e.printStackTrace();
@@ -413,12 +419,12 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
-     * Unregisters a device within an organization.
+     * Updates a device within an organization.
      *
-     * @param device object with all the necessary information to unregister the device.
+     * @param device object with all the necessary information to update the device.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void unregisterDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
+    public void updateDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
         String getDeviceObj = String.format("%s/tenants/%s/orgs/%s/devices?descriptor=%s", mServerURL, mTenantCode, mOrgCode, device.getDescriptor());
         try {
             URL url = new URL(getDeviceObj);
@@ -432,27 +438,29 @@ public class PIAPIAdapter implements Serializable {
                         JSONObject devicePayload = null;
                         URL putUrl = null;
                         String deviceCode = "";
-                        try {
-                            payload = JSONObject.parse((String) getResult.getResult());
-                            devices = (JSONArray) payload.get("rows");
+
+                        payload = getResult.getResultAsJson();
+                        devices = (JSONArray) payload.get("rows");
+                        if (devices.size() > 0) {
                             devicePayload = (JSONObject) devices.get(0);
-                            devicePayload.put(DeviceInfo.JSON_REGISTERED, false);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                            devicePayload.put(DeviceInfo.JSON_REGISTERED, device.isRegistered());
 
-                        // call PUT
-                        if (devicePayload.get("@code") != null) {
-                            deviceCode = (String) devicePayload.get("@code");
+                            // call PUT
+                            if (devicePayload.get("@code") != null) {
+                                deviceCode = (String) devicePayload.get("@code");
+                            }
+                            String unregisterDevice = String.format("%s/tenants/%s/orgs/%s/devices/%s", mServerURL, mTenantCode, mOrgCode, deviceCode);
+                            try {
+                                putUrl = new URL(unregisterDevice);
+                            } catch (MalformedURLException e) {
+                                e.printStackTrace();
+                            }
+                            PUT(putUrl, devicePayload, completionHandler);
+                        } else {
+                            getResult.setResponseCode(404);
+                            getResult.setResult("Device \"" + device.getName() + "\" does not exist");
+                            completionHandler.onComplete(getResult);
                         }
-                        String unregisterDevice = String.format("%s/tenants/%s/orgs/%s/devices/%s", mServerURL, mTenantCode, mOrgCode, deviceCode);
-                        try {
-                            putUrl = new URL(unregisterDevice);
-                        } catch (MalformedURLException e) {
-                            e.printStackTrace();
-                        }
-                        PUT(putUrl, devicePayload, completionHandler);
-
                     } else {
                         completionHandler.onComplete(getResult);
                     }
@@ -461,6 +469,17 @@ public class PIAPIAdapter implements Serializable {
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Unregisters a device within an organization.
+     *
+     * @param device object with all the necessary information to unregister the device.
+     * @param completionHandler callback for APIs asynchronous calls.
+     */
+    public void unregisterDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
+        device.setRegistered(false);
+        updateDevice(device, completionHandler);
     }
 
     /**
@@ -482,6 +501,17 @@ public class PIAPIAdapter implements Serializable {
     /*
         REST Helpers
      */
+    private String generateBasicAuth(String user, String pass) {
+        String toEncode = String.format("%s:%s", user, pass);
+        return "Basic " + Base64.encodeToString(toEncode.getBytes(), 0, toEncode.length(), Base64.DEFAULT);
+    }
+
+    private PIAPIResult cannotReachServer(PIAPIResult result) {
+        result.setResponseCode(0);
+        result.setResult("Cannot reach the server.");
+        return result;
+    }
+
     private void GET(URL url, PIAPICompletionHandler completionHandler) {
         new AsyncTask<Object, Void, PIAPIResult>(){
             private Exception exceptionToBeThrown;
@@ -500,6 +530,7 @@ public class PIAPIAdapter implements Serializable {
                     connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
                     connection.setConnectTimeout(CONNECTION_TIMEOUT_IN_MILLISECONDS);
                     connection.setRequestProperty("Accept", "application/json");
+                    connection.setRequestProperty("Authorization", mBasicAuth);
                     connection.setRequestMethod("GET");
                     connection.setDoInput(true);
                     connection.connect();
@@ -533,6 +564,8 @@ public class PIAPIAdapter implements Serializable {
                     result.setResult(sb.toString());
                     result.setResponseCode(responseCode);
                     return result;
+                } else {
+                    cannotReachServer(result);
                 }
 
                 return result;
@@ -564,6 +597,7 @@ public class PIAPIAdapter implements Serializable {
                     connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
                     connection.setConnectTimeout(CONNECTION_TIMEOUT_IN_MILLISECONDS);
                     connection.setRequestProperty("Accept", "application/json");
+                    connection.setRequestProperty("Authorization", mBasicAuth);
                     connection.setRequestMethod("GET");
                     connection.setDoInput(true);
                     connection.connect();
@@ -583,7 +617,7 @@ public class PIAPIAdapter implements Serializable {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                } else {
+                } else if (responseCode != 0) {
                     try {
                         StringBuilder sb = new StringBuilder();
                         try {
@@ -605,6 +639,8 @@ public class PIAPIAdapter implements Serializable {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                } else {
+                    cannotReachServer(result);
                 }
                 return result;
             }
@@ -638,6 +674,7 @@ public class PIAPIAdapter implements Serializable {
                     connection.setConnectTimeout(CONNECTION_TIMEOUT_IN_MILLISECONDS);
                     connection.setRequestProperty("Content-Type", "application/json");
                     connection.setRequestProperty("Accept", "application/json");
+                    connection.setRequestProperty("Authorization", mBasicAuth);
                     connection.setRequestMethod("POST");
                     connection.setDoOutput(true);
                     connection.connect();
@@ -677,6 +714,8 @@ public class PIAPIAdapter implements Serializable {
                     result.setResult(sb.toString());
                     result.setResponseCode(responseCode);
                     return result;
+                } else {
+                    cannotReachServer(result);
                 }
 
                 return result;
@@ -711,6 +750,7 @@ public class PIAPIAdapter implements Serializable {
                     connection.setConnectTimeout(CONNECTION_TIMEOUT_IN_MILLISECONDS);
                     connection.setRequestProperty("Content-Type", "application/json");
                     connection.setRequestProperty("Accept", "application/json");
+                    connection.setRequestProperty("Authorization", mBasicAuth);
                     connection.setRequestMethod("PUT");
                     connection.setDoOutput(true);
                     connection.connect();
@@ -750,6 +790,8 @@ public class PIAPIAdapter implements Serializable {
                     result.setResult(sb.toString());
                     result.setResponseCode(responseCode);
                     return result;
+                } else {
+                    cannotReachServer(result);
                 }
                 return result;
             }

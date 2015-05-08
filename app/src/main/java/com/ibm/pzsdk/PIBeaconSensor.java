@@ -27,7 +27,7 @@ public class PIBeaconSensor {
     private final Context mContext;
     private final PIAPIAdapter mAdapter;
     private final String mDeviceId;
-    private long mSendInterval = 5000;
+    private long mSendInterval = 1100;
 
     /**
      * Default constructor
@@ -63,7 +63,7 @@ public class PIBeaconSensor {
             }
 
         } catch (Exception e){
-            Log.d(TAG, "Failed to create PZBeaconSensorService: " + e.getMessage());
+            Log.d(TAG, "Failed to create PIBeaconSensorService: " + e.getMessage());
         }
 
     }
