@@ -20,11 +20,7 @@ import org.altbeacon.beacon.Region;
 import org.apache.http.HttpStatus;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Collection;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Set;
 
 public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private final String TAG = PIBeaconSensorService.class.getSimpleName();

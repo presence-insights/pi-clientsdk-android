@@ -4,10 +4,6 @@ import com.ibm.json.java.JSONObject;
 
 import org.altbeacon.beacon.Beacon;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
 /**
  * This class encapsulates all the data required to send to the PI Beacon Connector.
  *

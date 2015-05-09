@@ -69,6 +69,8 @@ public class PIAPIAdapter implements Serializable {
      * Constructor
      *
      * @param context Activity context
+     * @param username username for tenant
+     * @param password password for tenant
      * @param hostname url
      * @param tenantCode unique identifier for the tenant
      * @param orgCode unique identifier for the organization
@@ -435,7 +437,7 @@ public class PIAPIAdapter implements Serializable {
                         // build put payload
                         JSONObject payload;
                         JSONArray devices;
-                        JSONObject devicePayload = null;
+                        JSONObject devicePayload;
                         URL putUrl = null;
                         String deviceCode = "";
 
