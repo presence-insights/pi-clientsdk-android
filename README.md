@@ -20,22 +20,28 @@ This library contains classes that are useful for interfacing with Presence Insi
 
 ### Adding the library to your project
 
-1. download library at <where can they download the library?>
+1. Download library at <where can they download the library?>
 
-2. add library file to /libs
+2. Add library file to `/libs` directory
 
-3. add dependencies to gradle
+3. Add dependencies to `build.gradle`.  Need to include the altbeacon library, for now.  We are working on resolving this issue.
+
 
     dependencies {
         compile 'org.altbeacon:android-beacon-library:2.1.4'
         compile (name:'presence-insights-v1.1', ext:'aar')
     }
 
+
 ### Setting up PIAPIAdapter
 
     PIAPIAdapter mAdapter = new PIAPIAdapter(context, "username", "password", "https://www.url.com", "TenantCode", "OrgCode");
-                                             
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+Note: We do not store your username and password, it is up to the developer using this library to properly secure the credentials.
+
 ### Making a call to the API
+
 
     mAdapter.getOrg(new PIAPICompletionHandler() {
         @Override
@@ -44,9 +50,11 @@ This library contains classes that are useful for interfacing with Presence Insi
         }
     });
 
+&nbsp;&nbsp;&nbsp;&nbsp;
 Note: `PIAPICompletionHandler` is the callback interface for any asynchronous calls to the API.
     
 ### Setting up PIBeaconSensor
+
 
     PIBeaconSensor mBeaconSensor = new PIBeaconSensor(context, mAdapter);
 
@@ -57,17 +65,21 @@ Note: `PIAPICompletionHandler` is the callback interface for any asynchronous ca
     
     mBeaconSensor.stop()
     
+&nbsp;&nbsp;&nbsp;&nbsp;
 It's that easy!
 
 ### Setting the beacon advertisement layout
-We use AltBeacon's Android library for monitoring and ranging for beacons.  
+&nbsp;&nbsp;&nbsp;&nbsp;
+We use AltBeacon's Android library for monitoring and ranging for beacons.
 
     // adding beacon layout for Estimote Beacons
     mBeaconSensor.addBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24");
-    
+
+&nbsp;&nbsp;&nbsp;&nbsp;
 From AltBeacon's [Github](https://github.com/AltBeacon/android-beacon-library), "IMPORTANT: By default, this library will only detect beacons meeting the AltBeacon specification."
 
 
 ## Classes and Interfaces
 
+&nbsp;&nbsp;&nbsp;&nbsp;
 Have a look at the javadocs generated for this library, available in the `javadoc/` folder and launching `index.html`.
