@@ -438,14 +438,19 @@ public class PIAPIAdapter implements Serializable {
                         JSONObject payload;
                         JSONArray devices;
                         JSONObject devicePayload;
+//						JSONObject deviceInput;
                         URL putUrl = null;
                         String deviceCode = "";
 
                         payload = getResult.getResultAsJson();
                         devices = (JSONArray) payload.get("rows");
+//						deviceInput = device.toJSON();
+
                         if (devices.size() > 0) {
                             devicePayload = (JSONObject) devices.get(0);
                             devicePayload.put(DeviceInfo.JSON_REGISTERED, device.isRegistered());
+							devicePayload.put(DeviceInfo.JSON_NAME, device.getName());
+							devicePayload.put(DeviceInfo.JSON_DATA, device.getData());
 
                             // call PUT
                             if (devicePayload.get("@code") != null) {
