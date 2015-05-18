@@ -8,6 +8,8 @@
 //
 package com.ibm.pzsdk;
 
+import android.util.Log;
+
 import com.ibm.json.java.JSONObject;
 
 import org.altbeacon.beacon.Beacon;
@@ -112,7 +114,7 @@ public class PIBeaconData {
      *
      * @param accuracy of the beacon
      */
-    public void setAccuracy(int accuracy) {
+    public void setAccuracy(double accuracy) {
         this.accuracy = accuracy;
     }
 
@@ -232,7 +234,14 @@ public class PIBeaconData {
      * @return JSON Object of the beacon's data
      */
     public JSONObject getBeaconAsJson() {
-        JSONObject returnObj = new JSONObject();
+		try {
+			beaconValidator(this);
+		} catch (Exception e) {
+			Log.e("ERROR", e.toString());
+			e.printStackTrace();
+		}
+
+		JSONObject returnObj = new JSONObject();
 
         JSONObject beaconData = new JSONObject();
         beaconData.put("proximityUUID", proximityUUID);
@@ -247,5 +256,24 @@ public class PIBeaconData {
         returnObj.put("detectedTime", detectedTime);
         return returnObj;
     }
+
+	/**
+	 * Simple test to see if a beacon is valid
+	 * Cannot check RSSI or accuracy since they cannot be null
+	 *
+	 * @param beacon
+	 * @throws Exception
+	 */
+	private void beaconValidator(PIBeaconData beacon) throws Exception {
+		// DetectedTime, Accuracy, and RSSI (long, double, int) cannot be null
+		if ((beacon.proximityUUID == null)
+				|| (beacon.major == null)
+				|| (beacon.minor == null)
+				|| (beacon.proximity == null)
+				|| (beacon.deviceDescriptor == null)
+				) {
+			throw new Exception("PIBeacon is not valid");
+		}
+	}
 
 }
