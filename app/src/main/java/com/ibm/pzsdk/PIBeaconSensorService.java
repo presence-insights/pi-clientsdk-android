@@ -37,13 +37,15 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private BeaconManager mBeaconManager;
     private String mDeviceId;
 
+    private final Region demoEstimoteRegion = new Region("b9407f30-f5f8-466e-aff9-25556b57fe6d", null, null, null);
+
     private static final String INTENT_PARAMETER_ADAPTER = "adapter";
     private static final String INTENT_PARAMETER_COMMAND = "command";
     private static final String INTENT_PARAMETER_DEVICE_ID = "device_id";
     private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
     private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
 
-    private long sendInterval = 1100;
+    private volatile long sendInterval = 5000;
     private long lastSendTime = 0;
     private long currentTime = 0;
 
@@ -114,6 +116,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         mBeaconManager.setRangeNotifier(new RangeNotifier() {
             @Override
             public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
+                Log.d(TAG, "current send interval: " + sendInterval);
                 if (beacons.size() > 0) {
                     currentTime = System.currentTimeMillis();
                     if (currentTime - lastSendTime > sendInterval) {
@@ -127,18 +130,22 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         mPiApiAdapter.getProximityUUIDs(new PIAPICompletionHandler() {
             @Override
             public void onComplete(PIAPIResult result) {
-                JSONArray uuids = null;
-                try {
-                    uuids = JSONArray.parse((String) result.getResult());
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-                if (uuids != null) {
-                    for (Object uuid : uuids.toArray()) {
-                        startMonitoringAndRangingBeaconsInRegion(new Region((String) uuid, null, null, null));
+                if (result.getResponseCode() == 200) {
+                    JSONArray uuids = null;
+                    try {
+                        uuids = JSONArray.parse((String) result.getResult());
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                    if (uuids != null) {
+                        for (Object uuid : uuids.toArray()) {
+                            startMonitoringAndRangingBeaconsInRegion(new Region((String) uuid, null, null, null));
+                        }
+                    } else {
+                        Log.e(TAG, "Call to Management server returned an empty array of proximity UUIDs");
                     }
                 } else {
-                    Log.e(TAG, "Call to Management server returned an empty array of proximity UUIDs");
+                    startMonitoringAndRangingBeaconsInRegion(demoEstimoteRegion);
                 }
             }
         });

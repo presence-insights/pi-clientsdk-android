@@ -35,7 +35,7 @@ public class PIBeaconSensor {
     private final Context mContext;
     private final PIAPIAdapter mAdapter;
     private final String mDeviceId;
-    private long mSendInterval = 1100;
+    private long mSendInterval = 5000;
 
     /**
      * Default constructor
