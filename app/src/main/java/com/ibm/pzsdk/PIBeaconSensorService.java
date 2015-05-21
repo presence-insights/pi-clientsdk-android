@@ -12,7 +12,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.os.RemoteException;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.ibm.json.java.JSONArray;
@@ -28,22 +30,25 @@ import org.altbeacon.beacon.Region;
 import org.apache.http.HttpStatus;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 
 public class PIBeaconSensorService extends Service implements BeaconConsumer {
-    private final String TAG = PIBeaconSensorService.class.getSimpleName();
-
-    private PIAPIAdapter mPiApiAdapter;
-    private BeaconManager mBeaconManager;
-    private String mDeviceId;
-
-    private final Region demoEstimoteRegion = new Region("b9407f30-f5f8-466e-aff9-25556b57fe6d", null, null, null);
+    private static final String TAG = PIBeaconSensorService.class.getSimpleName();
 
     private static final String INTENT_PARAMETER_ADAPTER = "adapter";
     private static final String INTENT_PARAMETER_COMMAND = "command";
     private static final String INTENT_PARAMETER_DEVICE_ID = "device_id";
     private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
     private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
+
+    private static final String INTENT_RECEIVER_BEACON_COLLECTION = "intent_receiver_beacon_collection";
+
+    private final Region demoEstimoteRegion = new Region("b9407f30-f5f8-466e-aff9-25556b57fe6d", null, null, null);
+
+    private PIAPIAdapter mPiApiAdapter;
+    private BeaconManager mBeaconManager;
+    private String mDeviceId;
 
     private volatile long sendInterval = 5000;
     private long lastSendTime = 0;
@@ -167,10 +172,15 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             public void onComplete(PIAPIResult result) {
                 if (result.getResponseCode() >= HttpStatus.SC_BAD_REQUEST) {
                     log("something went wrong with sending the bnm");
-                    log((String)result.getResult());
+                    log((String) result.getResult());
                 }
             }
         });
+
+        // provide beacons to delegate
+        Intent intent = new Intent(INTENT_RECEIVER_BEACON_COLLECTION);
+        intent.putParcelableArrayListExtra("beacons", new ArrayList<Beacon>(beacons));
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     private JSONObject buildBeaconPayload(Collection<Beacon> beacons) {
