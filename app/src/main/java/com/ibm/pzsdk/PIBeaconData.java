@@ -259,20 +259,27 @@ public class PIBeaconData {
 
 	/**
 	 * Simple test to see if a beacon is valid
-	 * Cannot check RSSI or accuracy since they cannot be null
+	 * Cannot check RSSI, accuracy, or detectedTime since they cannot be null
 	 *
 	 * @param beacon
 	 * @throws Exception
 	 */
 	private void beaconValidator(PIBeaconData beacon) throws Exception {
 		// DetectedTime, Accuracy, and RSSI (long, double, int) cannot be null
-		if ((beacon.proximityUUID == null)
-				|| (beacon.major == null)
-				|| (beacon.minor == null)
-				|| (beacon.proximity == null)
-				|| (beacon.deviceDescriptor == null)
-				) {
-			throw new Exception("PIBeacon is not valid");
+		if (beacon.proximityUUID == null) {
+			throw new Exception("PIBeacon proximityUUID is null");
+		}
+		else if (beacon.major == null) {
+			throw new Exception("PIBeacon major is null");
+		}
+		else if (beacon.minor == null) {
+			throw new Exception("PIBeacon minor is null");
+		}
+		else if (beacon.proximity == null) {
+			throw new Exception("PIBeacon proximity is null");
+		}
+		else if (beacon.deviceDescriptor == null) {
+			throw new Exception("PIBeacon deviceDescriptor is null");
 		}
 	}
 
