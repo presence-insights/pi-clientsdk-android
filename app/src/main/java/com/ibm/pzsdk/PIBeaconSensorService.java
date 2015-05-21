@@ -57,7 +57,10 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String command;
-        Bundle extras = intent.getExtras();
+        Bundle extras = null;
+        if (intent != null) {
+            extras = intent.getExtras();
+        }
 
         // lazily instantiate beacon manager
         if (mBeaconManager == null) {
@@ -82,16 +85,14 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             if (!extras.getString(INTENT_PARAMETER_COMMAND, "").equals("")) {
                 command = extras.getString(INTENT_PARAMETER_COMMAND);
                 if (command.equals("START_SCANNING")){
-                    // get proximityUUIDs, then, in completion callback, bind to beacon manager
                     mBeaconManager.bind(this);
                 } else if (command.equals("STOP_SCANNING")){
-                    // unbind from beacon manager and clear proximityUUIDs list
                     mBeaconManager.unbind(this);
                 }
             }
         }
 
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
     @Override
@@ -99,24 +100,23 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         mBeaconManager.setMonitorNotifier(new MonitorNotifier() {
             @Override
             public void didEnterRegion(Region region) {
-                log("did enter region: " + region.toString());
+                // not used
             }
 
             @Override
             public void didExitRegion(Region region) {
-                log("did exit region: " + region.toString());
+                // not used
             }
 
             @Override
             public void didDetermineStateForRegion(int state, Region region) {
-                Log.i(TAG, "I have just switched from seeing/not seeing beacons: " + state);
+                // not used
             }
         });
 
         mBeaconManager.setRangeNotifier(new RangeNotifier() {
             @Override
             public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
-                Log.d(TAG, "current send interval: " + sendInterval);
                 if (beacons.size() > 0) {
                     currentTime = System.currentTimeMillis();
                     if (currentTime - lastSendTime > sendInterval) {
@@ -162,7 +162,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
     private void sendBeaconNotification(Collection<Beacon> beacons) {
         JSONObject payload = buildBeaconPayload(beacons);
-        log("sending beacon notification message");
         mPiApiAdapter.sendBeaconNotificationMessage(payload, new PIAPICompletionHandler() {
             @Override
             public void onComplete(PIAPIResult result) {

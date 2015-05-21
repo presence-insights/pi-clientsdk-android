@@ -16,6 +16,8 @@ import android.content.pm.PackageManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.sql.Statement;
+
 /**
  * This class wraps the AltBeacon library's BeaconConsumer, and provides a simple interface to handle
  * the communication to the PIBeaconSensorService.
@@ -35,6 +37,11 @@ public class PIBeaconSensor {
     private final Context mContext;
     private final PIAPIAdapter mAdapter;
     private final String mDeviceId;
+
+    private String mState;
+    private static final String STARTED = "started";
+    private static final String STOPPED = "stopped";
+
     private long mSendInterval = 5000;
 
     /**
@@ -47,6 +54,8 @@ public class PIBeaconSensor {
     public PIBeaconSensor(Context context, PIAPIAdapter adapter) {
         this.mContext = context;
         this.mAdapter = adapter;
+
+        mState = STOPPED;
 
         // get Device ID
         PIDeviceID deviceID = new PIDeviceID(context);
@@ -80,6 +89,8 @@ public class PIBeaconSensor {
      * Start sensing for beacons.
      */
     public void start() {
+        mState = STARTED;
+
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(INTENT_PARAMETER_ADAPTER, mAdapter);
         intent.putExtra(INTENT_PARAMETER_DEVICE_ID, mDeviceId);
@@ -91,6 +102,8 @@ public class PIBeaconSensor {
      * Stop sensing for beacons.
      */
     public void stop() {
+        mState = STOPPED;
+
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(INTENT_PARAMETER_ADAPTER, mAdapter);
         intent.putExtra(INTENT_PARAMETER_COMMAND, "STOP_SCANNING");
@@ -103,7 +116,6 @@ public class PIBeaconSensor {
      * @param sendInterval send interval in ms
      */
     public void setSendInterval(long sendInterval) {
-        // TODO make sure this is working
         mSendInterval = sendInterval;
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(INTENT_PARAMETER_SEND_INTERVAL, mSendInterval);
@@ -120,9 +132,14 @@ public class PIBeaconSensor {
      * @param beaconLayout the layout of the BLE advertisement
      */
     public void addBeaconLayout(String beaconLayout) {
-        Intent intent = new Intent(mContext, PIBeaconSensorService.class);
-        intent.putExtra(INTENT_PARAMETER_BEACON_LAYOUT, beaconLayout);
-        mContext.startService(intent);
+        if (mState.equals(STOPPED)) {
+            Intent intent = new Intent(mContext, PIBeaconSensorService.class);
+            intent.putExtra(INTENT_PARAMETER_BEACON_LAYOUT, beaconLayout);
+            mContext.startService(intent);
+        } else {
+            Toast.makeText(mContext, "Cannot set beacon layout while service is running.", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Cannot set beacon layout while service is running.");
+        }
     }
 
     // confirm if the device supports BLE, if not it can't be used for detecting beacons

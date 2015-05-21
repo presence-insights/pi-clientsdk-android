@@ -94,7 +94,7 @@ public class PIAPIAdapter implements Serializable {
 
     @Override
     public String toString() {
-        return "PZAPIAdapter{" +
+        return "PIAPIAdapter {" +
                 "serverURL=" + mServerURL +
                 "connectorURL=" + mConnectorURL +
                 '}';
