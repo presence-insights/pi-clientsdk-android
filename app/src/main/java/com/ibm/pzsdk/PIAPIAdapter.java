@@ -435,7 +435,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls.
      */
     public void updateDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
-        String getDeviceObj = String.format("%s/tenants/%s/orgs/%s/devices?descriptor=%s", mServerURL, mTenantCode, mOrgCode, device.getDescriptor());
+        String getDeviceObj = String.format("%s/tenants/%s/orgs/%s/devices?rawDescriptor=%s", mServerURL, mTenantCode, mOrgCode, device.getDescriptor());
         try {
             URL url = new URL(getDeviceObj);
             GET(url, new PIAPICompletionHandler() {
