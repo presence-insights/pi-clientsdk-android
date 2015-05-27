@@ -167,6 +167,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
     private void sendBeaconNotification(Collection<Beacon> beacons) {
         JSONObject payload = buildBeaconPayload(beacons);
+        log("sending beacon notification message");
         mPiApiAdapter.sendBeaconNotificationMessage(payload, new PIAPICompletionHandler() {
             @Override
             public void onComplete(PIAPIResult result) {

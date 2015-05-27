@@ -169,10 +169,9 @@ public class PIBeaconSensor {
         public void onReceive(Context context, Intent intent) {
             // Get extra data included in the Intent
             ArrayList<Beacon> beacons = intent.getParcelableArrayListExtra("beacons");
-            Log.d(TAG, beacons.toString());
             mDelegate.beaconsInRange(beacons);
         }
-    };;
+    };
 
     // confirm if the device supports BLE, if not it can't be used for detecting beacons
     private  boolean checkSupportBLE(){
