@@ -65,15 +65,6 @@ public class PIBeaconSensor {
         this.mAdapter = adapter;
         mState = STOPPED;
 
-        // This makes sure that the container context has implemented
-        // the callback interface. If not, it throws an exception
-        try {
-            mDelegate = (PIBeaconSensorDelegate) context;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(context.toString()
-                    + " must implement PIBeaconSensorDelegate");
-        }
-
         // get Device ID
         PIDeviceID deviceID = new PIDeviceID(context);
         mDeviceId = deviceID.getMacAddress();
@@ -167,11 +158,22 @@ public class PIBeaconSensor {
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            // Get extra data included in the Intent
-            ArrayList<Beacon> beacons = intent.getParcelableArrayListExtra("beacons");
-            mDelegate.beaconsInRange(beacons);
+            if (mDelegate != null) {
+                // Get extra data included in the Intent
+                ArrayList<Beacon> beacons = intent.getParcelableArrayListExtra("beacons");
+                mDelegate.beaconsInRange(beacons);
+            }
         }
     };
+
+    public void setBeaconsInRangeListener(PIBeaconSensorDelegate listener) {
+        try {
+            mDelegate = listener;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(listener.toString()
+                    + " must implement PIBeaconSensorDelegate");
+        }
+    }
 
     // confirm if the device supports BLE, if not it can't be used for detecting beacons
     private  boolean checkSupportBLE(){
