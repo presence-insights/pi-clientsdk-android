@@ -8,8 +8,8 @@ android {
         // BLE is introduced at 18
         minSdkVersion 18
         targetSdkVersion 20
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.1"
 
     }
 
@@ -22,7 +22,7 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:22.0.0'
+    compile 'com.android.support:support-v4:22.1.1'
     compile 'org.altbeacon:android-beacon-library:2.1.4'
     compile files('libs/JSON4J.jar')
 }
