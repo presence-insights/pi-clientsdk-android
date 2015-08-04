@@ -240,6 +240,22 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
+     * Retrieves a device within an organization by its descriptor.
+     *
+     * @param deviceDescriptor unique identifier for the device.
+     * @param completionHandler callback for APIs asynchronous calls.
+     */
+    public void getDeviceByDescriptor(String deviceDescriptor, PIAPICompletionHandler completionHandler) {
+        String device = String.format("%s/tenants/%s/orgs/%s/devices?rawDescriptor=%s", mServerURL, mTenantCode, mOrgCode, deviceDescriptor);
+        try {
+            URL url = new URL(device);
+            GET(url, completionHandler);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Retrieves all the zones on a floor.
      *
      * @param siteCode unique identifier for the site.

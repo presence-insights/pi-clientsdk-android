@@ -31,6 +31,7 @@ public abstract class DeviceInfo {
     static final String JSON_DEVICE_DESCRIPTOR = "descriptor";
     static final String JSON_NAME = "name";
     static final String JSON_DATA = "data";
+    static final String JSON_UNENCRYPTED_DATA = "unencryptedData";
     static final String JSON_REGISTERED = "registered";
 
     /**
@@ -123,6 +124,24 @@ public abstract class DeviceInfo {
     private String mDescriptor;
     private String mType;
     private JSONObject mData;
+
+    /**
+     *
+     * @return metadata pertaining to the device
+     */
+    public JSONObject getUnencryptedData() {
+        return mUnencryptedData;
+    }
+
+    /**
+     *
+     * @param unencryptedData metadata where encryption is not required
+     */
+    public void setUnencryptedData(JSONObject unencryptedData) {
+        this.mUnencryptedData = unencryptedData;
+    }
+
+    private JSONObject mUnencryptedData;
     private boolean mRegistered;
 
     /**
@@ -174,6 +193,9 @@ public abstract class DeviceInfo {
         }
         if (mData != null) {
             payload.put(JSON_DATA, mData);
+        }
+        if (mUnencryptedData != null) {
+            payload.put(JSON_UNENCRYPTED_DATA, mUnencryptedData);
         }
         payload.put(JSON_REGISTERED, mRegistered);
 
