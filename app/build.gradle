@@ -22,7 +22,7 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:22.1.1'
+    compile 'com.android.support:support-v4:22.2.1'
     compile 'org.altbeacon:android-beacon-library:2.1.4'
     compile files('libs/JSON4J.jar')
 }

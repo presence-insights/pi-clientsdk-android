@@ -3,8 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/pz-clientsdk-android.iml" filepath="$PROJECT_DIR$/pz-clientsdk-android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/pi-clientsdk-android.iml" filepath="$PROJECT_DIR$/pi-clientsdk-android.iml" />
     </modules>
   </component>
 </project>
-
