@@ -448,9 +448,7 @@ public class PIAPIAdapter implements Serializable {
 
                         if (devices.size() > 0) {
                             devicePayload = (JSONObject) devices.get(0);
-                            devicePayload.put(DeviceInfo.JSON_REGISTERED, device.isRegistered());
-							devicePayload.put(DeviceInfo.JSON_NAME, device.getName());
-							devicePayload.put(DeviceInfo.JSON_DATA, device.getData());
+                            device.addToJson(devicePayload);
 
                             // call PUT
                             if (devicePayload.get("@code") != null) {
