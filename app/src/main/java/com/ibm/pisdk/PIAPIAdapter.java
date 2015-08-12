@@ -6,7 +6,7 @@
 // divested of its trade secrets, irrespective of what has
 // been deposited with the U.S. Copyright Office.
 //
-package com.ibm.pzsdk;
+package com.ibm.pisdk;
 
 import android.content.Context;
 import android.graphics.BitmapFactory;
@@ -35,29 +35,8 @@ import java.net.URL;
 public class PIAPIAdapter implements Serializable {
     private static final String TAG = PIAPIAdapter.class.getSimpleName();
 
-    static final String JSON_Zone_Id = "id";
-    static final String JSON_Zone_Type = "type";
-    static final String JSON_Zone_Name = "name";
-    static final String JSON_Zone_Description = "description";
-    static final String JSON_Zone_TimeZone = "timeZone";
-
-    static final String JSON_Entity_Id 			= "id";
-    static final String JSON_Entity_Type 		= "type";
-    static final String JSON_Entity_Name 		= "name";
-    static final String JSON_Entity_Description = "description";
-    static final String JSON_Entity_Email 		= "email";
-    static final String JSON_Entity_Loyalty 	= "loyalty";
-    static final String JSON_Entity_Phone 		= "phone";
-    static final String JSON_Entity_OptedIn 	= "optedIn";
-    static final String JSON_Entity_Descriptors	= "descriptors";
-
-    static final String JSON_EntityFullLocation_Zones = "zones";
-    static final String JSON_EntityFullLocation_ZoneTags = "tags";
-    static final String JSON_EntityFullLocation_ZonePersonalTag = "personalTag";
-    static final String JSON_EntityFullLocation_X = "x";
-    static final String JSON_EntityFullLocation_Y = "y";
-    static final String JSON_EntityFullLocation_Z = "z";
-    static final String JSON_EntityFullLocation_Timestamp = "timestamp";
+    private static final String MANAGEMENT_SERVER_PATH = "/pi-config/v1";
+    private static final String BEACON_CONNECTOR_PATH = "/conn-beacon/v1";
 
     static final private int READ_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
     static final private int CONNECTION_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
@@ -72,7 +51,6 @@ public class PIAPIAdapter implements Serializable {
 
     private final String mBasicAuth;
 
-
     /**
      * Constructor
      *
@@ -86,8 +64,8 @@ public class PIAPIAdapter implements Serializable {
     public PIAPIAdapter(Context context, String username, String password, String hostname, String tenantCode, String orgCode){
         mContext = context;
         mBasicAuth = generateBasicAuth(username, password);
-        mServerURL = hostname + context.getString(R.string.management_server_path);
-        mConnectorURL = hostname + context.getString(R.string.beacon_connector_path);
+        mServerURL = hostname + MANAGEMENT_SERVER_PATH;
+        mConnectorURL = hostname + BEACON_CONNECTOR_PATH;
         mTenantCode = tenantCode;
         mOrgCode = orgCode;
     }

@@ -6,7 +6,7 @@
 // divested of its trade secrets, irrespective of what has
 // been deposited with the U.S. Copyright Office.
 //
-package com.ibm.pzsdk;
+package com.ibm.pisdk;
 
 /**
  * This interface provides a callback method for the PIAPIAdapter's asynchronous calls.

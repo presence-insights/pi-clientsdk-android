@@ -6,7 +6,7 @@
 // divested of its trade secrets, irrespective of what has
 // been deposited with the U.S. Copyright Office.
 //
-package com.ibm.pzsdk;
+package com.ibm.pisdk;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
@@ -21,10 +21,7 @@ import android.widget.Toast;
 
 import org.altbeacon.beacon.Beacon;
 
-import java.io.Serializable;
-import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collection;
 
 /**
  * This class wraps the AltBeacon library's BeaconConsumer, and provides a simple interface to handle
@@ -58,7 +55,7 @@ public class PIBeaconSensor {
      *
      * @param context Activity context
      * @param adapter to handle sending of the beacon notification message
-     * @see com.ibm.pzsdk.PIAPIAdapter
+     * @see com.ibm.pisdk.PIAPIAdapter
      */
     public PIBeaconSensor(Context context, PIAPIAdapter adapter) {
         this.mContext = context;

@@ -6,13 +6,12 @@
 // divested of its trade secrets, irrespective of what has
 // been deposited with the U.S. Copyright Office.
 //
-package com.ibm.pzsdk;
+package com.ibm.pisdk;
 
 import android.app.Service;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Parcelable;
 import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
