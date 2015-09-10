@@ -33,6 +33,15 @@ public abstract class DeviceInfo {
     static final String JSON_DATA = "data";
     static final String JSON_UNENCRYPTED_DATA = "unencryptedData";
     static final String JSON_REGISTERED = "registered";
+    static final String JSON_BLACKLIST = "blacklist";
+
+    private String mName;
+    private String mDescriptor;
+    private String mType;
+    private JSONObject mData;
+    private JSONObject mUnencryptedData;
+    private boolean mRegistered;
+    private boolean mBlacklisted;
 
     /**
      *
@@ -113,17 +122,27 @@ public abstract class DeviceInfo {
 
     /**
      *
+     * @return if the device is blacklisted
+     */
+    public boolean isBlacklisted() {
+        return mBlacklisted;
+    }
+
+    /**
+     *
+     * @param blacklisted if the device is blacklisted. if true, analytics will ignore this device.
+     */
+    public void setBlacklisted(boolean blacklisted) {
+        this.mBlacklisted = blacklisted;
+    }
+
+    /**
+     *
      * @param registered if the device is registered
      */
     public void setRegistered(boolean registered) {
         this.mRegistered = registered;
-
     }
-
-    private String mName;
-    private String mDescriptor;
-    private String mType;
-    private JSONObject mData;
 
     /**
      *
@@ -140,9 +159,6 @@ public abstract class DeviceInfo {
     public void setUnencryptedData(JSONObject unencryptedData) {
         this.mUnencryptedData = unencryptedData;
     }
-
-    private JSONObject mUnencryptedData;
-    private boolean mRegistered;
 
     /**
      * Default constructor
@@ -161,6 +177,7 @@ public abstract class DeviceInfo {
         mName = name;
         mType = type;
         mRegistered = false;
+        mBlacklisted = false;
         // call extended classes setDescriptor to generate the descriptor for the device
         setDescriptor();
     }
@@ -198,6 +215,7 @@ public abstract class DeviceInfo {
             payload.put(JSON_UNENCRYPTED_DATA, mUnencryptedData);
         }
         payload.put(JSON_REGISTERED, mRegistered);
+        payload.put(JSON_BLACKLIST, mBlacklisted);
 
         return payload;
     }
