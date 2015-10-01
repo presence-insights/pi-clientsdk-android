@@ -16,15 +16,70 @@
 
 package com.ibm.pisdk.doctypes;
 
+import com.ibm.json.java.JSONArray;
+import com.ibm.json.java.JSONObject;
+
+import java.util.ArrayList;
+
 /**
  * Simple class to encapsulate the Zone documents important attributes.
  *
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIZone {
-    String name;
-    int x;
-    int y;
-    int width;
-    String[] tags;
+    private static final String JSON_NAME = "name";
+    private static final String JSON_X = "x";
+    private static final String JSON_Y = "y";
+    private static final String JSON_WIDTH = "width";
+    private static final String JSON_HEIGHT = "height";
+    private static final String JSON_TAGS = "tags";
+
+    // required
+    private String name;
+    private int x;
+    private int y;
+    private int width;
+    private int height;
+
+    // optional
+    private ArrayList<String> tags;
+
+    public PIZone(JSONObject zoneObj) {
+        name = (String) zoneObj.get(JSON_NAME);
+        x = (Integer) zoneObj.get(JSON_X);
+        y = (Integer) zoneObj.get(JSON_Y);
+        width = (Integer) zoneObj.get(JSON_WIDTH);
+        height = (Integer) zoneObj.get(JSON_HEIGHT);
+
+        tags = new ArrayList<String>();
+        JSONArray tempTags = (JSONArray) zoneObj.get(JSON_TAGS);
+
+        for (int i = 0; i < tempTags.size(); i++) {
+            tags.add((String) tempTags.get(i));
+        }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public ArrayList<String> getTags() {
+        return tags;
+    }
 }

@@ -16,12 +16,31 @@
 
 package com.ibm.pisdk.doctypes;
 
+import com.ibm.json.java.JSONObject;
+
 /**
  * Simple class to encapsulate the Floor documents important attributes.
  *
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIFloor {
+    private static final String JSON_NAME = "name";
+    private static final String JSON_Z = "z";
+
+    // required
     String name;
     int z;
+
+    public PIFloor(JSONObject floorObj) {
+        name = (String) floorObj.get(JSON_NAME);
+        z = (Integer) floorObj.get(JSON_Z);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getZ() {
+        return z;
+    }
 }

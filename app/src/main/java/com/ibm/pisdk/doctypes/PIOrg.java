@@ -16,13 +16,47 @@
 
 package com.ibm.pisdk.doctypes;
 
+import com.ibm.json.java.JSONArray;
+import com.ibm.json.java.JSONObject;
+
+import java.util.ArrayList;
+
 /**
  * Simple class to encapsulate the Org documents important attributes.
  *
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIOrg {
+
+    private static final String JSON_NAME = "name";
+    private static final String JSON_DESCRIPTION = "description";
+    private static final String JSON_REGISTRATION_TYPES = "registrationTypes";
+
     String name;
     String description;
-    String[] registrationTypes;
+    ArrayList<String> registrationTypes;
+
+    public PIOrg(JSONObject orgObj) {
+        name = (String) orgObj.get(JSON_NAME);
+        description = orgObj.get(JSON_DESCRIPTION) != null ? (String)orgObj.get(JSON_DESCRIPTION) : "";
+
+        registrationTypes = new ArrayList<String>();
+        JSONArray tempTypes = (JSONArray) orgObj.get(JSON_REGISTRATION_TYPES);
+
+        for (int i = 0; i < tempTypes.size(); i++) {
+            registrationTypes.add((String) tempTypes.get(i));
+        }
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public ArrayList<String> getRegistrationTypes() {
+        return registrationTypes;
+    }
 }
