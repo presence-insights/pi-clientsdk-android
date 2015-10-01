@@ -24,16 +24,23 @@ import com.ibm.json.java.JSONObject;
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIFloor {
+    private static final String JSON_CODE = "@code";
     private static final String JSON_NAME = "name";
     private static final String JSON_Z = "z";
 
     // required
-    String name;
-    int z;
+    private String code;
+    private String name;
+    private int z;
 
     public PIFloor(JSONObject floorObj) {
+        code = (String) floorObj.get(JSON_CODE);
         name = (String) floorObj.get(JSON_NAME);
         z = (Integer) floorObj.get(JSON_Z);
+    }
+
+    public String getCode() {
+        return code;
     }
 
     public String getName() {

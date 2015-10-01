@@ -27,16 +27,21 @@ import java.util.ArrayList;
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIOrg {
-
+    private static final String JSON_CODE = "@code";
     private static final String JSON_NAME = "name";
     private static final String JSON_DESCRIPTION = "description";
     private static final String JSON_REGISTRATION_TYPES = "registrationTypes";
 
-    String name;
-    String description;
-    ArrayList<String> registrationTypes;
+    // required
+    private String code;
+    private String name;
+
+    // optional
+    private String description;
+    private ArrayList<String> registrationTypes;
 
     public PIOrg(JSONObject orgObj) {
+        code = (String) orgObj.get(JSON_CODE);
         name = (String) orgObj.get(JSON_NAME);
         description = orgObj.get(JSON_DESCRIPTION) != null ? (String)orgObj.get(JSON_DESCRIPTION) : "";
 
@@ -46,6 +51,10 @@ public class PIOrg {
         for (int i = 0; i < tempTypes.size(); i++) {
             registrationTypes.add((String) tempTypes.get(i));
         }
+    }
+
+    public String getCode() {
+        return code;
     }
 
     public String getName() {

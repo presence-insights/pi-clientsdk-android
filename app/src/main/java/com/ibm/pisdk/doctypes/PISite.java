@@ -24,7 +24,7 @@ import com.ibm.json.java.JSONObject;
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PISite {
-
+    private static final String JSON_CODE = "@code";
     private static final String JSON_NAME = "name";
     private static final String JSON_TIMEZONE = "timeZone";
     private static final String JSON_STREET = "street";
@@ -34,17 +34,19 @@ public class PISite {
     private static final String JSON_COUNTRY = "country";
 
     // required
-    String name;
-    String timeZone;
+    private String code;
+    private String name;
+    private String timeZone;
 
     // optional
-    String street;
-    String city;
-    String state;
-    String zip;
-    String country;
+    private String street;
+    private String city;
+    private String state;
+    private String zip;
+    private String country;
 
     public PISite(JSONObject siteObj) {
+        code = (String) siteObj.get(JSON_CODE);
         name = (String) siteObj.get(JSON_NAME);
         timeZone = (String) siteObj.get(JSON_TIMEZONE);
 
@@ -53,6 +55,10 @@ public class PISite {
         state = (String) siteObj.get(JSON_STATE);
         zip = (String) siteObj.get(JSON_ZIP);
         country = (String) siteObj.get(JSON_COUNTRY);
+    }
+
+    public String getCode() {
+        return code;
     }
 
     public String getName() {

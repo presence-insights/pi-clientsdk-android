@@ -27,6 +27,7 @@ import java.util.ArrayList;
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIZone {
+    private static final String JSON_CODE = "@code";
     private static final String JSON_NAME = "name";
     private static final String JSON_X = "x";
     private static final String JSON_Y = "y";
@@ -35,6 +36,7 @@ public class PIZone {
     private static final String JSON_TAGS = "tags";
 
     // required
+    private String code;
     private String name;
     private int x;
     private int y;
@@ -45,6 +47,7 @@ public class PIZone {
     private ArrayList<String> tags;
 
     public PIZone(JSONObject zoneObj) {
+        code = (String) zoneObj.get(JSON_CODE);
         name = (String) zoneObj.get(JSON_NAME);
         x = (Integer) zoneObj.get(JSON_X);
         y = (Integer) zoneObj.get(JSON_Y);
@@ -57,6 +60,10 @@ public class PIZone {
         for (int i = 0; i < tempTags.size(); i++) {
             tags.add((String) tempTags.get(i));
         }
+    }
+
+    public String getCode() {
+        return code;
     }
 
     public String getName() {
