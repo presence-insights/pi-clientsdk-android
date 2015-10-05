@@ -162,9 +162,9 @@ public class PIAPIAdapter implements Serializable {
                     if (result.getResponseCode() == 200) {
                         JSONObject siteObj = result.getResultAsJson();
                         JSONArray sitesArray = (JSONArray)siteObj.get(JSON_ROWS);
-                        ArrayList<PIOrg> sites = new ArrayList<PIOrg>();
-                        for (Object org : sitesArray) {
-                            sites.add(new PIOrg((JSONObject) org));
+                        ArrayList<PISite> sites = new ArrayList<PISite>();
+                        for (Object site : sitesArray) {
+                            sites.add(new PISite((JSONObject) site));
                         }
                         result.setResult(sites);
                     }
@@ -216,9 +216,9 @@ public class PIAPIAdapter implements Serializable {
                     if (result.getResponseCode() == 200) {
                         JSONObject floorObj = result.getResultAsJson();
                         JSONArray floorsArray = (JSONArray)floorObj.get(JSON_ROWS);
-                        ArrayList<PIOrg> floors = new ArrayList<PIOrg>();
-                        for (Object org : floorsArray) {
-                            floors.add(new PIOrg((JSONObject) org));
+                        ArrayList<PIFloor> floors = new ArrayList<PIFloor>();
+                        for (Object floor : floorsArray) {
+                            floors.add(new PIFloor((JSONObject) floor));
                         }
                         result.setResult(floors);
                     }
@@ -268,13 +268,13 @@ public class PIAPIAdapter implements Serializable {
                 @Override
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
-                        JSONObject floorObj = result.getResultAsJson();
-                        JSONArray floorsArray = (JSONArray)floorObj.get(JSON_ROWS);
-                        ArrayList<PIOrg> floors = new ArrayList<PIOrg>();
-                        for (Object org : floorsArray) {
-                            floors.add(new PIOrg((JSONObject) org));
+                        JSONObject deviceObj = result.getResultAsJson();
+                        JSONArray devicesArray = (JSONArray)deviceObj.get(JSON_ROWS);
+                        ArrayList<PIDevice> devices = new ArrayList<PIDevice>();
+                        for (Object org : devicesArray) {
+                            devices.add(new PIDevice((JSONObject) org));
                         }
-                        result.setResult(floors);
+                        result.setResult(devices);
                     }
                     completionHandler.onComplete(result);
                 }
@@ -349,9 +349,9 @@ public class PIAPIAdapter implements Serializable {
                     if (result.getResponseCode() == 200) {
                         JSONObject zoneObj = result.getResultAsJson();
                         JSONArray zonesArray = (JSONArray)zoneObj.get(JSON_ROWS);
-                        ArrayList<PIOrg> zones = new ArrayList<PIOrg>();
-                        for (Object org : zonesArray) {
-                            zones.add(new PIOrg((JSONObject) org));
+                        ArrayList<PIZone> zones = new ArrayList<PIZone>();
+                        for (Object zone : zonesArray) {
+                            zones.add(new PIZone((JSONObject) zone));
                         }
                         result.setResult(zones);
                     }
@@ -406,9 +406,9 @@ public class PIAPIAdapter implements Serializable {
                     if (result.getResponseCode() == 200) {
                         JSONObject beaconObj = result.getResultAsJson();
                         JSONArray beaconsArray = (JSONArray)beaconObj.get(JSON_ROWS);
-                        ArrayList<PIOrg> beacons = new ArrayList<PIOrg>();
-                        for (Object org : beaconsArray) {
-                            beacons.add(new PIOrg((JSONObject) org));
+                        ArrayList<PIBeacon> beacons = new ArrayList<PIBeacon>();
+                        for (Object beacon : beaconsArray) {
+                            beacons.add(new PIBeacon((JSONObject) beacon));
                         }
                         result.setResult(beacons);
                     }
@@ -463,9 +463,9 @@ public class PIAPIAdapter implements Serializable {
                     if (result.getResponseCode() == 200) {
                         JSONObject sensorObj = result.getResultAsJson();
                         JSONArray sensorsArray = (JSONArray)sensorObj.get(JSON_ROWS);
-                        ArrayList<PIOrg> sensors = new ArrayList<PIOrg>();
-                        for (Object org : sensorsArray) {
-                            sensors.add(new PIOrg((JSONObject) org));
+                        ArrayList<PISensor> sensors = new ArrayList<PISensor>();
+                        for (Object sensor : sensorsArray) {
+                            sensors.add(new PISensor((JSONObject) sensor));
                         }
                         result.setResult(sensors);
                     }
