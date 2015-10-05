@@ -34,7 +34,7 @@ public class PIDevice {
     private static final String JSON_DATA = "data";
     private static final String JSON_UNENCRYPTED_DATA = "unencryptedData";
     private static final String JSON_BLACKLIST = "blacklist";
-    
+
     private String code;
     private String name;
     private String descriptor;

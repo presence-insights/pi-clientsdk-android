@@ -20,7 +20,6 @@ import android.content.Context;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Base64;
-import android.util.Log;
 
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
@@ -39,6 +38,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * This class provides an interface with the Presence Insights APIs.
@@ -99,7 +99,7 @@ public class PIAPIAdapter implements Serializable {
     /**
      * Retrieves all the orgs of a tenant.  The tenant supplied in the PIAPIAdapter constructor.
      *
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList/<{@link PIOrg PIOrg}/>.
      */
     public void getOrgs(final PIAPICompletionHandler completionHandler) {
         String orgs = String.format("%s/tenants/%s/orgs", mServerURL, mTenantCode);
@@ -128,7 +128,7 @@ public class PIAPIAdapter implements Serializable {
     /**
      * Retrieves an org within a tenant.
      *
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIOrg PIOrg}.
      */
     public void getOrg(final PIAPICompletionHandler completionHandler) {
         String org = String.format("%s/tenants/%s/orgs/%s", mServerURL, mTenantCode, mOrgCode);
@@ -150,7 +150,7 @@ public class PIAPIAdapter implements Serializable {
 
     /**
      * Retrieves all the sites of an organization.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList/<{@link PISite PISite}/>.
      */
     public void getSites(final PIAPICompletionHandler completionHandler) {
         String sites = String.format("%s/tenants/%s/orgs/%s/sites", mServerURL, mTenantCode, mOrgCode);
@@ -180,7 +180,7 @@ public class PIAPIAdapter implements Serializable {
      * Retrieves a site of an organization.
      *
      * @param siteCode unique identifier for the site.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PISite PISite}.
      */
     public void getSite(String siteCode, final PIAPICompletionHandler completionHandler) {
         String site = String.format("%s/tenants/%s/orgs/%s/sites/%s", mServerURL, mTenantCode, mOrgCode, siteCode);
@@ -204,7 +204,7 @@ public class PIAPIAdapter implements Serializable {
      * Retrieves all the floors of a site.
      *
      * @param siteCode unique identifier for the site.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList/<{@link PIFloor PIFloor}/>.
      */
     public void getFloors(String siteCode, final PIAPICompletionHandler completionHandler) {
         String floors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors", mServerURL, mTenantCode, mOrgCode, siteCode);
@@ -235,7 +235,7 @@ public class PIAPIAdapter implements Serializable {
      *
      * @param siteCode unique identifier for the site.
      * @param floorCode unique identifier for the floor.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PISite PISite}.
      */
     public void getFloor(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
         String floor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
@@ -258,7 +258,7 @@ public class PIAPIAdapter implements Serializable {
     /**
      * Retrieves all devices of an organization.
      *
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList/<{@link PIDevice PIDevice}/>.
      */
     public void getDevices(final PIAPICompletionHandler completionHandler) {
         String devices = String.format("%s/tenants/%s/orgs/%s/devices", mServerURL, mTenantCode, mOrgCode);
@@ -288,7 +288,7 @@ public class PIAPIAdapter implements Serializable {
      * Retrieves a device within an organization.
      *
      * @param deviceCode unique identifier for the device.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIDevice PIDevice}.
      */
     public void getDevice(String deviceCode, final PIAPICompletionHandler completionHandler) {
         String device = String.format("%s/tenants/%s/orgs/%s/devices/%s", mServerURL, mTenantCode, mOrgCode, deviceCode);
@@ -312,7 +312,7 @@ public class PIAPIAdapter implements Serializable {
      * Retrieves a device within an organization by its descriptor.
      *
      * @param deviceDescriptor unique identifier for the device.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIDevice PIDevice}.
      */
     public void getDeviceByDescriptor(String deviceDescriptor, final PIAPICompletionHandler completionHandler) {
         String device = String.format("%s/tenants/%s/orgs/%s/devices?rawDescriptor=%s", mServerURL, mTenantCode, mOrgCode, deviceDescriptor);
@@ -337,7 +337,7 @@ public class PIAPIAdapter implements Serializable {
      *
      * @param siteCode unique identifier for the site.
      * @param floorCode unique identifier for the floor.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList/<{@link PIZone PIZone}/>.
      */
     public void getZones(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
         String zones = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
@@ -369,7 +369,7 @@ public class PIAPIAdapter implements Serializable {
      * @param siteCode unique identifier for the site.
      * @param floorCode unique identifier for the floor.
      * @param zoneCode unique identifier for the zone.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIZone PIZone}.
      */
     public void getZone(String siteCode, String floorCode, String zoneCode, final PIAPICompletionHandler completionHandler) {
         String zone = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, zoneCode);
@@ -394,7 +394,7 @@ public class PIAPIAdapter implements Serializable {
      *
      * @param siteCode unique identifier for the site.
      * @param floorCode unique identifier for the floor.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList/<{@link PIBeacon PIBeacon}/>.
      */
     public void getBeacons(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
         String beacons = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
@@ -426,7 +426,7 @@ public class PIAPIAdapter implements Serializable {
      * @param siteCode unique identifier for the site.
      * @param floorCode unique identifier for the floor.
      * @param beaconCode unique identifier for the beacon.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIFloor PIFloor}.
      */
     public void getBeacon(String siteCode, String floorCode, String beaconCode, final PIAPICompletionHandler completionHandler) {
         String beacon = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, beaconCode);
@@ -451,7 +451,7 @@ public class PIAPIAdapter implements Serializable {
      *
      * @param siteCode unique identifier for the site.
      * @param floorCode unique identifier for the floor.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls.  Result returns as ArrayList/<{@link PISensor PISensor}/>.
      */
     public void getSensors(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
         String sensors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
@@ -483,7 +483,7 @@ public class PIAPIAdapter implements Serializable {
      * @param siteCode unique identifier for the site.
      * @param floorCode unique identifier for the floor.
      * @param sensorCode unique identifier for the sensor.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIFloor PIFloor}.
      */
     public void getSensor(String siteCode, String floorCode, String sensorCode, final PIAPICompletionHandler completionHandler) {
         String sensor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, sensorCode);
@@ -508,7 +508,7 @@ public class PIAPIAdapter implements Serializable {
      *
      * @param siteCode unique identifier for the site.
      * @param floorCode unique identifier for the floor.
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link android.graphics.Bitmap Bitmap}.
      */
     public void getFloorMap(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
         String map = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/map", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
@@ -523,13 +523,31 @@ public class PIAPIAdapter implements Serializable {
     /**
      * Retrieves a list of proximity UUIDs from an organization.  Used for monitoring and ranging beacons in PIBeaconSensor.
      *
-     * @param completionHandler callback for APIs asynchronous calls.
+     * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link ArrayList ArrayList}.
      */
-    public void getProximityUUIDs(PIAPICompletionHandler completionHandler) {
+    public void getProximityUUIDs(final PIAPICompletionHandler completionHandler) {
         String proximityUUIDs = String.format("%s/tenants/%s/orgs/%s/views/proximityUUID", mServerURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(proximityUUIDs);
-            GET(url, completionHandler);
+            GET(url,  new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        try {
+                            ArrayList<String> uuids = new ArrayList<String>();
+                            JSONArray uuidArray = JSONArray.parse(result.getResultAsString());
+                            for (Object uuid : uuidArray) {
+                                uuids.add((String) uuid);
+                            }
+                            result.setResult(uuids);
+                        } catch (IOException e) {
+                            result.setException(e);
+                            e.printStackTrace();
+                        }
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
