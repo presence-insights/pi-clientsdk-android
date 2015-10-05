@@ -30,8 +30,8 @@ dependencies {
 // Task to generate Javadocs
 android.libraryVariants.all { variant ->
     task("generate${variant.name.capitalize()}Javadoc", type: Javadoc) {
-        // title = ''
-        // description = ''
+        title = 'Presence Insights SDK'
+        description = 'Library for integrating with the Presence Insights platform'
         source = variant.javaCompile.source
         classpath = files(variant.javaCompile.classpath.files, project.android.getBootClasspath())
         options {
