@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PZSDK</string>
+    <string name="app_name">PISDK</string>
     <string name="management_server_path">/pi-config/v1</string>
     <string name="beacon_connector_path">/conn-beacon/v1</string>
 </resources>

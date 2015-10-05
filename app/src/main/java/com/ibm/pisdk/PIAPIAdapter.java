@@ -24,6 +24,13 @@ import android.util.Log;
 
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
+import com.ibm.pisdk.doctypes.PIBeacon;
+import com.ibm.pisdk.doctypes.PIDevice;
+import com.ibm.pisdk.doctypes.PIFloor;
+import com.ibm.pisdk.doctypes.PIOrg;
+import com.ibm.pisdk.doctypes.PISensor;
+import com.ibm.pisdk.doctypes.PISite;
+import com.ibm.pisdk.doctypes.PIZone;
 
 import org.apache.http.HttpStatus;
 
@@ -31,6 +38,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 
 /**
  * This class provides an interface with the Presence Insights APIs.
@@ -45,6 +53,8 @@ public class PIAPIAdapter implements Serializable {
 
     private static final String MANAGEMENT_SERVER_PATH = "/pi-config/v1";
     private static final String BEACON_CONNECTOR_PATH = "/conn-beacon/v1";
+
+    private static final String JSON_ROWS = "rows";
 
     static final private int READ_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
     static final private int CONNECTION_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
@@ -87,30 +97,29 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
-     * Retrieves the specified tenant document
-     *
-     * @param completionHandler callback for APIs asynchronous calls.
-     */
-    public void getTenant(PIAPICompletionHandler completionHandler) {
-        String tenant = String.format("%s/tenants/%s", mServerURL, mTenantCode);
-        try {
-            URL url = new URL(tenant);
-            GET(url, completionHandler);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
      * Retrieves all the orgs of a tenant.  The tenant supplied in the PIAPIAdapter constructor.
      *
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getOrgs(PIAPICompletionHandler completionHandler) {
+    public void getOrgs(final PIAPICompletionHandler completionHandler) {
         String orgs = String.format("%s/tenants/%s/orgs", mServerURL, mTenantCode);
         try {
             URL url = new URL(orgs);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        JSONObject orgObj = result.getResultAsJson();
+                        JSONArray orgsArray = (JSONArray)orgObj.get(JSON_ROWS);
+                        ArrayList<PIOrg> orgs = new ArrayList<PIOrg>();
+                        for (Object org : orgsArray) {
+                            orgs.add(new PIOrg((JSONObject) org));
+                        }
+                        result.setResult(orgs);
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -121,11 +130,19 @@ public class PIAPIAdapter implements Serializable {
      *
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getOrg(PIAPICompletionHandler completionHandler) {
+    public void getOrg(final PIAPICompletionHandler completionHandler) {
         String org = String.format("%s/tenants/%s/orgs/%s", mServerURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(org);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        result.setResult(new PIOrg(result.getResultAsJson()));
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -135,11 +152,25 @@ public class PIAPIAdapter implements Serializable {
      * Retrieves all the sites of an organization.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getSites(PIAPICompletionHandler completionHandler) {
+    public void getSites(final PIAPICompletionHandler completionHandler) {
         String sites = String.format("%s/tenants/%s/orgs/%s/sites", mServerURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(sites);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        JSONObject siteObj = result.getResultAsJson();
+                        JSONArray sitesArray = (JSONArray)siteObj.get(JSON_ROWS);
+                        ArrayList<PIOrg> sites = new ArrayList<PIOrg>();
+                        for (Object org : sitesArray) {
+                            sites.add(new PIOrg((JSONObject) org));
+                        }
+                        result.setResult(sites);
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -151,11 +182,19 @@ public class PIAPIAdapter implements Serializable {
      * @param siteCode unique identifier for the site.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getSite(String siteCode, PIAPICompletionHandler completionHandler) {
+    public void getSite(String siteCode, final PIAPICompletionHandler completionHandler) {
         String site = String.format("%s/tenants/%s/orgs/%s/sites/%s", mServerURL, mTenantCode, mOrgCode, siteCode);
         try {
             URL url = new URL(site);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        result.setResult(new PISite(result.getResultAsJson()));
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -167,11 +206,25 @@ public class PIAPIAdapter implements Serializable {
      * @param siteCode unique identifier for the site.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getFloors(String siteCode, PIAPICompletionHandler completionHandler) {
+    public void getFloors(String siteCode, final PIAPICompletionHandler completionHandler) {
         String floors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors", mServerURL, mTenantCode, mOrgCode, siteCode);
         try {
             URL url = new URL(floors);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        JSONObject floorObj = result.getResultAsJson();
+                        JSONArray floorsArray = (JSONArray)floorObj.get(JSON_ROWS);
+                        ArrayList<PIOrg> floors = new ArrayList<PIOrg>();
+                        for (Object org : floorsArray) {
+                            floors.add(new PIOrg((JSONObject) org));
+                        }
+                        result.setResult(floors);
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -184,11 +237,19 @@ public class PIAPIAdapter implements Serializable {
      * @param floorCode unique identifier for the floor.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getFloor(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
+    public void getFloor(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
         String floor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(floor);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        result.setResult(new PIFloor(result.getResultAsJson()));
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -199,11 +260,25 @@ public class PIAPIAdapter implements Serializable {
      *
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getDevices(PIAPICompletionHandler completionHandler) {
+    public void getDevices(final PIAPICompletionHandler completionHandler) {
         String devices = String.format("%s/tenants/%s/orgs/%s/devices", mServerURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(devices);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        JSONObject floorObj = result.getResultAsJson();
+                        JSONArray floorsArray = (JSONArray)floorObj.get(JSON_ROWS);
+                        ArrayList<PIOrg> floors = new ArrayList<PIOrg>();
+                        for (Object org : floorsArray) {
+                            floors.add(new PIOrg((JSONObject) org));
+                        }
+                        result.setResult(floors);
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -215,11 +290,19 @@ public class PIAPIAdapter implements Serializable {
      * @param deviceCode unique identifier for the device.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getDevice(String deviceCode, PIAPICompletionHandler completionHandler) {
+    public void getDevice(String deviceCode, final PIAPICompletionHandler completionHandler) {
         String device = String.format("%s/tenants/%s/orgs/%s/devices/%s", mServerURL, mTenantCode, mOrgCode, deviceCode);
         try {
             URL url = new URL(device);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        result.setResult(new PIDevice(result.getResultAsJson()));
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -231,11 +314,19 @@ public class PIAPIAdapter implements Serializable {
      * @param deviceDescriptor unique identifier for the device.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getDeviceByDescriptor(String deviceDescriptor, PIAPICompletionHandler completionHandler) {
+    public void getDeviceByDescriptor(String deviceDescriptor, final PIAPICompletionHandler completionHandler) {
         String device = String.format("%s/tenants/%s/orgs/%s/devices?rawDescriptor=%s", mServerURL, mTenantCode, mOrgCode, deviceDescriptor);
         try {
             URL url = new URL(device);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        result.setResult(new PIDevice(result.getResultAsJson()));
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -248,11 +339,25 @@ public class PIAPIAdapter implements Serializable {
      * @param floorCode unique identifier for the floor.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getZones(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
+    public void getZones(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
         String zones = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(zones);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        JSONObject zoneObj = result.getResultAsJson();
+                        JSONArray zonesArray = (JSONArray)zoneObj.get(JSON_ROWS);
+                        ArrayList<PIOrg> zones = new ArrayList<PIOrg>();
+                        for (Object org : zonesArray) {
+                            zones.add(new PIOrg((JSONObject) org));
+                        }
+                        result.setResult(zones);
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -266,11 +371,19 @@ public class PIAPIAdapter implements Serializable {
      * @param zoneCode unique identifier for the zone.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getZone(String siteCode, String floorCode, String zoneCode, PIAPICompletionHandler completionHandler) {
+    public void getZone(String siteCode, String floorCode, String zoneCode, final PIAPICompletionHandler completionHandler) {
         String zone = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, zoneCode);
         try {
             URL url = new URL(zone);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        result.setResult(new PIZone(result.getResultAsJson()));
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -283,11 +396,25 @@ public class PIAPIAdapter implements Serializable {
      * @param floorCode unique identifier for the floor.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getBeacons(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
+    public void getBeacons(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
         String beacons = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(beacons);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        JSONObject beaconObj = result.getResultAsJson();
+                        JSONArray beaconsArray = (JSONArray)beaconObj.get(JSON_ROWS);
+                        ArrayList<PIOrg> beacons = new ArrayList<PIOrg>();
+                        for (Object org : beaconsArray) {
+                            beacons.add(new PIOrg((JSONObject) org));
+                        }
+                        result.setResult(beacons);
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -301,11 +428,19 @@ public class PIAPIAdapter implements Serializable {
      * @param beaconCode unique identifier for the beacon.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getBeacon(String siteCode, String floorCode, String beaconCode, PIAPICompletionHandler completionHandler) {
+    public void getBeacon(String siteCode, String floorCode, String beaconCode, final PIAPICompletionHandler completionHandler) {
         String beacon = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, beaconCode);
         try {
             URL url = new URL(beacon);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        result.setResult(new PIBeacon(result.getResultAsJson()));
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -318,11 +453,25 @@ public class PIAPIAdapter implements Serializable {
      * @param floorCode unique identifier for the floor.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getSensors(String siteCode, String floorCode, PIAPICompletionHandler completionHandler) {
+    public void getSensors(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
         String sensors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(sensors);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        JSONObject sensorObj = result.getResultAsJson();
+                        JSONArray sensorsArray = (JSONArray)sensorObj.get(JSON_ROWS);
+                        ArrayList<PIOrg> sensors = new ArrayList<PIOrg>();
+                        for (Object org : sensorsArray) {
+                            sensors.add(new PIOrg((JSONObject) org));
+                        }
+                        result.setResult(sensors);
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -336,11 +485,19 @@ public class PIAPIAdapter implements Serializable {
      * @param sensorCode unique identifier for the sensor.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void getSensor(String siteCode, String floorCode, String sensorCode, PIAPICompletionHandler completionHandler) {
+    public void getSensor(String siteCode, String floorCode, String sensorCode, final PIAPICompletionHandler completionHandler) {
         String sensor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, sensorCode);
         try {
             URL url = new URL(sensor);
-            GET(url, completionHandler);
+            GET(url, new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        result.setResult(new PISensor(result.getResultAsJson()));
+                    }
+                    completionHandler.onComplete(result);
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -392,7 +549,6 @@ public class PIAPIAdapter implements Serializable {
             POST(url, device.toJSON(), new PIAPICompletionHandler() {
                 @Override
                 public void onComplete(PIAPIResult postResult) {
-                    Log.i(TAG, "");
                     if (postResult.getResponseCode() == HttpStatus.SC_CONFLICT) {
                         // call GET
                         try {
@@ -401,7 +557,7 @@ public class PIAPIAdapter implements Serializable {
                                 @Override
                                 public void onComplete(PIAPIResult getResult) {
                                     if (getResult.getResponseCode() == HttpStatus.SC_OK) {
-                                        // build put payload
+                                        // build f payload
                                         JSONObject payload = null;
                                         try {
                                             payload = JSONObject.parse((String) getResult.getResult());

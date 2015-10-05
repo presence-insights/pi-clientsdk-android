@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-
 package com.ibm.pisdk;
 
 import android.graphics.Bitmap;
@@ -64,6 +63,8 @@ public class PIAPIResult implements Serializable {
     PIAPIResult(Object result, int responseCode){this.result = result; this.responseCode = responseCode;}
 
     /**
+     * Cast the return of this method with the expected {@link com.ibm.pisdk.doctypes doctype}.
+     * If you are retrieving a list, it will be of type ArrayList of type doctype.
      *
      * @return the payload as an Object
      */
@@ -72,6 +73,7 @@ public class PIAPIResult implements Serializable {
     }
 
     /**
+     * Use this method to get the error message associated with the response code
      *
      * @return the payload casted to a String
      */
@@ -80,6 +82,7 @@ public class PIAPIResult implements Serializable {
     }
 
     /**
+     * Use this method when calling {@link PIAPIAdapter#getFloorMap(String, String, PIAPICompletionHandler)  getFloorMap}
      *
      * @return the payload as Bitmap
      */
@@ -91,7 +94,7 @@ public class PIAPIResult implements Serializable {
      *
      * @return the payload as a JSON Object
      */
-    public JSONObject getResultAsJson() {
+    protected JSONObject getResultAsJson() {
         try {
             return JSONObject.parse((String)result);
         } catch (IOException e) {
