@@ -39,6 +39,7 @@ import org.apache.http.HttpStatus;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.PriorityQueue;
 
 public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private static final String TAG = PIBeaconSensorService.class.getSimpleName();
@@ -55,6 +56,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
     private PIAPIAdapter mPiApiAdapter;
     private BeaconManager mBeaconManager;
+    private RegionManager mRegionManager;
     private String mDeviceId;
 
     private volatile long sendInterval = 5000;
@@ -117,7 +119,9 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
             @Override
             public void didExitRegion(Region region) {
-                // not used
+                // remove region from list
+                // stop monitoring for that region
+
             }
 
             @Override
