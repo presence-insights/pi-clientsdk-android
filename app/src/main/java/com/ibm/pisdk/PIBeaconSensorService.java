@@ -52,8 +52,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
     private static final String INTENT_RECEIVER_BEACON_COLLECTION = "intent_receiver_beacon_collection";
 
-    private final Region demoEstimoteRegion = new Region("b9407f30-f5f8-466e-aff9-25556b57fe6d", null, null, null);
-
     private PIAPIAdapter mPiApiAdapter;
     private BeaconManager mBeaconManager;
     private RegionManager mRegionManager;
@@ -79,6 +77,10 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         // lazily instantiate beacon manager
         if (mBeaconManager == null) {
             mBeaconManager = BeaconManager.getInstanceForApplication(this);
+        }
+        // and region manager
+        if (mRegionManager == null) {
+            mRegionManager = new RegionManager(mBeaconManager);
         }
 
         // check passed in intent for commands sent from Beacon Sensor wrapper class
@@ -119,9 +121,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
             @Override
             public void didExitRegion(Region region) {
-                // remove region from list
-                // stop monitoring for that region
-
+                mRegionManager.remove(region);
             }
 
             @Override
@@ -134,6 +134,9 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             @Override
             public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
                 if (beacons.size() > 0) {
+                    for (Beacon b : beacons) {
+                        mRegionManager.add(b);
+                    }
                     currentTime = System.currentTimeMillis();
                     if (currentTime - lastSendTime > sendInterval) {
                         lastSendTime = currentTime;
@@ -155,13 +158,17 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
                     }
                     if (uuids != null) {
                         for (Object uuid : uuids.toArray()) {
-                            startMonitoringAndRangingBeaconsInRegion(new Region((String) uuid, null, null, null));
+                            // this is temporary
+                            // with only one uuid per org assumption in RegionManager
+                            // we will only range in the last uuid in the list
+                            mRegionManager.add((String) uuid);
                         }
                     } else {
                         Log.e(TAG, "Call to Management server returned an empty array of proximity UUIDs");
                     }
                 } else {
-                    startMonitoringAndRangingBeaconsInRegion(demoEstimoteRegion);
+                    // default estimote uuid
+                    mRegionManager.add("b9407f30-f5f8-466e-aff9-25556b57fe6d");
                 }
             }
         });

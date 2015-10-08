@@ -23,13 +23,15 @@ public class RegionManager {
     // regions used to get enter/exit region events
     private ArrayList<Region> mBeaconRegions = new ArrayList<Region>();
     // maximum number of regions to monitor at one time
-    private final int maxRegions = 19;
+    private final int maxRegions = 1;
 
     public RegionManager(BeaconManager manager) {
+        Log.d(TAG, "initializing region manager with maxRegions: " + maxRegions);
         mBeaconManager = manager;
     }
 
     public void add(String uuid) {
+        Log.d(TAG, "adding uuid region: " + uuid);
         Region uuidRegion = new Region(uuid, Identifier.parse(uuid), null, null);
         handleAddUuidRegion(uuidRegion);
     }
@@ -37,12 +39,14 @@ public class RegionManager {
     // creates a beacon region based off of beacon object
     public void add(Beacon beacon) {
         // create region from beacon object and then send to handle beacon region
+        Log.d(TAG, "adding beacon region for beacon: " + beacon.toString());
         String uniqueId = beacon.getId2().toString() + beacon.getId3().toString();
         Region beaconRegion = new Region(uniqueId, beacon.getId1(), beacon.getId2(), beacon.getId3());
         handleAddBeaconRegion(beaconRegion);
     }
 
     public void remove(Region region) {
+        Log.d(TAG, "removing region: " + region.toString());
         if (region.getId1() != null && region.getId2() == null && region.getId3() == null) {
             // remove uuid region
             try {
@@ -66,6 +70,7 @@ public class RegionManager {
     }
 
     private void handleAddUuidRegion(Region region) {
+        Log.d(TAG, "entered handle add uuid region method");
         // if no region set.. start ranging and monitoring
         if (mUuidRegion == null) {
             mUuidRegion = region;
@@ -88,6 +93,7 @@ public class RegionManager {
     }
 
     private void handleAddBeaconRegion(Region region) {
+        Log.d(TAG, "entered handle add beacon region method");
         // check to see if beacon region exists in list already
         if (mBeaconRegions.contains(region)) {
             mBeaconRegions.remove(region);
