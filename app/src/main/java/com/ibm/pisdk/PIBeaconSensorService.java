@@ -150,13 +150,8 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             @Override
             public void onComplete(PIAPIResult result) {
                 if (result.getResponseCode() == 200) {
-                    JSONArray uuids = null;
-                    try {
-                        uuids = JSONArray.parse((String) result.getResult());
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
-                    if (uuids != null) {
+                    ArrayList<String> uuids = (ArrayList<String>)result.getResult();
+                    if (uuids.size() > 0) {
                         for (Object uuid : uuids.toArray()) {
                             // this is temporary
                             // with only one uuid per org assumption in RegionManager

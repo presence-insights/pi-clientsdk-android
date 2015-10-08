@@ -96,10 +96,12 @@ public class RegionManager {
         Log.d(TAG, "entered handle add beacon region method");
         // check to see if beacon region exists in list already
         if (mBeaconRegions.contains(region)) {
+            Log.d(TAG, "region already contained in list");
             mBeaconRegions.remove(region);
             mBeaconRegions.add(region);
         } else if (mBeaconRegions.size() == maxRegions) {
             // stop monitoring and remove last object
+            Log.d(TAG, "reached max regions to monitor, removing oldest region and adding new region");
             Region removeRegion = mBeaconRegions.get(mBeaconRegions.size() - 1);
             mBeaconRegions.remove(removeRegion);
             mBeaconRegions.add(region);
@@ -110,6 +112,7 @@ public class RegionManager {
                 e.printStackTrace();
             }
         } else {
+            Log.d(TAG, "adding region to list");
             mBeaconRegions.add(region);
             try {
                 mBeaconManager.startMonitoringBeaconsInRegion(region);
