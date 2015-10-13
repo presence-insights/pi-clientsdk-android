@@ -17,6 +17,7 @@
 package com.ibm.pisdk;
 
 import org.altbeacon.beacon.Beacon;
+import org.altbeacon.beacon.Region;
 
 import java.util.ArrayList;
 
@@ -33,4 +34,8 @@ public interface PIBeaconSensorDelegate {
      * @param beacons collection of Class Beacon.
      */
     void beaconsInRange(ArrayList<Beacon> beacons);
+
+    void didEnterRegion(Region region);
+
+    void didExitRegion(Region region);
 }

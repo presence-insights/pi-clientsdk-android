@@ -17,6 +17,7 @@
 package com.ibm.pisdk;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -50,8 +51,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
     private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
 
-    private static final String INTENT_RECEIVER_BEACON_COLLECTION = "intent_receiver_beacon_collection";
-
+    private Context mContext;
     private PIAPIAdapter mPiApiAdapter;
     private BeaconManager mBeaconManager;
     private RegionManager mRegionManager;
@@ -112,16 +112,33 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     }
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+        mContext = this;
+    }
+
+    @Override
     public void onBeaconServiceConnect() {
         mBeaconManager.setMonitorNotifier(new MonitorNotifier() {
             @Override
             public void didEnterRegion(Region region) {
-                // not used
+                Log.d(TAG, "==================== entered region: " + region);
+
+                // send enter region delegate method
+                Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_REGION_ENTER);
+                intent.putExtra(PIBeaconSensor.INTENT_EXTRA_ENTER_REGION, region);
+
+                LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
             }
 
             @Override
             public void didExitRegion(Region region) {
-                mRegionManager.remove(region);
+                Log.d(TAG, "==================== exited region: " + region);
+                // send enter region delegate method
+                Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_REGION_EXIT);
+                intent.putExtra(PIBeaconSensor.INTENT_EXTRA_EXIT_REGION, region);
+
+                LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
             }
 
             @Override
@@ -169,15 +186,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         });
     }
 
-    private void startMonitoringAndRangingBeaconsInRegion(Region region) {
-        try {
-            mBeaconManager.startMonitoringBeaconsInRegion(region);
-            mBeaconManager.startRangingBeaconsInRegion(region);
-        } catch (RemoteException re) {
-            re.printStackTrace();
-        }
-    }
-
     private void sendBeaconNotification(Collection<Beacon> beacons) {
         JSONObject payload = buildBeaconPayload(beacons);
         log("sending beacon notification message");
@@ -192,8 +200,9 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         });
 
         // provide beacons to delegate
-        Intent intent = new Intent(INTENT_RECEIVER_BEACON_COLLECTION);
-        intent.putParcelableArrayListExtra("beacons", new ArrayList<Beacon>(beacons));
+        Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_BEACON_COLLECTION);
+        intent.putParcelableArrayListExtra(PIBeaconSensor.INTENT_EXTRA_BEACONS_IN_RANGE, new ArrayList<Beacon>(beacons));
+
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
@@ -209,8 +218,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             beaconArray.add(data.getBeaconAsJson());
         }
         payload.put("bnm", beaconArray);
-
-        log(payload.toString());
 
         return payload;
     }

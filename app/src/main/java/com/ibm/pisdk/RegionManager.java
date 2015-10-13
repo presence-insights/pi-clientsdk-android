@@ -23,7 +23,7 @@ public class RegionManager {
     // regions used to get enter/exit region events
     private ArrayList<Region> mBeaconRegions = new ArrayList<Region>();
     // maximum number of regions to monitor at one time
-    private final int maxRegions = 1;
+    private final int maxRegions = 19;
 
     public RegionManager(BeaconManager manager) {
         Log.d(TAG, "initializing region manager with maxRegions: " + maxRegions);
@@ -47,16 +47,7 @@ public class RegionManager {
 
     public void remove(Region region) {
         Log.d(TAG, "removing region: " + region.toString());
-        if (region.getId1() != null && region.getId2() == null && region.getId3() == null) {
-            // remove uuid region
-            try {
-                mBeaconManager.stopMonitoringBeaconsInRegion(region);
-                mBeaconManager.stopRangingBeaconsInRegion(region);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-            mUuidRegion = null;
-        } else if (region.getId1() != null && region.getId2() != null && region.getId3() != null) {
+        if (region.getId1() != null && region.getId2() != null && region.getId3() != null) {
             // remove beacon region
             try {
                 mBeaconManager.stopMonitoringBeaconsInRegion(region);
@@ -65,7 +56,23 @@ public class RegionManager {
             }
             mBeaconRegions.remove(region);
         } else {
-            Log.e(TAG, "region was not removed. Did not match either a uuid region or beacon region.");
+            Log.e(TAG, "region was not removed. Did not match beacon region.");
+        }
+    }
+
+    public void removeUuidRegion(Region region) {
+        Log.d(TAG, "removing region: " + region.toString());
+        if (region.getId1() != null && region.getId2() == null && region.getId3() == null) {
+            // remove beacon region
+            try {
+                mBeaconManager.stopMonitoringBeaconsInRegion(region);
+                mBeaconManager.stopRangingBeaconsInRegion(region);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            mUuidRegion = null;
+        } else {
+            Log.e(TAG, "region was not removed. Did not match uuid region.");
         }
     }
 
