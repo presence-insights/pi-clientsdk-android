@@ -28,6 +28,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import org.altbeacon.beacon.Beacon;
+import org.altbeacon.beacon.Region;
 
 import java.util.ArrayList;
 
@@ -46,7 +47,14 @@ public class PIBeaconSensor {
     private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
     private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
 
-    private static final String INTENT_RECEIVER_BEACON_COLLECTION = "intent_receiver_beacon_collection";
+    public static final String INTENT_RECEIVER_BEACON_COLLECTION = "intent_receiver_beacon_collection";
+    public static final String INTENT_RECEIVER_REGION_ENTER = "intent_receiver_region_enter";
+    public static final String INTENT_RECEIVER_REGION_EXIT = "intent_receiver_region_exit";
+
+    public static final String INTENT_EXTRA_BEACONS_IN_RANGE = "com.ibm.pi.android.beacons_in_range";
+    public static final String INTENT_EXTRA_ENTER_REGION = "com.ibm.pi.android.enter_region";
+    public static final String INTENT_EXTRA_EXIT_REGION = "com.ibm.pi.android.exit_region";
+
 
     private BluetoothAdapter mBluetoothAdapter;
     private final Context mContext;
@@ -164,9 +172,26 @@ public class PIBeaconSensor {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (mDelegate != null) {
-                // Get extra data included in the Intent
-                ArrayList<Beacon> beacons = intent.getParcelableArrayListExtra("beacons");
-                mDelegate.beaconsInRange(beacons);
+                // beacons in range
+                if (INTENT_RECEIVER_BEACON_COLLECTION.equals(intent.getAction())) {
+                    // Get extra data included in the Intent
+                    ArrayList<Beacon> beacons = intent.getParcelableArrayListExtra(INTENT_EXTRA_BEACONS_IN_RANGE);
+                    mDelegate.beaconsInRange(beacons);
+                }
+                // region entered
+                else if (INTENT_RECEIVER_REGION_ENTER.equals(intent.getAction())) {
+                    Region enterRegion = (Region) intent.getExtras().get(INTENT_EXTRA_ENTER_REGION);
+                    mDelegate.didEnterRegion(enterRegion);
+                }
+                // region exited
+                else if (INTENT_RECEIVER_REGION_EXIT.equals(intent.getAction())) {
+                    Region exitRegion = (Region) intent.getExtras().get(INTENT_EXTRA_EXIT_REGION);
+                    mDelegate.didExitRegion(exitRegion);
+                }
+                // incorrect action received
+                else {
+                    Log.e(TAG, "incorrect action received, action received: " + intent.getAction());
+                }
             }
         }
     };

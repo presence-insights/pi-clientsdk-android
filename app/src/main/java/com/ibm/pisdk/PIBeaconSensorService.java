@@ -17,6 +17,7 @@
 package com.ibm.pisdk;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -39,6 +40,7 @@ import org.apache.http.HttpStatus;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.PriorityQueue;
 
 public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private static final String TAG = PIBeaconSensorService.class.getSimpleName();
@@ -49,12 +51,10 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
     private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
 
-    private static final String INTENT_RECEIVER_BEACON_COLLECTION = "intent_receiver_beacon_collection";
-
-    private final Region demoEstimoteRegion = new Region("b9407f30-f5f8-466e-aff9-25556b57fe6d", null, null, null);
-
+    private Context mContext;
     private PIAPIAdapter mPiApiAdapter;
     private BeaconManager mBeaconManager;
+    private RegionManager mRegionManager;
     private String mDeviceId;
 
     private volatile long sendInterval = 5000;
@@ -77,6 +77,10 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         // lazily instantiate beacon manager
         if (mBeaconManager == null) {
             mBeaconManager = BeaconManager.getInstanceForApplication(this);
+        }
+        // and region manager
+        if (mRegionManager == null) {
+            mRegionManager = new RegionManager(mBeaconManager);
         }
 
         // check passed in intent for commands sent from Beacon Sensor wrapper class
@@ -108,16 +112,33 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     }
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+        mContext = this;
+    }
+
+    @Override
     public void onBeaconServiceConnect() {
         mBeaconManager.setMonitorNotifier(new MonitorNotifier() {
             @Override
             public void didEnterRegion(Region region) {
-                // not used
+                Log.d(TAG, "==================== entered region: " + region);
+
+                // send enter region delegate method
+                Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_REGION_ENTER);
+                intent.putExtra(PIBeaconSensor.INTENT_EXTRA_ENTER_REGION, region);
+
+                LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
             }
 
             @Override
             public void didExitRegion(Region region) {
-                // not used
+                Log.d(TAG, "==================== exited region: " + region);
+                // send enter region delegate method
+                Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_REGION_EXIT);
+                intent.putExtra(PIBeaconSensor.INTENT_EXTRA_EXIT_REGION, region);
+
+                LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
             }
 
             @Override
@@ -130,6 +151,9 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             @Override
             public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
                 if (beacons.size() > 0) {
+                    for (Beacon b : beacons) {
+                        mRegionManager.add(b);
+                    }
                     currentTime = System.currentTimeMillis();
                     if (currentTime - lastSendTime > sendInterval) {
                         lastSendTime = currentTime;
@@ -143,33 +167,23 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             @Override
             public void onComplete(PIAPIResult result) {
                 if (result.getResponseCode() == 200) {
-                    JSONArray uuids = null;
-                    try {
-                        uuids = JSONArray.parse((String) result.getResult());
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
-                    if (uuids != null) {
+                    ArrayList<String> uuids = (ArrayList<String>)result.getResult();
+                    if (uuids.size() > 0) {
                         for (Object uuid : uuids.toArray()) {
-                            startMonitoringAndRangingBeaconsInRegion(new Region((String) uuid, null, null, null));
+                            // this is temporary
+                            // with only one uuid per org assumption in RegionManager
+                            // we will only range in the last uuid in the list
+                            mRegionManager.add((String) uuid);
                         }
                     } else {
                         Log.e(TAG, "Call to Management server returned an empty array of proximity UUIDs");
                     }
                 } else {
-                    startMonitoringAndRangingBeaconsInRegion(demoEstimoteRegion);
+                    // default estimote uuid
+                    mRegionManager.add("b9407f30-f5f8-466e-aff9-25556b57fe6d");
                 }
             }
         });
-    }
-
-    private void startMonitoringAndRangingBeaconsInRegion(Region region) {
-        try {
-            mBeaconManager.startMonitoringBeaconsInRegion(region);
-            mBeaconManager.startRangingBeaconsInRegion(region);
-        } catch (RemoteException re) {
-            re.printStackTrace();
-        }
     }
 
     private void sendBeaconNotification(Collection<Beacon> beacons) {
@@ -186,8 +200,9 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         });
 
         // provide beacons to delegate
-        Intent intent = new Intent(INTENT_RECEIVER_BEACON_COLLECTION);
-        intent.putParcelableArrayListExtra("beacons", new ArrayList<Beacon>(beacons));
+        Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_BEACON_COLLECTION);
+        intent.putParcelableArrayListExtra(PIBeaconSensor.INTENT_EXTRA_BEACONS_IN_RANGE, new ArrayList<Beacon>(beacons));
+
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
@@ -203,8 +218,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             beaconArray.add(data.getBeaconAsJson());
         }
         payload.put("bnm", beaconArray);
-
-        log(payload.toString());
 
         return payload;
     }
