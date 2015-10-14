@@ -35,7 +35,17 @@ public interface PIBeaconSensorDelegate {
      */
     void beaconsInRange(ArrayList<Beacon> beacons);
 
+    /**
+     * The device has entered a region
+     *
+     * @param region
+     */
     void didEnterRegion(Region region);
 
+    /**
+     * The device has exited a region
+     *
+     * @param region
+     */
     void didExitRegion(Region region);
 }

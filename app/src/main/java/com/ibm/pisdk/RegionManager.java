@@ -1,3 +1,19 @@
+/**
+ * Copyright (c) 2015 IBM Corporation. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.ibm.pisdk;
 
 import android.os.RemoteException;
@@ -11,7 +27,10 @@ import org.altbeacon.beacon.Region;
 import java.util.ArrayList;
 
 /**
- * Created by hannigan on 10/6/15.
+ * This class manages regions for Presence Insights. It keeps track of the number of overall regions monitored.
+ * It handles starting and stopping the monitoring of beacon regions and the monitoring and ranging of UUID regions.
+ *
+ * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class RegionManager {
     // TAG
