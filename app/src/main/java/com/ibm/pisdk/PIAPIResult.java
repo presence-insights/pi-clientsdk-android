@@ -158,4 +158,17 @@ public class PIAPIResult implements Serializable {
     public void setException(Exception exception) {
         this.exception = exception;
     }
+
+    @Override
+    public String toString() {
+        String returnString = "";
+
+        if (exception != null) {
+            returnString = exception.toString();
+        } else {
+            returnString = String.format("(%d) %s", responseCode, result);
+        }
+
+        return returnString;
+    }
 }

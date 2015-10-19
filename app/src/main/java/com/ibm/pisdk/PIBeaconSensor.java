@@ -55,7 +55,6 @@ public class PIBeaconSensor {
     public static final String INTENT_EXTRA_ENTER_REGION = "com.ibm.pi.android.enter_region";
     public static final String INTENT_EXTRA_EXIT_REGION = "com.ibm.pi.android.exit_region";
 
-
     private BluetoothAdapter mBluetoothAdapter;
     private final Context mContext;
     private final PIAPIAdapter mAdapter;
