@@ -93,16 +93,21 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             }
             if (extras.getLong(INTENT_PARAMETER_SEND_INTERVAL, -1) > 0) {
                 sendInterval = extras.getLong(INTENT_PARAMETER_SEND_INTERVAL);
+                PILogger.d(TAG, "updating send interval to: " + sendInterval);
             }
             if (!extras.getString(INTENT_PARAMETER_BEACON_LAYOUT, "").equals("")) {
+                String beaconLayout = intent.getStringExtra(INTENT_PARAMETER_BEACON_LAYOUT);
+                PILogger.d(TAG, "adding new beacon layout: " + beaconLayout);
                 mBeaconManager.getBeaconParsers().add(new BeaconParser()
-                        .setBeaconLayout(intent.getStringExtra(INTENT_PARAMETER_BEACON_LAYOUT)));
+                        .setBeaconLayout(beaconLayout));
             }
             if (!extras.getString(INTENT_PARAMETER_COMMAND, "").equals("")) {
                 command = extras.getString(INTENT_PARAMETER_COMMAND);
                 if (command.equals("START_SCANNING")){
+                    PILogger.d(TAG, "Service has started scanning for beacons");
                     mBeaconManager.bind(this);
                 } else if (command.equals("STOP_SCANNING")){
+                    PILogger.d(TAG, "Service has stopped scanning for beacons");
                     mBeaconManager.unbind(this);
                 }
             }
@@ -122,7 +127,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         mBeaconManager.setMonitorNotifier(new MonitorNotifier() {
             @Override
             public void didEnterRegion(Region region) {
-                Log.d(TAG, "==================== entered region: " + region);
+                PILogger.d(TAG, "entered region: " + region);
 
                 // send enter region delegate method
                 Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_REGION_ENTER);
@@ -133,7 +138,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
             @Override
             public void didExitRegion(Region region) {
-                Log.d(TAG, "==================== exited region: " + region);
+                PILogger.d(TAG, "exited region: " + region);
                 // send enter region delegate method
                 Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_REGION_EXIT);
                 intent.putExtra(PIBeaconSensor.INTENT_EXTRA_EXIT_REGION, region);
@@ -176,11 +181,11 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
                             mRegionManager.add((String) uuid);
                         }
                     } else {
-                        Log.e(TAG, "Call to Management server returned an empty array of proximity UUIDs");
+                        PILogger.e(TAG, "Call to Management server returned an empty array of proximity UUIDs");
                     }
                 } else {
                     // default estimote uuid
-                    mRegionManager.add("b9407f30-f5f8-466e-aff9-25556b57fe6d");
+                    PILogger.e(TAG, result.toString());
                 }
             }
         });
@@ -188,13 +193,12 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
     private void sendBeaconNotification(Collection<Beacon> beacons) {
         JSONObject payload = buildBeaconPayload(beacons);
-        log("sending beacon notification message");
+        PILogger.d(TAG, "sending beacon notification message");
         mPiApiAdapter.sendBeaconNotificationMessage(payload, new PIAPICompletionHandler() {
             @Override
             public void onComplete(PIAPIResult result) {
                 if (result.getResponseCode() >= HttpStatus.SC_BAD_REQUEST) {
-                    log("something went wrong with sending the bnm");
-                    log((String) result.getResult());
+                    PILogger.e(TAG, result.toString());
                 }
             }
         });
@@ -226,9 +230,5 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     public void onDestroy() {
         mBeaconManager.unbind(this);
         super.onDestroy();
-    }
-
-    private void log(String msg) {
-        Log.i(TAG, msg);
     }
 }
