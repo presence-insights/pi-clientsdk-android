@@ -40,9 +40,9 @@ public class PIBeacon {
     private String proximityUUID;
     private String major;
     private String minor;
-    private int threshold;
-    private int x;
-    private int y;
+    private long threshold;
+    private long x;
+    private long y;
 
     // optional
     private String description;
@@ -53,9 +53,9 @@ public class PIBeacon {
         proximityUUID = (String) beaconObj.get(JSON_PROXIMITY_UUID);
         major = (String) beaconObj.get(JSON_MAJOR);
         minor = (String) beaconObj.get(JSON_MINOR);
-        threshold = (Integer) beaconObj.get(JSON_THRESHOLD);
-        x = (Integer) beaconObj.get(JSON_X);
-        y = (Integer) beaconObj.get(JSON_Y);
+        threshold = (Long) beaconObj.get(JSON_THRESHOLD);
+        x = (Long) beaconObj.get(JSON_X);
+        y = (Long) beaconObj.get(JSON_Y);
 
         description = beaconObj.get(JSON_DESCRIPTION) != null ? (String)beaconObj.get(JSON_DESCRIPTION) : "";
     }
@@ -80,15 +80,15 @@ public class PIBeacon {
         return minor;
     }
 
-    public int getThreshold() {
+    public long getThreshold() {
         return threshold;
     }
 
-    public int getX() {
+    public long getX() {
         return x;
     }
 
-    public int getY() {
+    public long getY() {
         return y;
     }
 

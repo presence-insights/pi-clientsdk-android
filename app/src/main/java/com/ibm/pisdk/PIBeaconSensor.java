@@ -55,7 +55,6 @@ public class PIBeaconSensor {
     public static final String INTENT_EXTRA_ENTER_REGION = "com.ibm.pi.android.enter_region";
     public static final String INTENT_EXTRA_EXIT_REGION = "com.ibm.pi.android.exit_region";
 
-
     private BluetoothAdapter mBluetoothAdapter;
     private final Context mContext;
     private final PIAPIAdapter mAdapter;
@@ -96,12 +95,12 @@ public class PIBeaconSensor {
             if (!isBLEOn()) {
                 // If BLE is off, turned it on
                 if(!enableBLE()) {
-                    Log.d(TAG, "Failed to start Bluetooth on this device.");
+                    PILogger.e(TAG, "Failed to start Bluetooth on this device.");
                 }
             }
 
         } catch (Exception e){
-            Log.d(TAG, "Failed to create PIBeaconSensorService: " + e.getMessage());
+            PILogger.e(TAG, "Failed to create PIBeaconSensorService: " + e.getMessage());
         }
     }
 
@@ -163,8 +162,7 @@ public class PIBeaconSensor {
             intent.putExtra(INTENT_PARAMETER_BEACON_LAYOUT, beaconLayout);
             mContext.startService(intent);
         } else {
-            Toast.makeText(mContext, "Cannot set beacon layout while service is running.", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "Cannot set beacon layout while service is running.");
+            PILogger.e(TAG, "Cannot set beacon layout while service is running.");
         }
     }
 
@@ -190,7 +188,7 @@ public class PIBeaconSensor {
                 }
                 // incorrect action received
                 else {
-                    Log.e(TAG, "incorrect action received, action received: " + intent.getAction());
+                    PILogger.e(TAG, "incorrect action received, action received: " + intent.getAction());
                 }
             }
         }
@@ -208,8 +206,7 @@ public class PIBeaconSensor {
     // confirm if the device supports BLE, if not it can't be used for detecting beacons
     private  boolean checkSupportBLE(){
         if (!mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            Log.e(TAG, "ble_not_supported");
-            Toast.makeText(mContext, "ble_not_supported", Toast.LENGTH_SHORT).show();
+            PILogger.e(TAG, "BLE is not supported for this device");
             return false;
         }
         return true;

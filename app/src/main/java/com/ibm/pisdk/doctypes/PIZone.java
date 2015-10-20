@@ -38,10 +38,10 @@ public class PIZone {
     // required
     private String code;
     private String name;
-    private int x;
-    private int y;
-    private int width;
-    private int height;
+    private long x;
+    private long y;
+    private long width;
+    private long height;
 
     // optional
     private ArrayList<String> tags;
@@ -49,10 +49,10 @@ public class PIZone {
     public PIZone(JSONObject zoneObj) {
         code = (String) zoneObj.get(JSON_CODE);
         name = (String) zoneObj.get(JSON_NAME);
-        x = (Integer) zoneObj.get(JSON_X);
-        y = (Integer) zoneObj.get(JSON_Y);
-        width = (Integer) zoneObj.get(JSON_WIDTH);
-        height = (Integer) zoneObj.get(JSON_HEIGHT);
+        x = (Long) zoneObj.get(JSON_X);
+        y = (Long) zoneObj.get(JSON_Y);
+        width = (Long) zoneObj.get(JSON_WIDTH);
+        height = (Long) zoneObj.get(JSON_HEIGHT);
 
         tags = new ArrayList<String>();
         JSONArray tempTags = (JSONArray) zoneObj.get(JSON_TAGS);
@@ -70,19 +70,19 @@ public class PIZone {
         return name;
     }
 
-    public int getX() {
+    public long getX() {
         return x;
     }
 
-    public int getY() {
+    public long getY() {
         return y;
     }
 
-    public int getWidth() {
+    public long getWidth() {
         return width;
     }
 
-    public int getHeight() {
+    public long getHeight() {
         return height;
     }
 

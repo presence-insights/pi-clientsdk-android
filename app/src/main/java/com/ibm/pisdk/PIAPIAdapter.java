@@ -529,7 +529,7 @@ public class PIAPIAdapter implements Serializable {
         String proximityUUIDs = String.format("%s/tenants/%s/orgs/%s/views/proximityUUID", mServerURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(proximityUUIDs);
-            GET(url,  new PIAPICompletionHandler() {
+            GET(url, new PIAPICompletionHandler() {
                 @Override
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
@@ -712,6 +712,7 @@ public class PIAPIAdapter implements Serializable {
                 url = (URL) params[0];
                 completionHandler = (PIAPICompletionHandler) params[1];
                 // attempt GET from url
+                PILogger.d(TAG, "GET " + url.toString());
                 try {
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
@@ -750,11 +751,13 @@ public class PIAPIAdapter implements Serializable {
                     result.setHeader(connection.getHeaderFields());
                     result.setResult(sb.toString());
                     result.setResponseCode(responseCode);
+
+                    PILogger.d(TAG, result.toString());
                     return result;
                 } else {
                     cannotReachServer(result);
                 }
-
+                PILogger.e(TAG, result.toString());
                 return result;
             }
 
@@ -779,6 +782,7 @@ public class PIAPIAdapter implements Serializable {
                 completionHandler = (PIAPICompletionHandler) params[1];
 
                 // attempt GET from url
+                PILogger.d(TAG, "GET " + url.toString());
                 try {
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
@@ -800,6 +804,8 @@ public class PIAPIAdapter implements Serializable {
                         result.setHeader(connection.getHeaderFields());
                         result.setResult(BitmapFactory.decodeStream(connection.getInputStream()));
                         result.setResponseCode(responseCode);
+
+                        PILogger.d(TAG, result.toString());
                         return result;
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -829,6 +835,8 @@ public class PIAPIAdapter implements Serializable {
                 } else {
                     cannotReachServer(result);
                 }
+
+                PILogger.d(TAG, result.toString());
                 return result;
             }
 
@@ -855,6 +863,7 @@ public class PIAPIAdapter implements Serializable {
                 completionHandler = (PIAPICompletionHandler) params[2];
 
                 // attempt POST to url
+                PILogger.d(TAG, "POST " + url.toString());
                 try {
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
@@ -900,11 +909,14 @@ public class PIAPIAdapter implements Serializable {
                     result.setHeader(connection.getHeaderFields());
                     result.setResult(sb.toString());
                     result.setResponseCode(responseCode);
+
+                    PILogger.d(TAG, result.toString());
                     return result;
                 } else {
                     cannotReachServer(result);
                 }
 
+                PILogger.e(TAG, result.toString());
                 return result;
             }
 
@@ -931,6 +943,7 @@ public class PIAPIAdapter implements Serializable {
                 completionHandler = (PIAPICompletionHandler) params[2];
 
                 // attempt POST to url
+                PILogger.d(TAG, "PUT " + url.toString());
                 try {
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
@@ -976,10 +989,14 @@ public class PIAPIAdapter implements Serializable {
                     result.setHeader(connection.getHeaderFields());
                     result.setResult(sb.toString());
                     result.setResponseCode(responseCode);
+
+                    PILogger.d(TAG, result.toString());
                     return result;
                 } else {
                     cannotReachServer(result);
                 }
+
+                PILogger.e(TAG, result.toString());
                 return result;
             }
 
