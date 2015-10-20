@@ -18,9 +18,9 @@ public class PISensor {
     // required
     private String code;
     private String name;
-    private int threshold;
-    private int x;
-    private int y;
+    private long threshold;
+    private long x;
+    private long y;
 
     // optional
     private String description;
@@ -28,9 +28,9 @@ public class PISensor {
     public PISensor(JSONObject sensorObj) {
         code = (String) sensorObj.get(JSON_CODE);
         name = (String) sensorObj.get(JSON_NAME);
-        threshold = (Integer) sensorObj.get(JSON_THRESHOLD);
-        x = (Integer) sensorObj.get(JSON_X);
-        y = (Integer) sensorObj.get(JSON_Y);
+        threshold = (Long) sensorObj.get(JSON_THRESHOLD);
+        x = (Long) sensorObj.get(JSON_X);
+        y = (Long) sensorObj.get(JSON_Y);
 
         description = sensorObj.get(JSON_DESCRIPTION) != null ? (String)sensorObj.get(JSON_DESCRIPTION) : "";
     }
@@ -43,15 +43,15 @@ public class PISensor {
         return name;
     }
 
-    public int getThreshold() {
+    public long getThreshold() {
         return threshold;
     }
 
-    public int getX() {
+    public long getX() {
         return x;
     }
 
-    public int getY() {
+    public long getY() {
         return y;
     }
 

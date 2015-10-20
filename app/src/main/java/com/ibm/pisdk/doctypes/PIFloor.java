@@ -31,12 +31,12 @@ public class PIFloor {
     // required
     private String code;
     private String name;
-    private int z;
+    private long z;
 
     public PIFloor(JSONObject floorObj) {
         code = (String) floorObj.get(JSON_CODE);
         name = (String) floorObj.get(JSON_NAME);
-        z = (Integer) floorObj.get(JSON_Z);
+        z = (Long) floorObj.get(JSON_Z);
     }
 
     public String getCode() {
@@ -47,7 +47,7 @@ public class PIFloor {
         return name;
     }
 
-    public int getZ() {
+    public long getZ() {
         return z;
     }
 }
