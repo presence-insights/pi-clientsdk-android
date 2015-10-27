@@ -211,7 +211,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList&lt;{@link PIFloor PIFloor}&gt;.
      */
     public void getFloors(String siteCode, final PIAPICompletionHandler completionHandler) {
-        String floors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors", mServerURL, mTenantCode, mOrgCode, siteCode);
+        String floors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors", mServerURL_v2, mTenantCode, mOrgCode, siteCode);
         try {
             URL url = new URL(floors);
             GET(url, new PIAPICompletionHandler() {
@@ -219,7 +219,7 @@ public class PIAPIAdapter implements Serializable {
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
                         JSONObject floorObj = result.getResultAsJson();
-                        JSONArray floorsArray = (JSONArray)floorObj.get(JSON_ROWS);
+                        JSONArray floorsArray = (JSONArray)floorObj.get(JSON_FEATURES);
                         ArrayList<PIFloor> floors = new ArrayList<PIFloor>();
                         for (Object floor : floorsArray) {
                             floors.add(new PIFloor((JSONObject) floor));
@@ -242,7 +242,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIFloor PIFloor}.
      */
     public void getFloor(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
-        String floor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
+        String floor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(floor);
             GET(url, new PIAPICompletionHandler() {
