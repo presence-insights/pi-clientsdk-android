@@ -458,7 +458,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls.  Result returns as ArrayList&lt;{@link PISensor PISensor}&gt;.
      */
     public void getSensors(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
-        String sensors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
+        String sensors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(sensors);
             GET(url, new PIAPICompletionHandler() {
@@ -466,7 +466,7 @@ public class PIAPIAdapter implements Serializable {
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
                         JSONObject sensorObj = result.getResultAsJson();
-                        JSONArray sensorsArray = (JSONArray)sensorObj.get(JSON_ROWS);
+                        JSONArray sensorsArray = (JSONArray)sensorObj.get(JSON_FEATURES);
                         ArrayList<PISensor> sensors = new ArrayList<PISensor>();
                         for (Object sensor : sensorsArray) {
                             sensors.add(new PISensor((JSONObject) sensor));
@@ -490,7 +490,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PISensor PISensor}.
      */
     public void getSensor(String siteCode, String floorCode, String sensorCode, final PIAPICompletionHandler completionHandler) {
-        String sensor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, sensorCode);
+        String sensor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors/%s", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode, sensorCode);
         try {
             URL url = new URL(sensor);
             GET(url, new PIAPICompletionHandler() {
