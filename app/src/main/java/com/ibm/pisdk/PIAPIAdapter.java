@@ -344,7 +344,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList&lt;{@link PIZone PIZone}&gt;.
      */
     public void getZones(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
-        String zones = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
+        String zones = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(zones);
             GET(url, new PIAPICompletionHandler() {
@@ -352,7 +352,7 @@ public class PIAPIAdapter implements Serializable {
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
                         JSONObject zoneObj = result.getResultAsJson();
-                        JSONArray zonesArray = (JSONArray)zoneObj.get(JSON_ROWS);
+                        JSONArray zonesArray = (JSONArray)zoneObj.get(JSON_FEATURES);
                         ArrayList<PIZone> zones = new ArrayList<PIZone>();
                         for (Object zone : zonesArray) {
                             zones.add(new PIZone((JSONObject) zone));
@@ -376,7 +376,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIZone PIZone}.
      */
     public void getZone(String siteCode, String floorCode, String zoneCode, final PIAPICompletionHandler completionHandler) {
-        String zone = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, zoneCode);
+        String zone = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones/%s", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode, zoneCode);
         try {
             URL url = new URL(zone);
             GET(url, new PIAPICompletionHandler() {

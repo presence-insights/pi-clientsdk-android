@@ -16,6 +16,8 @@
 
 package com.ibm.pisdk.doctypes;
 
+import android.graphics.Point;
+
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
 
@@ -29,37 +31,52 @@ import java.util.ArrayList;
 public class PIZone {
     private static final String JSON_CODE = "@code";
     private static final String JSON_NAME = "name";
-    private static final String JSON_X = "x";
-    private static final String JSON_Y = "y";
-    private static final String JSON_WIDTH = "width";
-    private static final String JSON_HEIGHT = "height";
     private static final String JSON_TAGS = "tags";
 
     // required
     private String code;
     private String name;
-    private long x;
-    private long y;
-    private long width;
-    private long height;
+    private ArrayList<ArrayList<Point>> polygons;
 
     // optional
     private ArrayList<String> tags;
 
     public PIZone(JSONObject zoneObj) {
-        code = (String) zoneObj.get(JSON_CODE);
-        name = (String) zoneObj.get(JSON_NAME);
-        x = (Long) zoneObj.get(JSON_X);
-        y = (Long) zoneObj.get(JSON_Y);
-        width = (Long) zoneObj.get(JSON_WIDTH);
-        height = (Long) zoneObj.get(JSON_HEIGHT);
+        JSONObject geometry = (JSONObject)zoneObj.get("geometry");
+        JSONObject properties = (JSONObject)zoneObj.get("properties");
 
-        tags = new ArrayList<String>();
-        JSONArray tempTags = (JSONArray) zoneObj.get(JSON_TAGS);
+        code = (String) properties.get(JSON_CODE);
+        name = (String) properties.get(JSON_NAME);
+        polygons = getPolygonsFromJson((JSONArray) geometry.get("coordinates"));
+
+        tags = getTagsFromJson(properties);
+    }
+
+    private ArrayList<ArrayList<Point>> getPolygonsFromJson(JSONArray coordinates) {
+        ArrayList<ArrayList<Point>> polygons = new ArrayList<ArrayList<Point>>();
+
+        for (int i = 0; i < coordinates.size(); i++) {
+            JSONArray polygon = (JSONArray) coordinates.get(i);
+            ArrayList<Point> points = new ArrayList<Point>();
+            for (int j = 0; j < polygon.size(); j++) {
+                JSONArray point = (JSONArray)polygon.get(j);
+                points.add(new Point(((Long)point.get(0)).intValue(), ((Long)point.get(1)).intValue()));
+            }
+            polygons.add(points);
+        }
+
+        return polygons;
+    }
+
+    private ArrayList<String> getTagsFromJson(JSONObject properties) {
+        ArrayList<String> tags = new ArrayList<String>();
+        JSONArray tempTags = (JSONArray) properties.get(JSON_TAGS);
 
         for (int i = 0; i < tempTags.size(); i++) {
             tags.add((String) tempTags.get(i));
         }
+
+        return tags;
     }
 
     public String getCode() {
@@ -70,20 +87,8 @@ public class PIZone {
         return name;
     }
 
-    public long getX() {
-        return x;
-    }
-
-    public long getY() {
-        return y;
-    }
-
-    public long getWidth() {
-        return width;
-    }
-
-    public long getHeight() {
-        return height;
+    public ArrayList<ArrayList<Point>> getPolygons() {
+        return polygons;
     }
 
     public ArrayList<String> getTags() {
