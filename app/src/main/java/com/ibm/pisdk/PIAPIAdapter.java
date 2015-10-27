@@ -52,9 +52,11 @@ public class PIAPIAdapter implements Serializable {
     private static final String TAG = PIAPIAdapter.class.getSimpleName();
 
     private static final String MANAGEMENT_SERVER_PATH = "/pi-config/v1";
+    private static final String MANAGEMENT_SERVER_PATH_v2 = "/pi-config/v2";
     private static final String BEACON_CONNECTOR_PATH = "/conn-beacon/v1";
 
     private static final String JSON_ROWS = "rows";
+    private static final String JSON_FEATURES = "features";
 
     static final private int READ_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
     static final private int CONNECTION_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
@@ -63,6 +65,7 @@ public class PIAPIAdapter implements Serializable {
     // we could provide them the option to throw up a progress indicator while the async tasks are running.
     private final transient Context mContext;
     private final String mServerURL;
+    private final String mServerURL_v2;
     private final String mConnectorURL;
     private final String mTenantCode;
     private final String mOrgCode;
@@ -83,6 +86,7 @@ public class PIAPIAdapter implements Serializable {
         mContext = context;
         mBasicAuth = generateBasicAuth(username, password);
         mServerURL = hostname + MANAGEMENT_SERVER_PATH;
+        mServerURL_v2 = hostname + MANAGEMENT_SERVER_PATH_v2;
         mConnectorURL = hostname + BEACON_CONNECTOR_PATH;
         mTenantCode = tenantCode;
         mOrgCode = orgCode;
@@ -397,7 +401,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList&lt;{@link PIBeacon PIBeacon}&gt;.
      */
     public void getBeacons(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
-        String beacons = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
+        String beacons = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(beacons);
             GET(url, new PIAPICompletionHandler() {
@@ -405,7 +409,7 @@ public class PIAPIAdapter implements Serializable {
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
                         JSONObject beaconObj = result.getResultAsJson();
-                        JSONArray beaconsArray = (JSONArray)beaconObj.get(JSON_ROWS);
+                        JSONArray beaconsArray = (JSONArray)beaconObj.get(JSON_FEATURES);
                         ArrayList<PIBeacon> beacons = new ArrayList<PIBeacon>();
                         for (Object beacon : beaconsArray) {
                             beacons.add(new PIBeacon((JSONObject) beacon));
@@ -429,7 +433,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIBeacon PIBeacon}.
      */
     public void getBeacon(String siteCode, String floorCode, String beaconCode, final PIAPICompletionHandler completionHandler) {
-        String beacon = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, beaconCode);
+        String beacon = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons/%s", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode, beaconCode);
         try {
             URL url = new URL(beacon);
             GET(url, new PIAPICompletionHandler() {
