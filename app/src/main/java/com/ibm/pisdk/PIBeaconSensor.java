@@ -59,11 +59,53 @@ public class PIBeaconSensor {
     private final Context mContext;
     private final PIAPIAdapter mAdapter;
     private final String mDeviceId;
-    private PIBeaconSensorDelegate mDelegate;
 
     private String mState;
     private static final String STARTED = "started";
     private static final String STOPPED = "stopped";
+
+    /**
+     * This interface provides a callback for beacons within range of the device.
+     */
+    public interface BeaconsInRangeListener {
+        /**
+         * Provides a collection of beacons within range
+         *
+         * @param beacons collection of Class Beacon.
+         */
+        void beaconsInRange(ArrayList<Beacon> beacons);
+    }
+
+    private BeaconsInRangeListener mBeaconsInRangeListener;
+
+    public void setBeaconsInRangeListener(BeaconsInRangeListener listener) {
+        mBeaconsInRangeListener = listener;
+    }
+
+    /**
+     * This interface provides region event callbacks.
+     */
+    public interface RegionEventListener {
+        /**
+         * The device has entered a region
+         *
+         * @param region
+         */
+        void didEnterRegion(Region region);
+
+        /**
+         * The device has exited a region
+         *
+         * @param region
+         */
+        void didExitRegion(Region region);
+    }
+
+    private RegionEventListener mRegionEventListener;
+
+    public void setRegionEventListener(RegionEventListener listener) {
+        mRegionEventListener = listener;
+    }
 
     /**
      * Default constructor
@@ -76,6 +118,10 @@ public class PIBeaconSensor {
         this.mContext = context;
         this.mAdapter = adapter;
         mState = STOPPED;
+
+        // set listeners to null
+        mBeaconsInRangeListener = null;
+        mRegionEventListener = null;
 
         // get Device ID
         PIDeviceID deviceID = new PIDeviceID(context);
@@ -166,42 +212,38 @@ public class PIBeaconSensor {
         }
     }
 
+    // Local broadcast receiver to handle callback
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (mDelegate != null) {
                 // beacons in range
                 if (INTENT_RECEIVER_BEACON_COLLECTION.equals(intent.getAction())) {
-                    // Get extra data included in the Intent
-                    ArrayList<Beacon> beacons = intent.getParcelableArrayListExtra(INTENT_EXTRA_BEACONS_IN_RANGE);
-                    mDelegate.beaconsInRange(beacons);
+                    if (mBeaconsInRangeListener != null) {
+                        // Get extra data included in the Intent
+                        ArrayList<Beacon> beacons = intent.getParcelableArrayListExtra(INTENT_EXTRA_BEACONS_IN_RANGE);
+                        mBeaconsInRangeListener.beaconsInRange(beacons);
+                    }
                 }
                 // region entered
                 else if (INTENT_RECEIVER_REGION_ENTER.equals(intent.getAction())) {
-                    Region enterRegion = (Region) intent.getExtras().get(INTENT_EXTRA_ENTER_REGION);
-                    mDelegate.didEnterRegion(enterRegion);
+                    if (mRegionEventListener != null) {
+                        Region enterRegion = (Region) intent.getExtras().get(INTENT_EXTRA_ENTER_REGION);
+                        mRegionEventListener.didEnterRegion(enterRegion);
+                    }
                 }
                 // region exited
                 else if (INTENT_RECEIVER_REGION_EXIT.equals(intent.getAction())) {
-                    Region exitRegion = (Region) intent.getExtras().get(INTENT_EXTRA_EXIT_REGION);
-                    mDelegate.didExitRegion(exitRegion);
+                    if (mRegionEventListener != null) {
+                        Region exitRegion = (Region) intent.getExtras().get(INTENT_EXTRA_EXIT_REGION);
+                        mRegionEventListener.didExitRegion(exitRegion);
+                    }
                 }
                 // incorrect action received
                 else {
                     PILogger.e(TAG, "incorrect action received, action received: " + intent.getAction());
                 }
-            }
         }
     };
-
-    public void setBeaconsInRangeListener(PIBeaconSensorDelegate listener) {
-        try {
-            mDelegate = listener;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(listener.toString()
-                    + " must implement PIBeaconSensorDelegate");
-        }
-    }
 
     // confirm if the device supports BLE, if not it can't be used for detecting beacons
     private  boolean checkSupportBLE(){

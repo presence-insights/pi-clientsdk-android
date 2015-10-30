@@ -129,7 +129,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             public void didEnterRegion(Region region) {
                 PILogger.d(TAG, "entered region: " + region);
 
-                // send enter region delegate method
+                // send enter region event to listener callback
                 Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_REGION_ENTER);
                 intent.putExtra(PIBeaconSensor.INTENT_EXTRA_ENTER_REGION, region);
 
@@ -139,7 +139,8 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             @Override
             public void didExitRegion(Region region) {
                 PILogger.d(TAG, "exited region: " + region);
-                // send enter region delegate method
+
+                // send exit region event to listener callback
                 Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_REGION_EXIT);
                 intent.putExtra(PIBeaconSensor.INTENT_EXTRA_EXIT_REGION, region);
 
@@ -203,7 +204,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             }
         });
 
-        // provide beacons to delegate
+        // send beacons in range event to listener callback
         Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_BEACON_COLLECTION);
         intent.putParcelableArrayListExtra(PIBeaconSensor.INTENT_EXTRA_BEACONS_IN_RANGE, new ArrayList<Beacon>(beacons));
 
