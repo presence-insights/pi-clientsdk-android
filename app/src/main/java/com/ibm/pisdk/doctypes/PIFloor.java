@@ -16,6 +16,9 @@
 
 package com.ibm.pisdk.doctypes;
 
+import android.graphics.Point;
+
+import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
 
 /**
@@ -32,11 +35,19 @@ public class PIFloor {
     private String code;
     private String name;
     private long z;
+    private Point barriers;
 
     public PIFloor(JSONObject floorObj) {
-        code = (String) floorObj.get(JSON_CODE);
-        name = (String) floorObj.get(JSON_NAME);
-        z = (Long) floorObj.get(JSON_Z);
+        JSONObject geometry = (JSONObject)floorObj.get("geometry");
+        JSONObject properties = (JSONObject)floorObj.get("properties");
+
+        code = (String) properties.get(JSON_CODE);
+        name = (String) properties.get(JSON_NAME);
+        z = (Long) properties.get(JSON_Z);
+
+        JSONArray coordinates = (JSONArray) geometry.get("coordinates");
+        barriers = new Point(((Long) coordinates.get(0)).intValue(),
+                             ((Long) coordinates.get(1)).intValue());
     }
 
     public String getCode() {
@@ -49,5 +60,10 @@ public class PIFloor {
 
     public long getZ() {
         return z;
+    }
+
+    // Currently not implemented. This is a place holder for future work.
+    public Point getBarriers() {
+        return barriers;
     }
 }
