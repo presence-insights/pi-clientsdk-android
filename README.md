@@ -1,85 +1,155 @@
 # Presence Insights SDK for Android
 
-![This content is in draft state](https://img.shields.io/badge/documentation-draft-lightgrey.svg)
+This library contains classes that are useful for interfacing with Presence Insights. This SDK supports Android 4.3+.
 
-## Intro
-
-This library contains classes that are useful for interfacing with Presence Insights.
-
-## Features/Overview
+## Features
 
 * **BLE beacon sensor** - monitor regions, range for beacons, and send beacon notification messages to PI
 
-
 * **Management Config REST** - make calls to the management config server to retrieve information about your organization
-
 
 * **Device Registration** - easily registers a smartphone or tablet with your organization.
 
+## Adding the library to your project
 
-## Getting Started
+1. Create `/libs` directory if it does not already exist.
 
-### Adding the library to your project
+2. Add .aar file to `/libs` directory.
 
-1. Download library at <where can they download the library?>
+3. Add dependencies to module `build.gradle`.  Need to include the altbeacon library, for now.  We are working on resolving this issue.
 
-2. Add library file to `/libs` directory
+        dependencies {
+            compile 'org.altbeacon:android-beacon-library:2.1.4'
+            compile (name:'presence-insights-v1.1', ext:'aar')
+        }
+    
+4. Add `flatDir` to project `build.gradle`.
 
-3. Add dependencies to `build.gradle`.  Need to include the altbeacon library, for now.  We are working on resolving this issue.
+        allprojects {
+            repositories {
+            
+            ...     
+            
+                flatDir {
+                    dirs 'libs'
+                }
+            }
+        }
 
+5. Add Internet and Bluetooth permissions to your manifest file
 
-    dependencies {
-        compile 'org.altbeacon:android-beacon-library:2.1.4'
-        compile (name:'presence-insights-v1.1', ext:'aar')
-    }
+        <uses-permission android:name="android.permission.INTERNET"/>
+        <uses-permission android:name="android.permission.BLUETOOTH"/>
 
+## Setting up PIAPIAdapter <a name="pi_adapter"></a>
 
-### Setting up PIAPIAdapter
-
-    PIAPIAdapter mAdapter = new PIAPIAdapter(context, "username", "password", "https://www.url.com", "TenantCode", "OrgCode");
+        PIAPIAdapter mAdapter = new PIAPIAdapter(context, "username", "password", "https://www.url.com", "TenantCode", "OrgCode");
 
 Note: We do not store your username and password, it is up to the developer using this library to properly secure the credentials.
 
-### Making a call to the API
+## Making a call to the API
 
+        mAdapter.getOrg(new PIAPICompletionHandler() {
+            @Override
+            public void onComplete(PIAPIResult result) {
+                PIOrg myOrg = (PIOrg) result.getResult();
+            }
+        });
 
-    mAdapter.getOrg(new PIAPICompletionHandler() {
-        @Override
-        public void onComplete(PIAPIResult result) {
-            Log.i(TAG, result.getResultAsString());
-        }
-    });
+Note: `PIAPICompletionHandler` is the callback interface for all asynchronous calls to the API. Please refer to the javadocs for how to cast the result.
 
-Note: `PIAPICompletionHandler` is the callback interface for any asynchronous calls to the API.
+## Setting up PIBeaconSensor
 
-### Setting up PIBeaconSensor
+        PIBeaconSensor mBeaconSensor = new PIBeaconSensor(context, mAdapter);
 
-
-    PIBeaconSensor mBeaconSensor = new PIBeaconSensor(context, mAdapter);
-
-
-### Starting and stopping the beacon sensor
-
-    mBeaconSensor.start()
-
-    mBeaconSensor.stop()
-
-It's that easy!
-
-### Setting the beacon advertisement layout
+## Setting the beacon advertisement layout <a name="beacon_layout"></a>
 
 We use AltBeacon's Android library for monitoring and ranging for beacons.
 
-    // adding beacon layout for Estimote Beacons
-    mBeaconSensor.addBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24");
+        // adding beacon layout for iBeacons
+        mBeaconSensor.addBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24");
 
 From AltBeacon's [Github](https://github.com/AltBeacon/android-beacon-library), "IMPORTANT: By default, this library will only detect beacons meeting the AltBeacon specification."
 
+## Starting and stopping the beacon sensor
 
-## Classes and Interfaces
+        mBeaconSensor.start()
+        mBeaconSensor.stop()
 
-Have a look at the javadocs generated for this library, available in the `javadoc/` folder and launching `index.html`.
+It's that easy!
+
+## Listening for monitoring and ranging callbacks
+
+We have three callbacks that you can tie into when using the `PIBeaconSensor`.
+
+        beaconsInRange(ArrayList<Beacon> beacons)
+        didEnterRegion(Region region)
+        didExitRegion(Region region)
+
+Set up a listener, and you are good to go.
+
+        mBeaconSensor.setDidEnterRegionListener(this);
+
+## Device Registration
+
+1.  Create a PIDeviceInfo Object and set your values
+
+        PIDeviceInfo mDeviceInfo = new PIDeviceInfo(context);
+        mDeviceInfo.setName("My Nexus 5");
+        mDeviceInfo.setType("External");
+        mDeviceInfo.setRegistered(true);
+
+2.  Adding personal data to PIDeviceInfo object (optional)
+
+        JSONObject data = new JSONObject();
+        data.put("cellphone", "919-555-5555");
+        data.put("email", "android@us.ibm.com");
+
+        mDeviceInfo.setData(data);
+
+3.  Adding non personal data to PIDeviceInfo object (optional). For example, linking push notification ID from another service to a device.
+
+        JSONObject data = new JSONObject();
+        data.put("pushID", "PIisAwesome");
+
+        mDeviceInfo.setUnencryptedData(data);
+
+4.  Blacklisting a device. For example, to ignore an employees device.
+
+        mDeviceInfo.setBlacklisted(true);
+
+5.  Make the call to registerDevice from the PIAPIAdapter. Instantiate mAdapter as seen in section above, ['Setting up PIAPIAdapter'](#pi_adapter)
+
+        mAdapter.registerDevice(mDeviceInfo, new PIAPICompletionHandler() {
+            @Override
+            public void onComplete(PIAPIResult result) {
+                if (result.getResponseCode() == HttpStatus.SC_OK || result.getResponseCode() == HttpStatus.SC_CREATED) {
+                    PIDevice device = new PIDevice(result.getResultAsJson());
+                } else {
+                    Log.e(TAG, result.getResultAsString());
+                }
+            }
+        });
+
+## Troubleshooting
+
+*   First things first, if things are not working, enable debugging to see all the inner workings in LogCat.
+
+        PILogger.enableDebugMode(true);
+
+*   I started the beacon sensor, but it is not picking up any beacons. There are several reasons why this may be happening.
+    1.  The beacons are not configured correctly in the PI UI. Ensure that the Proximity UUID is set correctly. We retrieve that to create a region to range for beacons.
+    2.  The beacon layout has not been set on the PIBeaconSensor. Please see the section on [beacon advertisement layout](#beacon_layout).
+    3.  The codes (username, password, tenant, org) used in creating the PIAPIAdapter may have been entered incorrectly.
+
+*   I set up the callback for `beaconsInRange(ArrayList<Beacon>)`, but it is not being called. Make sure you set the listener for the callback you want.
+
+        mBeaconSensor.setBeaconsInRangeListener(this);
+
+## Javadocs
+
+Jump over to the <a href="/pidocs/mobile/android/javadoc/" target="_blank">Javadocs</a> for more information.
 
 ## Downloads
 
-[Download the Android SDK](/pidocs/sdk/pi-android-sdk.zip)
+<a href="/pidocs/sdk/pi-android-sdk.zip" target="_blank">Download the Android SDK</a>
