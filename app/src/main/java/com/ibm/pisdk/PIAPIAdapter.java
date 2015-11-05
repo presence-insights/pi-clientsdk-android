@@ -54,6 +54,7 @@ public class PIAPIAdapter implements Serializable {
     private static final String MANAGEMENT_SERVER_PATH = "/pi-config/v1";
     private static final String MANAGEMENT_SERVER_PATH_v2 = "/pi-config/v2";
     private static final String BEACON_CONNECTOR_PATH = "/conn-beacon/v1";
+    private static final String DEVICE_ACTOR_PATH = "/actr-reg/v1";
 
     private static final String JSON_ROWS = "rows";
     private static final String JSON_FEATURES = "features";
@@ -67,6 +68,7 @@ public class PIAPIAdapter implements Serializable {
     private final String mServerURL;
     private final String mServerURL_v2;
     private final String mConnectorURL;
+    private final String mDeviceURL;
     private final String mTenantCode;
     private final String mOrgCode;
 
@@ -88,6 +90,7 @@ public class PIAPIAdapter implements Serializable {
         mServerURL = hostname + MANAGEMENT_SERVER_PATH;
         mServerURL_v2 = hostname + MANAGEMENT_SERVER_PATH_v2;
         mConnectorURL = hostname + BEACON_CONNECTOR_PATH;
+        mDeviceURL = hostname + DEVICE_ACTOR_PATH;
         mTenantCode = tenantCode;
         mOrgCode = orgCode;
     }
@@ -265,7 +268,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList&lt;{@link PIDevice PIDevice}&gt;.
      */
     public void getDevices(final PIAPICompletionHandler completionHandler) {
-        String devices = String.format("%s/tenants/%s/orgs/%s/devices", mServerURL, mTenantCode, mOrgCode);
+        String devices = String.format("%s/tenants/%s/orgs/%s/devices", mDeviceURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(devices);
             GET(url, new PIAPICompletionHandler() {
@@ -295,7 +298,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIDevice PIDevice}.
      */
     public void getDevice(String deviceCode, final PIAPICompletionHandler completionHandler) {
-        String device = String.format("%s/tenants/%s/orgs/%s/devices/%s", mServerURL, mTenantCode, mOrgCode, deviceCode);
+        String device = String.format("%s/tenants/%s/orgs/%s/devices/%s", mDeviceURL, mTenantCode, mOrgCode, deviceCode);
         try {
             URL url = new URL(device);
             GET(url, new PIAPICompletionHandler() {
@@ -319,7 +322,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIDevice PIDevice}.
      */
     public void getDeviceByDescriptor(String deviceDescriptor, final PIAPICompletionHandler completionHandler) {
-        String device = String.format("%s/tenants/%s/orgs/%s/devices?rawDescriptor=%s", mServerURL, mTenantCode, mOrgCode, deviceDescriptor);
+        String device = String.format("%s/tenants/%s/orgs/%s/devices?rawDescriptor=%s", mDeviceURL, mTenantCode, mOrgCode, deviceDescriptor);
         try {
             URL url = new URL(device);
             GET(url, new PIAPICompletionHandler() {
@@ -565,7 +568,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls.
      */
     public void registerDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
-        final String registerDevice = String.format("%s/tenants/%s/orgs/%s/devices", mServerURL, mTenantCode, mOrgCode);
+        final String registerDevice = String.format("%s/tenants/%s/orgs/%s/devices", mDeviceURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(registerDevice);
             POST(url, device.toJSON(), new PIAPICompletionHandler() {
@@ -615,7 +618,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls.
      */
     public void updateDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
-        String getDeviceObj = String.format("%s/tenants/%s/orgs/%s/devices?rawDescriptor=%s", mServerURL, mTenantCode, mOrgCode, device.getDescriptor());
+        String getDeviceObj = String.format("%s/tenants/%s/orgs/%s/devices?rawDescriptor=%s", mDeviceURL, mTenantCode, mOrgCode, device.getDescriptor());
         try {
             URL url = new URL(getDeviceObj);
             GET(url, new PIAPICompletionHandler() {
@@ -640,7 +643,7 @@ public class PIAPIAdapter implements Serializable {
                             if (devicePayload.get("@code") != null) {
                                 deviceCode = (String) devicePayload.get("@code");
                             }
-                            String unregisterDevice = String.format("%s/tenants/%s/orgs/%s/devices/%s", mServerURL, mTenantCode, mOrgCode, deviceCode);
+                            String unregisterDevice = String.format("%s/tenants/%s/orgs/%s/devices/%s", mDeviceURL, mTenantCode, mOrgCode, deviceCode);
                             try {
                                 putUrl = new URL(unregisterDevice);
                             } catch (MalformedURLException e) {
