@@ -21,9 +21,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
@@ -37,10 +35,8 @@ import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
 import org.apache.http.HttpStatus;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.PriorityQueue;
 
 public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private static final String TAG = PIBeaconSensorService.class.getSimpleName();
@@ -128,6 +124,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             @Override
             public void didEnterRegion(Region region) {
                 PILogger.d(TAG, "entered region: " + region);
+                mRegionManager.handleEnterRegion(region);
 
                 // send enter region event to listener callback
                 Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_REGION_ENTER);
@@ -139,6 +136,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             @Override
             public void didExitRegion(Region region) {
                 PILogger.d(TAG, "exited region: " + region);
+                mRegionManager.handleExitRegion(region);
 
                 // send exit region event to listener callback
                 Intent intent = new Intent(PIBeaconSensor.INTENT_RECEIVER_REGION_EXIT);

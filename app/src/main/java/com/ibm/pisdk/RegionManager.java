@@ -17,7 +17,6 @@
 package com.ibm.pisdk;
 
 import android.os.RemoteException;
-import android.util.Log;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconManager;
@@ -93,6 +92,26 @@ public class RegionManager {
         }
     }
 
+    public void handleEnterRegion(Region region) {
+        if (isUuidRegion(region)) {
+            try {
+                mBeaconManager.startRangingBeaconsInRegion(region);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void handleExitRegion(Region region) {
+        if (isUuidRegion(region)) {
+            try {
+                mBeaconManager.stopRangingBeaconsInRegion(region);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private void handleAddUuidRegion(Region region) {
         // if no region set.. start ranging and monitoring
         if (mUuidRegion == null) {
@@ -100,7 +119,6 @@ public class RegionManager {
         } else { // else stop ranging and monitoring for previous region and start for new region
             try {
                 mBeaconManager.stopMonitoringBeaconsInRegion(mUuidRegion);
-                mBeaconManager.stopRangingBeaconsInRegion(mUuidRegion);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -109,7 +127,6 @@ public class RegionManager {
         // after handling assignment start it up!
         try {
             mBeaconManager.startMonitoringBeaconsInRegion(mUuidRegion);
-            mBeaconManager.startRangingBeaconsInRegion(mUuidRegion);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -139,5 +156,9 @@ public class RegionManager {
                 e.printStackTrace();
             }
         }
+    }
+
+    private boolean isUuidRegion(Region region) {
+        return region.getId2() == null;
     }
 }

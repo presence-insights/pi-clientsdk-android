@@ -24,8 +24,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
-import android.widget.Toast;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.Region;
@@ -107,6 +105,17 @@ public class PIBeaconSensor {
         mRegionEventListener = listener;
     }
 
+    private static PIBeaconSensor sInstance;
+
+    public static PIBeaconSensor getInstance(Context context, PIAPIAdapter adapter) {
+        if (sInstance == null) {
+            //Always pass in the Application Context
+            sInstance = new PIBeaconSensor(context.getApplicationContext(), adapter);
+        }
+
+        return sInstance;
+    }
+
     /**
      * Default constructor
      *
@@ -114,7 +123,7 @@ public class PIBeaconSensor {
      * @param adapter to handle sending of the beacon notification message
      * @see com.ibm.pisdk.PIAPIAdapter
      */
-    public PIBeaconSensor(Context context, PIAPIAdapter adapter) {
+    private PIBeaconSensor(Context context, PIAPIAdapter adapter) {
         this.mContext = context;
         this.mAdapter = adapter;
         mState = STOPPED;
@@ -159,6 +168,10 @@ public class PIBeaconSensor {
         // Register to receive messages.
         LocalBroadcastManager.getInstance(mContext).registerReceiver(mMessageReceiver,
                 new IntentFilter(INTENT_RECEIVER_BEACON_COLLECTION));
+        LocalBroadcastManager.getInstance(mContext).registerReceiver(mMessageReceiver,
+                new IntentFilter(INTENT_RECEIVER_REGION_ENTER));
+        LocalBroadcastManager.getInstance(mContext).registerReceiver(mMessageReceiver,
+                new IntentFilter(INTENT_RECEIVER_REGION_EXIT));
 
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(INTENT_PARAMETER_ADAPTER, mAdapter);
@@ -216,6 +229,7 @@ public class PIBeaconSensor {
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+                PILogger.d(TAG, "local broadcast receiver with callback");
                 // beacons in range
                 if (INTENT_RECEIVER_BEACON_COLLECTION.equals(intent.getAction())) {
                     if (mBeaconsInRangeListener != null) {
@@ -226,6 +240,7 @@ public class PIBeaconSensor {
                 }
                 // region entered
                 else if (INTENT_RECEIVER_REGION_ENTER.equals(intent.getAction())) {
+                    PILogger.d(TAG, "local broadcast receiver with region enter");
                     if (mRegionEventListener != null) {
                         Region enterRegion = (Region) intent.getExtras().get(INTENT_EXTRA_ENTER_REGION);
                         mRegionEventListener.didEnterRegion(enterRegion);
