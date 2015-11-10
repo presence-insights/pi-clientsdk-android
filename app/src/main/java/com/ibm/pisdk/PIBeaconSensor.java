@@ -109,6 +109,13 @@ public class PIBeaconSensor {
 
     private static PIBeaconSensor sInstance;
 
+    /**
+     * Default singleton constructor
+     *
+     * @param context Activity context
+     * @param adapter to handle sending of the beacon notification message
+     * @see com.ibm.pisdk.PIAPIAdapter
+     */
     public static PIBeaconSensor getInstance(Context context, PIAPIAdapter adapter) {
         if (sInstance == null) {
             //Always pass in the Application Context
@@ -118,13 +125,6 @@ public class PIBeaconSensor {
         return sInstance;
     }
 
-    /**
-     * Default constructor
-     *
-     * @param context Activity context
-     * @param adapter to handle sending of the beacon notification message
-     * @see com.ibm.pisdk.PIAPIAdapter
-     */
     private PIBeaconSensor(Context context, PIAPIAdapter adapter) {
         this.mContext = context;
         this.mAdapter = adapter;
@@ -208,12 +208,22 @@ public class PIBeaconSensor {
         mContext.startService(intent);
     }
 
+    /**
+     * Sets the duration in milliseconds spent not scanning between each Bluetooth LE scan cycle when no ranging/monitoring clients are in the foreground.
+     *
+     * @param scanPeriod time in ms
+     */
     public void setBackgroundScanPeriod(long scanPeriod) {
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(INTENT_PARAMETER_BACKGROUND_SCAN_PERIOD, scanPeriod);
         mContext.startService(intent);
     }
 
+    /**
+     * Sets the duration in milliseconds of each Bluetooth LE scan cycle to look for beacons.
+     *
+     * @param betweenScanPeriod time in ms
+     */
     public void setBackgroundBetweenScanPeriod(long betweenScanPeriod) {
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(INTENT_PARAMETER_BACKGROUND_BETWEEN_SCAN_PERIOD, betweenScanPeriod);
