@@ -33,6 +33,7 @@ import org.altbeacon.beacon.BeaconParser;
 import org.altbeacon.beacon.MonitorNotifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
+import org.altbeacon.beacon.powersave.BackgroundPowerSaver;
 import org.apache.http.HttpStatus;
 
 import java.util.ArrayList;
@@ -41,21 +42,18 @@ import java.util.Collection;
 public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private static final String TAG = PIBeaconSensorService.class.getSimpleName();
 
-    private static final String INTENT_PARAMETER_ADAPTER = "adapter";
-    private static final String INTENT_PARAMETER_COMMAND = "command";
-    private static final String INTENT_PARAMETER_DEVICE_ID = "device_id";
-    private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
-    private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
-
     private Context mContext;
+    private BackgroundPowerSaver mBackgroundPowerSaver;
     private PIAPIAdapter mPiApiAdapter;
     private BeaconManager mBeaconManager;
     private RegionManager mRegionManager;
     private String mDeviceId;
 
-    private volatile long sendInterval = 5000;
-    private long lastSendTime = 0;
-    private long currentTime = 0;
+    private volatile long mSendInterval = 5000l;
+    private volatile long mBackgroundScanPeriod = 1100l;
+    private volatile long mBackgroundBetweenScanPeriod = 60000l;
+    private long mLastSendTime = 0;
+    private long mCurrentTime = 0;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -73,6 +71,13 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         // lazily instantiate beacon manager
         if (mBeaconManager == null) {
             mBeaconManager = BeaconManager.getInstanceForApplication(this);
+
+            // set up for background ranging and monitoring
+            mBackgroundPowerSaver = new BackgroundPowerSaver(this.getApplicationContext());
+
+            // set some default values
+            mBeaconManager.setBackgroundScanPeriod(mBackgroundScanPeriod);
+            mBeaconManager.setBackgroundBetweenScanPeriod(mBackgroundBetweenScanPeriod);
         }
         // and region manager
         if (mRegionManager == null) {
@@ -81,24 +86,34 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
         // check passed in intent for commands sent from Beacon Sensor wrapper class
         if (extras != null) {
-            if (extras.get(INTENT_PARAMETER_ADAPTER) != null) {
-                mPiApiAdapter = (PIAPIAdapter) extras.get(INTENT_PARAMETER_ADAPTER);
+            if (extras.get(PIBeaconSensor.INTENT_PARAMETER_ADAPTER) != null) {
+                mPiApiAdapter = (PIAPIAdapter) extras.get(PIBeaconSensor.INTENT_PARAMETER_ADAPTER);
             }
-            if (!extras.getString(INTENT_PARAMETER_DEVICE_ID, "").equals("")) {
-                mDeviceId = extras.getString(INTENT_PARAMETER_DEVICE_ID);
+            if (!extras.getString(PIBeaconSensor.INTENT_PARAMETER_DEVICE_ID, "").equals("")) {
+                mDeviceId = extras.getString(PIBeaconSensor.INTENT_PARAMETER_DEVICE_ID);
             }
-            if (extras.getLong(INTENT_PARAMETER_SEND_INTERVAL, -1) > 0) {
-                sendInterval = extras.getLong(INTENT_PARAMETER_SEND_INTERVAL);
-                PILogger.d(TAG, "updating send interval to: " + sendInterval);
+            if (extras.getLong(PIBeaconSensor.INTENT_PARAMETER_SEND_INTERVAL, -1) > 0) {
+                mSendInterval = extras.getLong(PIBeaconSensor.INTENT_PARAMETER_SEND_INTERVAL);
+                PILogger.d(TAG, "updating send interval to: " + mSendInterval);
             }
-            if (!extras.getString(INTENT_PARAMETER_BEACON_LAYOUT, "").equals("")) {
-                String beaconLayout = intent.getStringExtra(INTENT_PARAMETER_BEACON_LAYOUT);
+            if (!extras.getString(PIBeaconSensor.INTENT_PARAMETER_BEACON_LAYOUT, "").equals("")) {
+                String beaconLayout = intent.getStringExtra(PIBeaconSensor.INTENT_PARAMETER_BEACON_LAYOUT);
                 PILogger.d(TAG, "adding new beacon layout: " + beaconLayout);
                 mBeaconManager.getBeaconParsers().add(new BeaconParser()
                         .setBeaconLayout(beaconLayout));
             }
-            if (!extras.getString(INTENT_PARAMETER_COMMAND, "").equals("")) {
-                command = extras.getString(INTENT_PARAMETER_COMMAND);
+            if (extras.getLong(PIBeaconSensor.INTENT_PARAMETER_BACKGROUND_SCAN_PERIOD, -1) > 0) {
+                mBackgroundScanPeriod = extras.getLong(PIBeaconSensor.INTENT_PARAMETER_BACKGROUND_SCAN_PERIOD);
+                PILogger.d(TAG, "updating background scan period to: " + mBackgroundScanPeriod);
+                mBeaconManager.setBackgroundScanPeriod(mBackgroundScanPeriod);
+            }
+            if (extras.getLong(PIBeaconSensor.INTENT_PARAMETER_BACKGROUND_BETWEEN_SCAN_PERIOD, -1) > 0) {
+                mBackgroundBetweenScanPeriod = extras.getLong(PIBeaconSensor.INTENT_PARAMETER_BACKGROUND_BETWEEN_SCAN_PERIOD);
+                PILogger.d(TAG, "updating background between scan period to: " + mBackgroundBetweenScanPeriod);
+                mBeaconManager.setBackgroundBetweenScanPeriod(mBackgroundBetweenScanPeriod);
+            }
+            if (!extras.getString(PIBeaconSensor.INTENT_PARAMETER_COMMAND, "").equals("")) {
+                command = extras.getString(PIBeaconSensor.INTENT_PARAMETER_COMMAND);
                 if (command.equals("START_SCANNING")){
                     PILogger.d(TAG, "Service has started scanning for beacons");
                     mBeaconManager.bind(this);
@@ -158,9 +173,9 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
                     for (Beacon b : beacons) {
                         mRegionManager.add(b);
                     }
-                    currentTime = System.currentTimeMillis();
-                    if (currentTime - lastSendTime > sendInterval) {
-                        lastSendTime = currentTime;
+                    mCurrentTime = System.currentTimeMillis();
+                    if (mCurrentTime - mLastSendTime > mSendInterval) {
+                        mLastSendTime = mCurrentTime;
                         sendBeaconNotification(beacons);
                     }
                 }

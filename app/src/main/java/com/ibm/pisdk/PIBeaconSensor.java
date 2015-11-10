@@ -39,11 +39,13 @@ import java.util.ArrayList;
 public class PIBeaconSensor {
     private final String TAG = PIBeaconSensor.class.getSimpleName();
 
-    private static final String INTENT_PARAMETER_ADAPTER = "adapter";
-    private static final String INTENT_PARAMETER_COMMAND = "command";
-    private static final String INTENT_PARAMETER_DEVICE_ID = "device_id";
-    private static final String INTENT_PARAMETER_BEACON_LAYOUT = "beacon_layout";
-    private static final String INTENT_PARAMETER_SEND_INTERVAL = "send_interval";
+    protected static final String INTENT_PARAMETER_ADAPTER = "com.ibm.pisdk.adapter";
+    protected static final String INTENT_PARAMETER_COMMAND = "com.ibm.pisdk.command";
+    protected static final String INTENT_PARAMETER_DEVICE_ID = "com.ibm.pisdk.device_id";
+    protected static final String INTENT_PARAMETER_BEACON_LAYOUT = "com.ibm.pisdk.beacon_layout";
+    protected static final String INTENT_PARAMETER_SEND_INTERVAL = "com.ibm.pisdk.send_interval";
+    protected static final String INTENT_PARAMETER_BACKGROUND_SCAN_PERIOD = "com.ibm.pisdk.send_interval";
+    protected static final String INTENT_PARAMETER_BACKGROUND_BETWEEN_SCAN_PERIOD = "com.ibm.pisdk.send_interval";
 
     public static final String INTENT_RECEIVER_BEACON_COLLECTION = "intent_receiver_beacon_collection";
     public static final String INTENT_RECEIVER_REGION_ENTER = "intent_receiver_region_enter";
@@ -203,6 +205,18 @@ public class PIBeaconSensor {
     public void setSendInterval(long sendInterval) {
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(INTENT_PARAMETER_SEND_INTERVAL, sendInterval);
+        mContext.startService(intent);
+    }
+
+    public void setBackgroundScanPeriod(long scanPeriod) {
+        Intent intent = new Intent(mContext, PIBeaconSensorService.class);
+        intent.putExtra(INTENT_PARAMETER_BACKGROUND_SCAN_PERIOD, scanPeriod);
+        mContext.startService(intent);
+    }
+
+    public void setBackgroundBetweenScanPeriod(long betweenScanPeriod) {
+        Intent intent = new Intent(mContext, PIBeaconSensorService.class);
+        intent.putExtra(INTENT_PARAMETER_BACKGROUND_BETWEEN_SCAN_PERIOD, betweenScanPeriod);
         mContext.startService(intent);
     }
 
