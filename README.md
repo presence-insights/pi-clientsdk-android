@@ -24,33 +24,35 @@ This library contains classes that are useful for interfacing with Presence Insi
 1. Download or build the Presence Insights SDK library. See [Building the SDK](#building-the-sdk)
 
 2. Add the library to your project. You can do this using Android Studio, or manually:
-  #### Using Android Studio:
-    Do not use Android Studio to import the project until we are able to publish the SDK on Maven.
+
+  **Using Android Studio:**
+
+  Do not use Android Studio to import the project until we are able to publish the SDK on Maven.
   
-  #### Manually:
+  **Manually:**
+
   1. Add library file to `/libs` directory. 
+
   2. Add the following dependencies to `app/build.gradle` file:
-```
-dependencies {
-        compile 'org.altbeacon:android-beacon-library:2.1.4'
-        compile (name:'presence-insights-v1.1', ext:'aar')
-    }
-```
-  3. You will also have to add teh `flatDir` attribute to the top level `build.gradle` file:
-```
-allprojects {
-    repositories {
-        jcenter()
-        flatDir {
-            dirs 'libs'
+
+        dependencies {
+            compile 'org.altbeacon:android-beacon-library:2.1.4'
+            compile (name:'presence-insights-v1.1', ext:'aar')
         }
-    }
-}```
+
+  3. You will also have to add teh `flatDir` attribute to the top level `build.gradle` file:
+
+        allprojects {
+            repositories {
+                jcenter()
+                flatDir {
+                    dirs 'libs'
+                }
+            }
+        }
 
 3. Add the `altbeacon` library to the dependencies. We are working on resolving this issue. Edit the `/app/build.gradle` file and add:
-```
-compile 'org.altbeacon:android-beacon-library:2.1.4'```
-to the `dependencies` object.
+    compile 'org.altbeacon:android-beacon-library:2.1.4' to the `dependencies` object.
 
 Sync your gradle project. You should now have access to all of the Presence Insights APIs!
 
