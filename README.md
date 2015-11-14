@@ -21,18 +21,54 @@ This library contains classes that are useful for interfacing with Presence Insi
 
 ### Adding the library to your project
 
-1. Download library at <where can they download the library?>
+1. Download or build the Presence Insights SDK library. See [Building the SDK](#building-the-sdk)
 
-2. Add library file to `/libs` directory
-
-3. Add dependencies to `build.gradle`.  Need to include the altbeacon library, for now.  We are working on resolving this issue.
-
-
-    dependencies {
+2. Add the library to your project. You can do this using Android Studio, or manually:
+  #### Using Android Studio:
+    Do not use Android Studio to import the project until we are able to publish the SDK on Maven.
+  
+  #### Manually:
+  1. Add library file to `/libs` directory. 
+  2. Add the following dependencies to `app/build.gradle` file:
+```
+dependencies {
         compile 'org.altbeacon:android-beacon-library:2.1.4'
         compile (name:'presence-insights-v1.1', ext:'aar')
     }
+```
+  3. You will also have to add teh `flatDir` attribute to the top level `build.gradle` file:
+```
+allprojects {
+    repositories {
+        jcenter()
+        flatDir {
+            dirs 'libs'
+        }
+    }
+}```
 
+3. Add the `altbeacon` library to the dependencies. We are working on resolving this issue. Edit the `/app/build.gradle` file and add:
+```
+compile 'org.altbeacon:android-beacon-library:2.1.4'```
+to the `dependencies` object.
+
+Sync your gradle project. You should now have access to all of the Presence Insights APIs!
+
+## Building the SDK
+You can build the Presence Insights SDK straight from git. This is useful if you ever have any need to build a custom version of the SDK.
+
+1. In the terminal, type:
+ 
+```
+git clone git@github.ibm.com:PresenceInsights/pi-clientsdk-android.git
+cd pi-clientsdk-android
+chmod +x build-android.sh
+// Wait a while for gradle services to download
+```
+    
+**Tip** At this point, you may need to configure your development environment. Just follow the error messages. Some common issues include forgetting to create an `ANDROID_HOME` environment variable, or not having the correct android SDK downloaded. 
+
+At this point, you should have a `/pi-android-sdk/` folder that contains a **.aar**, Android Library file.
 
 ### Setting up PIAPIAdapter
 
