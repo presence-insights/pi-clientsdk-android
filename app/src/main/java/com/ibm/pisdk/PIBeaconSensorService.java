@@ -198,7 +198,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
                         PILogger.e(TAG, "Call to Management server returned an empty array of proximity UUIDs");
                     }
                 } else {
-                    // default estimote uuid
                     PILogger.e(TAG, result.toString());
                 }
             }

@@ -91,14 +91,6 @@ public class PIAPIAdapter implements Serializable {
         mOrgCode = orgCode;
     }
 
-    @Override
-    public String toString() {
-        return "PIAPIAdapter {" +
-                "serverURL=" + mServerURL +
-                "connectorURL=" + mConnectorURL +
-                '}';
-    }
-
     /**
      * Retrieves all the orgs of a tenant.  The tenant supplied in the PIAPIAdapter constructor.
      *

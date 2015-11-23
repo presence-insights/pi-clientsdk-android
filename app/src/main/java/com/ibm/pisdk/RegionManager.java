@@ -29,9 +29,11 @@ import java.util.ArrayList;
  * This class manages regions for Presence Insights. It keeps track of the number of overall regions monitored.
  * It handles starting and stopping the monitoring of beacon regions and the monitoring and ranging of UUID regions.
  *
+ * Used as a helper class in PIBeaconSensorService.
+ *
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
-public class RegionManager {
+class RegionManager {
     // TAG
     private final String TAG = RegionManager.class.getSimpleName();
     // handle to the BeaconManager

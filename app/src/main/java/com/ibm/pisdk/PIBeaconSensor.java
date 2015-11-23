@@ -118,7 +118,7 @@ public class PIBeaconSensor {
      */
     public static PIBeaconSensor getInstance(Context context, PIAPIAdapter adapter) {
         if (sInstance == null) {
-            //Always pass in the Application Context
+            // Always pass in the Application Context
             sInstance = new PIBeaconSensor(context.getApplicationContext(), adapter);
         }
 
@@ -235,6 +235,8 @@ public class PIBeaconSensor {
      * beacons meeting the AltBeacon specification.  Please see AltBeacon's BeaconParser#setBeaconLayout
      * for a solid explanation of BLE advertisements.
      *
+     * The beacon layout for iBeacons is "m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"
+     *
      * MUST BE CALLED BEFORE start()!
      *
      * @param beaconLayout the layout of the BLE advertisement
@@ -253,10 +255,10 @@ public class PIBeaconSensor {
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-                PILogger.d(TAG, "local broadcast receiver with callback");
                 // beacons in range
                 if (INTENT_RECEIVER_BEACON_COLLECTION.equals(intent.getAction())) {
                     if (mBeaconsInRangeListener != null) {
+                        PILogger.d(TAG, "received callback for beacons in range from sensor service.");
                         // Get extra data included in the Intent
                         ArrayList<Beacon> beacons = intent.getParcelableArrayListExtra(INTENT_EXTRA_BEACONS_IN_RANGE);
                         mBeaconsInRangeListener.beaconsInRange(beacons);
@@ -264,7 +266,7 @@ public class PIBeaconSensor {
                 }
                 // region entered
                 else if (INTENT_RECEIVER_REGION_ENTER.equals(intent.getAction())) {
-                    PILogger.d(TAG, "local broadcast receiver with region enter");
+                    PILogger.d(TAG, "received callback for region entered from sensor service.");
                     if (mRegionEventListener != null) {
                         Region enterRegion = (Region) intent.getExtras().get(INTENT_EXTRA_ENTER_REGION);
                         mRegionEventListener.didEnterRegion(enterRegion);
@@ -272,6 +274,7 @@ public class PIBeaconSensor {
                 }
                 // region exited
                 else if (INTENT_RECEIVER_REGION_EXIT.equals(intent.getAction())) {
+                    PILogger.d(TAG, "received callback for region exited from sensor service.");
                     if (mRegionEventListener != null) {
                         Region exitRegion = (Region) intent.getExtras().get(INTENT_EXTRA_EXIT_REGION);
                         mRegionEventListener.didExitRegion(exitRegion);
