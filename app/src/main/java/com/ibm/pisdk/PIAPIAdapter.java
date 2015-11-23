@@ -38,7 +38,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * This class provides an interface with the Presence Insights APIs.
@@ -52,9 +51,11 @@ public class PIAPIAdapter implements Serializable {
     private static final String TAG = PIAPIAdapter.class.getSimpleName();
 
     private static final String MANAGEMENT_SERVER_PATH = "/pi-config/v1";
+    private static final String MANAGEMENT_SERVER_PATH_v2 = "/pi-config/v2";
     private static final String BEACON_CONNECTOR_PATH = "/conn-beacon/v1";
 
     private static final String JSON_ROWS = "rows";
+    private static final String JSON_FEATURES = "features";
 
     static final private int READ_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
     static final private int CONNECTION_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
@@ -63,6 +64,7 @@ public class PIAPIAdapter implements Serializable {
     // we could provide them the option to throw up a progress indicator while the async tasks are running.
     private final transient Context mContext;
     private final String mServerURL;
+    private final String mServerURL_v2;
     private final String mConnectorURL;
     private final String mTenantCode;
     private final String mOrgCode;
@@ -83,17 +85,10 @@ public class PIAPIAdapter implements Serializable {
         mContext = context;
         mBasicAuth = generateBasicAuth(username, password);
         mServerURL = hostname + MANAGEMENT_SERVER_PATH;
+        mServerURL_v2 = hostname + MANAGEMENT_SERVER_PATH_v2;
         mConnectorURL = hostname + BEACON_CONNECTOR_PATH;
         mTenantCode = tenantCode;
         mOrgCode = orgCode;
-    }
-
-    @Override
-    public String toString() {
-        return "PIAPIAdapter {" +
-                "serverURL=" + mServerURL +
-                "connectorURL=" + mConnectorURL +
-                '}';
     }
 
     /**
@@ -207,7 +202,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList&lt;{@link PIFloor PIFloor}&gt;.
      */
     public void getFloors(String siteCode, final PIAPICompletionHandler completionHandler) {
-        String floors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors", mServerURL, mTenantCode, mOrgCode, siteCode);
+        String floors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors", mServerURL_v2, mTenantCode, mOrgCode, siteCode);
         try {
             URL url = new URL(floors);
             GET(url, new PIAPICompletionHandler() {
@@ -215,7 +210,7 @@ public class PIAPIAdapter implements Serializable {
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
                         JSONObject floorObj = result.getResultAsJson();
-                        JSONArray floorsArray = (JSONArray)floorObj.get(JSON_ROWS);
+                        JSONArray floorsArray = (JSONArray)floorObj.get(JSON_FEATURES);
                         ArrayList<PIFloor> floors = new ArrayList<PIFloor>();
                         for (Object floor : floorsArray) {
                             floors.add(new PIFloor((JSONObject) floor));
@@ -238,7 +233,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIFloor PIFloor}.
      */
     public void getFloor(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
-        String floor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
+        String floor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(floor);
             GET(url, new PIAPICompletionHandler() {
@@ -322,7 +317,10 @@ public class PIAPIAdapter implements Serializable {
                 @Override
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
-                        result.setResult(new PIDevice(result.getResultAsJson()));
+                        JSONArray matchingDevices = (JSONArray)result.getResultAsJson().get(JSON_ROWS);
+                        if (matchingDevices.size() > 0) {
+                            result.setResult(new PIDevice((JSONObject) matchingDevices.get(0)));
+                        }
                     }
                     completionHandler.onComplete(result);
                 }
@@ -340,7 +338,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList&lt;{@link PIZone PIZone}&gt;.
      */
     public void getZones(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
-        String zones = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
+        String zones = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(zones);
             GET(url, new PIAPICompletionHandler() {
@@ -348,7 +346,7 @@ public class PIAPIAdapter implements Serializable {
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
                         JSONObject zoneObj = result.getResultAsJson();
-                        JSONArray zonesArray = (JSONArray)zoneObj.get(JSON_ROWS);
+                        JSONArray zonesArray = (JSONArray)zoneObj.get(JSON_FEATURES);
                         ArrayList<PIZone> zones = new ArrayList<PIZone>();
                         for (Object zone : zonesArray) {
                             zones.add(new PIZone((JSONObject) zone));
@@ -372,7 +370,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIZone PIZone}.
      */
     public void getZone(String siteCode, String floorCode, String zoneCode, final PIAPICompletionHandler completionHandler) {
-        String zone = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, zoneCode);
+        String zone = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/zones/%s", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode, zoneCode);
         try {
             URL url = new URL(zone);
             GET(url, new PIAPICompletionHandler() {
@@ -397,7 +395,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as ArrayList&lt;{@link PIBeacon PIBeacon}&gt;.
      */
     public void getBeacons(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
-        String beacons = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
+        String beacons = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(beacons);
             GET(url, new PIAPICompletionHandler() {
@@ -405,7 +403,7 @@ public class PIAPIAdapter implements Serializable {
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
                         JSONObject beaconObj = result.getResultAsJson();
-                        JSONArray beaconsArray = (JSONArray)beaconObj.get(JSON_ROWS);
+                        JSONArray beaconsArray = (JSONArray)beaconObj.get(JSON_FEATURES);
                         ArrayList<PIBeacon> beacons = new ArrayList<PIBeacon>();
                         for (Object beacon : beaconsArray) {
                             beacons.add(new PIBeacon((JSONObject) beacon));
@@ -429,7 +427,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIBeacon PIBeacon}.
      */
     public void getBeacon(String siteCode, String floorCode, String beaconCode, final PIAPICompletionHandler completionHandler) {
-        String beacon = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, beaconCode);
+        String beacon = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/beacons/%s", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode, beaconCode);
         try {
             URL url = new URL(beacon);
             GET(url, new PIAPICompletionHandler() {
@@ -454,7 +452,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls.  Result returns as ArrayList&lt;{@link PISensor PISensor}&gt;.
      */
     public void getSensors(String siteCode, String floorCode, final PIAPICompletionHandler completionHandler) {
-        String sensors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode);
+        String sensors = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode);
         try {
             URL url = new URL(sensors);
             GET(url, new PIAPICompletionHandler() {
@@ -462,7 +460,7 @@ public class PIAPIAdapter implements Serializable {
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
                         JSONObject sensorObj = result.getResultAsJson();
-                        JSONArray sensorsArray = (JSONArray)sensorObj.get(JSON_ROWS);
+                        JSONArray sensorsArray = (JSONArray)sensorObj.get(JSON_FEATURES);
                         ArrayList<PISensor> sensors = new ArrayList<PISensor>();
                         for (Object sensor : sensorsArray) {
                             sensors.add(new PISensor((JSONObject) sensor));
@@ -486,7 +484,7 @@ public class PIAPIAdapter implements Serializable {
      * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PISensor PISensor}.
      */
     public void getSensor(String siteCode, String floorCode, String sensorCode, final PIAPICompletionHandler completionHandler) {
-        String sensor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors/%s", mServerURL, mTenantCode, mOrgCode, siteCode, floorCode, sensorCode);
+        String sensor = String.format("%s/tenants/%s/orgs/%s/sites/%s/floors/%s/sensors/%s", mServerURL_v2, mTenantCode, mOrgCode, siteCode, floorCode, sensorCode);
         try {
             URL url = new URL(sensor);
             GET(url, new PIAPICompletionHandler() {
@@ -529,7 +527,7 @@ public class PIAPIAdapter implements Serializable {
         String proximityUUIDs = String.format("%s/tenants/%s/orgs/%s/views/proximityUUID", mServerURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(proximityUUIDs);
-            GET(url,  new PIAPICompletionHandler() {
+            GET(url, new PIAPICompletionHandler() {
                 @Override
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
@@ -712,6 +710,7 @@ public class PIAPIAdapter implements Serializable {
                 url = (URL) params[0];
                 completionHandler = (PIAPICompletionHandler) params[1];
                 // attempt GET from url
+                PILogger.d(TAG, "GET " + url.toString());
                 try {
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
@@ -750,11 +749,13 @@ public class PIAPIAdapter implements Serializable {
                     result.setHeader(connection.getHeaderFields());
                     result.setResult(sb.toString());
                     result.setResponseCode(responseCode);
+
+                    PILogger.d(TAG, result.toString());
                     return result;
                 } else {
                     cannotReachServer(result);
                 }
-
+                PILogger.e(TAG, result.toString());
                 return result;
             }
 
@@ -779,6 +780,7 @@ public class PIAPIAdapter implements Serializable {
                 completionHandler = (PIAPICompletionHandler) params[1];
 
                 // attempt GET from url
+                PILogger.d(TAG, "GET " + url.toString());
                 try {
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
@@ -800,6 +802,8 @@ public class PIAPIAdapter implements Serializable {
                         result.setHeader(connection.getHeaderFields());
                         result.setResult(BitmapFactory.decodeStream(connection.getInputStream()));
                         result.setResponseCode(responseCode);
+
+                        PILogger.d(TAG, result.toString());
                         return result;
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -829,6 +833,8 @@ public class PIAPIAdapter implements Serializable {
                 } else {
                     cannotReachServer(result);
                 }
+
+                PILogger.d(TAG, result.toString());
                 return result;
             }
 
@@ -855,6 +861,7 @@ public class PIAPIAdapter implements Serializable {
                 completionHandler = (PIAPICompletionHandler) params[2];
 
                 // attempt POST to url
+                PILogger.d(TAG, "POST " + url.toString());
                 try {
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
@@ -900,11 +907,14 @@ public class PIAPIAdapter implements Serializable {
                     result.setHeader(connection.getHeaderFields());
                     result.setResult(sb.toString());
                     result.setResponseCode(responseCode);
+
+                    PILogger.d(TAG, result.toString());
                     return result;
                 } else {
                     cannotReachServer(result);
                 }
 
+                PILogger.e(TAG, result.toString());
                 return result;
             }
 
@@ -931,6 +941,7 @@ public class PIAPIAdapter implements Serializable {
                 completionHandler = (PIAPICompletionHandler) params[2];
 
                 // attempt POST to url
+                PILogger.d(TAG, "PUT " + url.toString());
                 try {
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
@@ -976,10 +987,14 @@ public class PIAPIAdapter implements Serializable {
                     result.setHeader(connection.getHeaderFields());
                     result.setResult(sb.toString());
                     result.setResponseCode(responseCode);
+
+                    PILogger.d(TAG, result.toString());
                     return result;
                 } else {
                     cannotReachServer(result);
                 }
+
+                PILogger.e(TAG, result.toString());
                 return result;
             }
 

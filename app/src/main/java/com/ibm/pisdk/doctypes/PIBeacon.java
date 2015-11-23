@@ -16,6 +16,7 @@
 
 package com.ibm.pisdk.doctypes;
 
+import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
 
 /**
@@ -27,8 +28,6 @@ public class PIBeacon {
     private static final String JSON_CODE = "@code";
     private static final String JSON_NAME = "name";
     private static final String JSON_DESCRIPTION = "description";
-    private static final String JSON_X = "x";
-    private static final String JSON_Y = "y";
     private static final String JSON_MAJOR = "major";
     private static final String JSON_MINOR = "minor";
     private static final String JSON_PROXIMITY_UUID = "proximityUUID";
@@ -40,24 +39,29 @@ public class PIBeacon {
     private String proximityUUID;
     private String major;
     private String minor;
-    private int threshold;
-    private int x;
-    private int y;
+    private long threshold;
+    private long x;
+    private long y;
 
     // optional
     private String description;
 
     public PIBeacon(JSONObject beaconObj) {
-        code = (String) beaconObj.get(JSON_CODE);
-        name = (String) beaconObj.get(JSON_NAME);
-        proximityUUID = (String) beaconObj.get(JSON_PROXIMITY_UUID);
-        major = (String) beaconObj.get(JSON_MAJOR);
-        minor = (String) beaconObj.get(JSON_MINOR);
-        threshold = (Integer) beaconObj.get(JSON_THRESHOLD);
-        x = (Integer) beaconObj.get(JSON_X);
-        y = (Integer) beaconObj.get(JSON_Y);
+        JSONObject geometry = (JSONObject)beaconObj.get("geometry");
+        JSONObject properties = (JSONObject)beaconObj.get("properties");
 
-        description = beaconObj.get(JSON_DESCRIPTION) != null ? (String)beaconObj.get(JSON_DESCRIPTION) : "";
+        code = (String) properties.get(JSON_CODE);
+        name = (String) properties.get(JSON_NAME);
+        description = properties.get(JSON_DESCRIPTION) != null ? (String)properties.get(JSON_DESCRIPTION) : "";
+        proximityUUID = (String) properties.get(JSON_PROXIMITY_UUID);
+        major = (String) properties.get(JSON_MAJOR);
+        minor = (String) properties.get(JSON_MINOR);
+        threshold = (Long) properties.get(JSON_THRESHOLD);
+
+        JSONArray coordinates = (JSONArray) geometry.get("coordinates");
+        x = (Long) coordinates.get(0);
+        y = (Long) coordinates.get(1);
+
     }
 
     public String getCode() {
@@ -80,15 +84,15 @@ public class PIBeacon {
         return minor;
     }
 
-    public int getThreshold() {
+    public long getThreshold() {
         return threshold;
     }
 
-    public int getX() {
+    public long getX() {
         return x;
     }
 
-    public int getY() {
+    public long getY() {
         return y;
     }
 

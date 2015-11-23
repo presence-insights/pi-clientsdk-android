@@ -17,6 +17,7 @@
 package com.ibm.pisdk.doctypes;
 
 import com.ibm.json.java.JSONObject;
+import com.ibm.pisdk.PILogger;
 
 /**
  * Simple class to encapsulate the Device documents important attributes.
@@ -35,26 +36,29 @@ public class PIDevice {
     private static final String JSON_UNENCRYPTED_DATA = "unencryptedData";
     private static final String JSON_BLACKLIST = "blacklist";
 
-    private String code;
-    private String name;
-    private String descriptor;
-    private String descriptorType;
-    private String registrationType;
-    private JSONObject data;
-    private JSONObject unencryptedData;
-    private boolean registered;
-    private boolean blacklisted;
+    private String code = "";
+    private String name = "";
+    private String descriptor = "";
+    private String descriptorType = "";
+    private String registrationType = "";
+    private JSONObject data = new JSONObject();
+    private JSONObject unencryptedData = new JSONObject();
+    private boolean registered = false;
+    private boolean blacklisted = false;
 
     public PIDevice(JSONObject deviceObj) {
         code = (String) deviceObj.get(JSON_CODE);
-        name = (String) deviceObj.get(JSON_NAME);
         descriptor = (String) deviceObj.get(JSON_DESCRIPTOR);
-        descriptorType = (String) deviceObj.get(JSON_DESCRIPTOR_TYPE);
-        registrationType = (String) deviceObj.get(JSON_REGISTRATION_TYPE);
-        data = (JSONObject) deviceObj.get(JSON_DATA);
-        unencryptedData = (JSONObject) deviceObj.get(JSON_UNENCRYPTED_DATA);
         registered = (Boolean) deviceObj.get(JSON_REGISTERED);
-        blacklisted = (Boolean) deviceObj.get(JSON_BLACKLIST);
+
+        if (registered) {
+            name = (String) deviceObj.get(JSON_NAME);
+            descriptorType = (String) deviceObj.get(JSON_DESCRIPTOR_TYPE);
+            registrationType = (String) deviceObj.get(JSON_REGISTRATION_TYPE);
+            data = (JSONObject) deviceObj.get(JSON_DATA);
+            unencryptedData = (JSONObject) deviceObj.get(JSON_UNENCRYPTED_DATA);
+            blacklisted = (Boolean) deviceObj.get(JSON_BLACKLIST);
+        }
     }
 
     public String getCode() {
