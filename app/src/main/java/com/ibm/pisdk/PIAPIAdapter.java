@@ -325,7 +325,10 @@ public class PIAPIAdapter implements Serializable {
                 @Override
                 public void onComplete(PIAPIResult result) {
                     if (result.getResponseCode() == 200) {
-                        result.setResult(new PIDevice(result.getResultAsJson()));
+                        JSONArray matchingDevices = (JSONArray)result.getResultAsJson().get(JSON_ROWS);
+                        if (matchingDevices.size() > 0) {
+                            result.setResult(new PIDevice((JSONObject) matchingDevices.get(0)));
+                        }
                     }
                     completionHandler.onComplete(result);
                 }
