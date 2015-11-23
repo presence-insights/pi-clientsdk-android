@@ -168,10 +168,3 @@ Set up a listener, and you are good to go.
 
         mBeaconSensor.setBeaconsInRangeListener(this);
 
-## Javadocs
-
-Jump over to the <a href="/pidocs/mobile/android/javadoc/" target="_blank">Javadocs</a> for more information.
-
-## Downloads
-
-<a href="/pidocs/sdk/pi-android-sdk.zip" target="_blank">Download the Android SDK</a>
