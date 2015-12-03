@@ -38,7 +38,6 @@ import org.apache.http.HttpStatus;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 
 public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private static final String TAG = PIBeaconSensorService.class.getSimpleName();
@@ -206,10 +205,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     }
 
     private void sendBeaconNotification(Collection<Beacon> beacons) {
-        if (beacons.isEmpty()) {
-            PILogger.e(TAG, "Cannot send beacon notification message, beacon array is empty.");
-            return;
-        }
         PILogger.d(TAG, "sending beacon notification message");
 
         JSONObject payload = buildBeaconPayload(beacons);
@@ -248,8 +243,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         beaconArray.add(data.getBeaconAsJson());
 
         payload.put("bnm", beaconArray);
-
-        PILogger.d(TAG, payload.toString());
 
         return payload;
     }
