@@ -8,8 +8,8 @@ android {
         // BLE is introduced at 18
         minSdkVersion 18
         targetSdkVersion 20
-        versionCode 3
-        versionName "1.1.0"
+        versionCode 4
+        versionName "1.2.0"
 
     }
 
