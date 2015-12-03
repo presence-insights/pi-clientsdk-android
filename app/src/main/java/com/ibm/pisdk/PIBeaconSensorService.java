@@ -38,6 +38,7 @@ import org.apache.http.HttpStatus;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private static final String TAG = PIBeaconSensorService.class.getSimpleName();
@@ -186,7 +187,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             @Override
             public void onComplete(PIAPIResult result) {
                 if (result.getResponseCode() == 200) {
-                    ArrayList<String> uuids = (ArrayList<String>)result.getResult();
+                    ArrayList<String> uuids = (ArrayList<String>) result.getResult();
                     if (uuids.size() > 0) {
                         for (Object uuid : uuids.toArray()) {
                             // this is temporary
@@ -205,8 +206,13 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     }
 
     private void sendBeaconNotification(Collection<Beacon> beacons) {
-        JSONObject payload = buildBeaconPayload(beacons);
+        if (beacons.isEmpty()) {
+            PILogger.e(TAG, "Cannot send beacon notification message, beacon array is empty.");
+            return;
+        }
         PILogger.d(TAG, "sending beacon notification message");
+
+        JSONObject payload = buildBeaconPayload(beacons);
         mPiApiAdapter.sendBeaconNotificationMessage(payload, new PIAPICompletionHandler() {
             @Override
             public void onComplete(PIAPIResult result) {
@@ -228,13 +234,22 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         JSONObject payload = new JSONObject();
         JSONArray beaconArray = new JSONArray();
 
+        // build payload with nearest beacon only
+        Beacon nearestBeacon = beacons.iterator().next();
         for (Beacon b : beacons) {
-            PIBeaconData data = new PIBeaconData(b);
-            data.setDetectedTime(detectedTime);
-            data.setDeviceDescriptor(mDeviceId);
-            beaconArray.add(data.getBeaconAsJson());
+            if (b.getDistance() < nearestBeacon.getDistance()) {
+                nearestBeacon = b;
+            }
         }
+
+        PIBeaconData data = new PIBeaconData(nearestBeacon);
+        data.setDetectedTime(detectedTime);
+        data.setDeviceDescriptor(mDeviceId);
+        beaconArray.add(data.getBeaconAsJson());
+
         payload.put("bnm", beaconArray);
+
+        PILogger.d(TAG, payload.toString());
 
         return payload;
     }
