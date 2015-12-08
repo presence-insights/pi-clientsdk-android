@@ -4,6 +4,7 @@
 /build
 app/build
 **/.idea/
+*.iml
 
 ## File-based project format:
 *.ipr
