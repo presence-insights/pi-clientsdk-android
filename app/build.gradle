@@ -3,7 +3,6 @@ apply plugin: 'com.android.library'
 android {
     compileSdkVersion 23
     buildToolsVersion "21.1.2"
-    useLibrary  'org.apache.http.legacy'
 
     defaultConfig {
         // BLE introduced at SDK Version 18

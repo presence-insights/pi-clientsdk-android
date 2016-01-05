@@ -34,8 +34,8 @@ import org.altbeacon.beacon.MonitorNotifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
 import org.altbeacon.beacon.powersave.BackgroundPowerSaver;
-import org.apache.http.HttpStatus;
 
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -211,7 +211,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         mPiApiAdapter.sendBeaconNotificationMessage(payload, new PIAPICompletionHandler() {
             @Override
             public void onComplete(PIAPIResult result) {
-                if (result.getResponseCode() >= HttpStatus.SC_BAD_REQUEST) {
+                if (result.getResponseCode() >= HttpURLConnection.HTTP_BAD_REQUEST) {
                     PILogger.e(TAG, result.toString());
                 }
             }
