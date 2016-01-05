@@ -31,8 +31,6 @@ import com.ibm.pisdk.doctypes.PISensor;
 import com.ibm.pisdk.doctypes.PISite;
 import com.ibm.pisdk.doctypes.PIZone;
 
-import org.apache.http.HttpStatus;
-
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -565,14 +563,14 @@ public class PIAPIAdapter implements Serializable {
             POST(url, device.toJSON(), new PIAPICompletionHandler() {
                 @Override
                 public void onComplete(PIAPIResult postResult) {
-                    if (postResult.getResponseCode() == HttpStatus.SC_CONFLICT) {
+                    if (postResult.getResponseCode() == HttpURLConnection.HTTP_CONFLICT) {
                         // call GET
                         try {
                             final URL deviceLocation = new URL(postResult.getHeader().get("Location").get(0));
                             GET(deviceLocation, new PIAPICompletionHandler() {
                                 @Override
                                 public void onComplete(PIAPIResult getResult) {
-                                    if (getResult.getResponseCode() == HttpStatus.SC_OK) {
+                                    if (getResult.getResponseCode() == HttpURLConnection.HTTP_OK) {
                                         // build f payload
                                         JSONObject payload = null;
                                         try {
@@ -615,7 +613,7 @@ public class PIAPIAdapter implements Serializable {
             GET(url, new PIAPICompletionHandler() {
                 @Override
                 public void onComplete(PIAPIResult getResult) {
-                    if (getResult.getResponseCode() == HttpStatus.SC_OK) {
+                    if (getResult.getResponseCode() == HttpURLConnection.HTTP_OK) {
                         // build put payload
                         JSONObject payload;
                         JSONArray devices;
@@ -732,7 +730,7 @@ public class PIAPIAdapter implements Serializable {
                     BufferedReader br;
                     String line;
                     try {
-                        if (responseCode >= HttpStatus.SC_OK && responseCode < HttpStatus.SC_BAD_REQUEST) {
+                        if (isSuccessfulResponse(responseCode)) {
                             br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                         } else {
                             br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
@@ -797,7 +795,7 @@ public class PIAPIAdapter implements Serializable {
                 }
 
                 // if all goes well, return payload
-                if(responseCode == HttpStatus.SC_OK) {
+                if(responseCode == HttpURLConnection.HTTP_OK) {
                     try {
                         result.setHeader(connection.getHeaderFields());
                         result.setResult(BitmapFactory.decodeStream(connection.getInputStream()));
@@ -890,7 +888,7 @@ public class PIAPIAdapter implements Serializable {
                     BufferedReader br;
                     String line;
                     try {
-                        if (responseCode >= HttpStatus.SC_OK && responseCode < HttpStatus.SC_BAD_REQUEST) {
+                        if (isSuccessfulResponse(responseCode)) {
                             br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                         } else {
                             br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
@@ -970,7 +968,7 @@ public class PIAPIAdapter implements Serializable {
                     BufferedReader br;
                     String line;
                     try {
-                        if (responseCode >= HttpStatus.SC_OK && responseCode < HttpStatus.SC_BAD_REQUEST) {
+                        if (isSuccessfulResponse(responseCode)) {
                             br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                         } else {
                             br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
@@ -1003,5 +1001,8 @@ public class PIAPIAdapter implements Serializable {
             }
 
         }.execute(url, payload, completionHandler);
+    }
+    private boolean isSuccessfulResponse (int responseCode) {
+        return responseCode >= HttpURLConnection.HTTP_OK && responseCode < HttpURLConnection.HTTP_BAD_REQUEST;
     }
 }
