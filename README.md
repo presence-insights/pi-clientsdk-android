@@ -1,8 +1,12 @@
-# Presence Insights SDK for Android
+Presence Insights SDK for Android
+========================
 
-This library contains classes that are useful for interfacing with Presence Insights. This SDK supports Android 4.3+.
+This library contains classes that allows for easy integration with IBM [Presence Insights](https://console.ng.bluemix.net/catalog/presence-insights/) service available on [Bluemix](https://console.ng.bluemix.net/).
 
-## Features
+This SDK supports Android 4.3+.
+
+Features
+--------
 
 * **BLE beacon sensor** - monitor regions, range for beacons, and send beacon notification messages to PI
 
@@ -10,29 +14,35 @@ This library contains classes that are useful for interfacing with Presence Insi
 
 * **Device Registration** - easily registers a smartphone or tablet with your organization.
 
-## Adding the library to your project
+Getting Started
+---------------
 
-1. Download or build the Presence Insights SDK library. See [Building the SDK](#building-the-sdk)
+####Adding the library to your project
+
+1. [Download](http://presenceinsights.ibmcloud.com/pidocs/sdk/pi-android-sdk.zip) or build the Presence Insights SDK library. See [Building the SDK](#building-the-sdk)
 
 2. Add the library to your project. You can do this using Android Studio, or manually:
 
-  **Using Android Studio:**
+    **Using Android Studio:**
 
-  Do not use Android Studio to import the project until we are able to publish the SDK on Maven.
+    Do not use Android Studio to import the project until we are able to publish the SDK on Maven.
   
-  **Manually:**
+    **Manually:**
 
-  1. Add library file to `/libs` directory. 
+    1. Add library file to `/libs` directory. 
 
-  2. Add the following dependencies to `app/build.gradle` file:
+    2. Add the following dependencies to `app/build.gradle` file:
 
+        ```
         dependencies {
             compile 'org.altbeacon:android-beacon-library:2.1.4'
-            compile (name:'presence-insights-v1.1', ext:'aar')
+            compile (name:'presence-insights', ext:'aar')
         }
+        ```
 
-  3. You will also have to add teh `flatDir` attribute to the top level `build.gradle` file:
+    3. You will also have to add the `flatDir` attribute to the project level `build.gradle` file:
 
+        ```
         allprojects {
             repositories {
                 jcenter()
@@ -41,16 +51,19 @@ This library contains classes that are useful for interfacing with Presence Insi
                 }
             }
         }
+        ```
 
-3. Add the `altbeacon` library to the dependencies. We are working on resolving this issue. Edit the `/app/build.gradle` file and add:
-    compile 'org.altbeacon:android-beacon-library:2.1.4' to the `dependencies` object.
+3. Add the `altbeacon` library to the dependencies. Edit the app level `build.gradle` file by adding:
+
+    `compile 'org.altbeacon:android-beacon-library:2.1.4'` to the `dependencies` object.
 
 Sync your gradle project. You should now have access to all of the Presence Insights APIs!
 
-## Building the SDK
-You can build the Presence Insights SDK straight from git. This is useful if you ever have any need to build a custom version of the SDK.
+####Building the SDK
 
-1. In the terminal, type:
+You can build the Presence Insights SDK straight from Git. This is useful if you ever have any need to build a custom version of the SDK.
+
+In the terminal, type:
  
 ```
 git clone git@github.ibm.com:PresenceInsights/pi-clientsdk-android.git
@@ -63,42 +76,96 @@ chmod +x build-android.sh
 
 At this point, you should have a `/pi-android-sdk/` folder that contains a **.aar**, Android Library file.
 
-## Setting up PIAPIAdapter <a name="pi_adapter"></a>
+Using the SDK
+-------------
 
-        PIAPIAdapter mAdapter = new PIAPIAdapter(context, "username", "password", "https://www.url.com", "TenantCode", "OrgCode");
+There are two classes that do most of the heavy lifting: PIAPIAdapter and PIBeaconSensor.
 
-Note: We do not store your username and password, it is up to the developer using this library to properly secure the credentials.
+####The PIAPIAdapter <a name="pi_adapter"></a>
 
-## Making a call to the API
+The first thing you need to do is initialize an adapter.
 
-        mAdapter.getOrg(new PIAPICompletionHandler() {
-            @Override
-            public void onComplete(PIAPIResult result) {
-                PIOrg myOrg = (PIOrg) result.getResult();
-            }
-        });
+```
+PIAPIAdapter mAdapter = new PIAPIAdapter(context, <username>, <password>, "https://presenceinsights.ibmcloud.com", <tenant>, <org>);
+```
 
-Note: `PIAPICompletionHandler` is the callback interface for all asynchronous calls to the API. Please refer to the javadocs for how to cast the result.
+You can obtain your tenant, org, username, and password from the Presence Insights dashboard on Bluemix. We do not store your username and password, it is up to the developer using this library to properly secure the credentials.
 
-## Setting up PIBeaconSensor
+You are now able to query all sorts of useful information from Presence Insights!
 
-        PIBeaconSensor mBeaconSensor = new PIBeaconSensor(context, mAdapter);
+* How about presenting a floor map to your customers?
 
-## Setting the beacon advertisement layout <a name="beacon_layout"></a>
+```
+mAdapter.getFloorMap(<site code>, <floor code>, new PIAPICompletionHandler() {
+    @Override
+    public void onComplete(PIAPIResult result) {
+        if (result.getResponseCode() == HttpStatus.SC_OK) {
+            mMap.setImageBitmap((Bitmap)result.getResult());
+        } else {
+            Log.e(TAG, result.getResponseCode() + ": " + result.getResult());
+        }
+    }
+});
+```
 
-We use AltBeacon's Android library for monitoring and ranging for beacons.
+* You want to get a list of all the beacons on that floor and display their location on the map you just retrieved?
 
-        // adding beacon layout for iBeacons
-        mBeaconSensor.addBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24");
+```
+piAdapter.getBeacons(<site code>, <floor code>, new PIAPICompletionHandler() {
+    @Override
+    public void onComplete(PIAPIResult result) {
+        if (result.getResponseCode() == HttpStatus.SC_OK) {
+            ArrayList<PIBeacon> beacons = (ArrayList<PIBeacon>) result.getResult();
+            // use the x and y coords from each beacon obj to place them on the map.
+        } else {
+            Log.e(TAG, result.getResponseCode() + ": " + result.getResult());
+        }
+    }
+});
+```
 
-From AltBeacon's [Github](https://github.com/AltBeacon/android-beacon-library), "IMPORTANT: By default, this library will only detect beacons meeting the AltBeacon specification."
+Don't forget to add the Internet permission to your manifest file!
 
-## Starting and stopping the beacon sensor
+```
+<uses-permission android:name="android.permission.INTERNET" />
+```
 
-        mBeaconSensor.start()
-        mBeaconSensor.stop()
+####The PI Beacon Sensor
 
-It's that easy!
+After you initialize the adapter, you can initialize a Beacon Sensor.
+
+```
+PIBeaconSensor mBeaconSensor = new PIBeaconSensor(context, mAdapter);
+```
+
+Before starting the beacon sensor you will need to add the beacon layout to tell the sensor how to read the BLE advertisement from your beacons.
+
+```
+// adding beacon layout for iBeacons
+mBeaconSensor.addBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24");
+```
+
+*Note:* From AltBeacon's [Github](https://github.com/AltBeacon/android-beacon-library), "**IMPORTANT:** By default, this library will only detect beacons meeting the AltBeacon specification."
+
+Now we can start the beacon sensor.
+
+```
+mBeaconSensor.start()
+```
+
+And that's really all there is to getting the app to start sending the device location back to your Presence Insights instance.
+
+The SDK by default sends information about the beacons around you every 5 seconds. This can be adjusted (time in ms).
+
+```
+mBeaconSensor.setSendInterval(10000);
+```
+
+To stop beacon sensing,
+
+```
+mBeaconSensor.stop()
+```
 
 ## Listening for monitoring and ranging callbacks
 
