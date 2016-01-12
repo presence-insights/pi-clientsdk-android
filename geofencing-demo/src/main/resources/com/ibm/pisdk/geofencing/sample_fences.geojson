@@ -1,0 +1,18 @@
+{ 
+  "anchor":1,
+  "geojson": {
+    "type": "FeatureCollection",
+    "features": [
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [1.148113, 49.027769]}, "properties": { "name": "La Vieille Gabelle",           "radius": 100, "uuid": "0001" }},
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [1.152286, 49.027544]}, "properties": { "name": "Côté Rotisserie",              "radius": 100, "uuid": "0002" }},
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [1.148242, 49.027537]}, "properties": { "name": "Le Maharadjah",                "radius": 100, "uuid": "0003" }},
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [1.146750, 49.027192]}, "properties": { "name": "Le 17",                        "radius": 100, "uuid": "0004" }},
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [1.149754, 49.027664]}, "properties": { "name": "La Sarrazine",                 "radius": 100, "uuid": "0005" }},
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [1.147834, 49.026988]}, "properties": { "name": "Relais d'Alsace",              "radius": 100, "uuid": "0006" }},
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [1.150205, 49.027080]}, "properties": { "name": "Le Café Des Arts",             "radius": 100, "uuid": "0007" }},
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [1.151932, 49.028015]}, "properties": { "name": "London Pub Tavern",            "radius": 100, "uuid": "0008" }},
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [1.146622, 49.025715]}, "properties": { "name": "Le Petit Bruit de L'Oeuf Dur", "radius": 100, "uuid": "0009" }},
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [1.149282, 49.025849]}, "properties": { "name": "Le Matahari",                  "radius": 100, "uuid": "0010" }}
+    ]
+  }
+}

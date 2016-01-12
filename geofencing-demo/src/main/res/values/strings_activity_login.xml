@@ -1,0 +1,42 @@
+<!--
+ ********************************************************************
+ * Licensed Materials - Property of IBM                             *
+ *                                                                  *
+ * Copyright IBM Corp. 2015 All rights reserved.                    *
+ *                                                                  *
+ * US Government Users Restricted Rights - Use, duplication or      *
+ * disclosure restricted by GSA ADP Schedule Contract with          *
+ * IBM Corp.                                                        *
+ *                                                                  *
+ * DISCLAIMER OF WARRANTIES. The following [enclosed] code is       *
+ * sample code created by IBM Corporation. This sample code is      *
+ * not part of any standard or IBM product and is provided to you   *
+ * solely for the purpose of assisting you in the development of    *
+ * your applications. The code is provided "AS IS", without         *
+ * warranty of any kind. IBM shall not be liable for any damages    *
+ * arising out of your use of the sample code, even if they have    *
+ * been advised of the possibility of such damages.                 *
+ ********************************************************************
+-->
+
+<resources>
+
+  <!-- Strings related to login -->
+
+  <!-- server url, tenant, application id, user and password for the AE server -->
+  <string name="server_url_default">http://192.168.1.10:3000</string>
+  <string name="tenant_default">lolo</string>
+  <string name="application_id_default">c96491c12c8c8b703168a50ba07947d3</string>
+  <string name="apiKey_default">1061b86f-ef75-44b6-b86f-f9b2fb7fe715</string>
+
+  <!-- prompt text shown in empty fields -->
+  <string name="prompt_server">Server URL</string>
+  <string name="prompt_user">User</string>
+  <string name="prompt_password">Password</string>
+  <string name="prompt_tenant">Tenant</string>
+  <string name="prompt_application_id">App ID</string>
+
+  <!-- Sign-in button label -->
+  <string name="action_sign_in">Sign in</string>
+
+</resources>
