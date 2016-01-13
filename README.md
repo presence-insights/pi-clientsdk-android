@@ -234,4 +234,8 @@ Set up a listener, and you are good to go.
 *   I set up the callback for `beaconsInRange(ArrayList<Beacon>)`, but it is not being called. Make sure you set the listener for the callback you want.
 
         mBeaconSensor.setBeaconsInRangeListener(this);
+        
+*    How can I send location events when the application is in the background or not open?
 
+    1. There is a background process we create that uses scanPeriod (how long you scan) and betweenScanPeriod (how long to wait before waking up and scanning BLE). You should set these to values that make sense for your application. Consider the fact that scanning for BLE devices drains the battery and reduces a users privacy. 
+    2. If a user force closes the app, Android will stop these background services. If a user restarts their phone, these background processes will not be running. Consider solutions such as signage around your venue to encourage users to open the application. 
