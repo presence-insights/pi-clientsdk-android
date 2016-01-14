@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -170,6 +171,6 @@ class GeofenceManager implements LocationListener {
         LatLng pos2 = calculateDerivedPosition(latitude, longitude, radius, 90);
         LatLng pos3 = calculateDerivedPosition(latitude, longitude, radius, 180);
         LatLng pos4 = calculateDerivedPosition(latitude, longitude, radius, 270);
-        return String.format("latitude < %f AND longitude < %f AND latitude > %f AND longitude > %f", pos1.latitude, pos2.longitude, pos3.latitude, pos4.longitude);
+        return String.format(Locale.US, "latitude < %f AND longitude < %f AND latitude > %f AND longitude > %f", pos1.latitude, pos2.longitude, pos3.latitude, pos4.longitude);
     }
 }

@@ -26,9 +26,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -106,7 +104,9 @@ public class MapsActivity extends FragmentActivity {
      */
     int mapMode = MODE_NORMAL;
     /**
-     *
+     * Positions a marker always at the center of the map while following zoom and pan actions.
+     * This isn't great, because events are only sent after the transition/movement has ended, never during the transition,
+     * thus the marker appears to stutter.
      */
     final GoogleMap.OnCameraChangeListener cameraListener = new GoogleMap.OnCameraChangeListener() {
         @Override
@@ -223,10 +223,9 @@ public class MapsActivity extends FragmentActivity {
             googleMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
             Log.v(LOG_TAG, "setUpMapIfNeeded() : googleMap = " + googleMap);
             if (googleMap != null) {
-                List<PIGeofence> fences = geofenceManager.getFences();
                 LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-                //Location currentLoc = LocationServices.FusedLocationApi.getLastLocation(service.getGoogleApiClient());
                 currentLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                initGeofences();
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 10f, new android.location.LocationListener() {
                     @Override
                     public void onLocationChanged(Location location) {
@@ -241,7 +240,8 @@ public class MapsActivity extends FragmentActivity {
                     public void onProviderDisabled(String provider) { }
                  });
                 LatLng latlng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-                Map<String, Object> map = (fences != null) && !fences.isEmpty() ? DemoUtils.computeBounds(fences, latlng) : DemoUtils.computeBounds(latlng, 0.002, 0.002);
+                List<PIGeofence> fences = geofenceManager.getFences();
+                Map<String, Object> map = (fences != null) && !fences.isEmpty() ? DemoUtils.computeBounds(fences, latlng) : DemoUtils.computeBounds(latlng, 0.0005, 0.0005);
                 Log.v(LOG_TAG, "setUpMapIfNeeded() : bounds map = " + map);
                 final LatLngBounds bounds = (LatLngBounds) map.get("bounds");
                 final LatLng loc = (LatLng) map.get("center");
@@ -396,6 +396,22 @@ public class MapsActivity extends FragmentActivity {
             }
         }
         return null;
+    }
+
+    void initGeofences() {
+        List<PIGeofence> fences = PIGeofence.listAll(PIGeofence.class);
+        geofenceManager.addFences(fences);
+        for (PIGeofence g: fences) {
+            boolean active = false;
+            if (currentLocation != null) {
+                Location loc = new Location(LocationManager.NETWORK_PROVIDER);
+                loc.setLatitude(g.getLatitude());
+                loc.setLongitude(g.getLongitude());
+                loc.setTime(System.currentTimeMillis());
+                active = loc.distanceTo(currentLocation) <= g.getRadius();
+            }
+            refreshGeofenceInfo(g, active);
+        }
     }
 
     /**
