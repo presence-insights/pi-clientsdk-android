@@ -16,6 +16,8 @@
 
 package com.ibm.pisdk.geofencing.demo;
 
+import android.location.Location;
+import android.location.LocationManager;
 import android.util.Log;
 
 import com.ibm.pisdk.geofencing.PIGeofence;
@@ -44,12 +46,32 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
     @Override
     public void onGeofencesMonitored(final List<PIGeofence> geofences) {
         Log.v(LOG_TAG, "onGeofencesMonitored() geofences = " + geofences);
+        /*
         new Thread(new Runnable() {
             @Override
             public void run() {
                 activity.startSimulation(geofences);
             }
         }).start();
+        */
+        activity.getGeofenceManager().clearFences();
+        activity.getGeofenceManager().addFences(geofences);
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                for (PIGeofence g: geofences) {
+                    boolean active = false;
+                    if (activity.currentLocation != null) {
+                        Location loc = new Location(LocationManager.NETWORK_PROVIDER);
+                        loc.setLatitude(g.getLatitude());
+                        loc.setLongitude(g.getLongitude());
+                        loc.setTime(System.currentTimeMillis());
+                        active = loc.distanceTo(activity.currentLocation) <= g.getRadius();
+                    }
+                    activity.refreshGeofenceInfo(g, active);
+                }
+            }
+        });
     }
 
     @Override

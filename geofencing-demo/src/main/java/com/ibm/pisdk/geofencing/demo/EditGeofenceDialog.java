@@ -93,6 +93,7 @@ public class EditGeofenceDialog extends DialogFragment {
                     list.add(fence);
                     mapsActivity.service.addGeofences(list);
                     mapsActivity.refreshGeofenceInfo(fence, false);
+                    mapsActivity.refreshCurrentLocation();
                 }
             });
         } else if (dialogMode == MODE_UPDATE_DELETE) {
@@ -107,6 +108,7 @@ public class EditGeofenceDialog extends DialogFragment {
                     fence.save();
                     dialog.cancel();
                     mapsActivity.refreshGeofenceInfo(fence, (fenceInfo != null) && fenceInfo.active);
+                    mapsActivity.refreshCurrentLocation();
                 }
             });
             builder.setNeutralButton(R.string.delete_button, new DialogInterface.OnClickListener() {
@@ -118,12 +120,14 @@ public class EditGeofenceDialog extends DialogFragment {
                     list.add(fence);
                     mapsActivity.service.removeGeofences(list);
                     mapsActivity.removeGeofence(fence);
+                    mapsActivity.refreshCurrentLocation();
                 }
             });
         }
         builder.setNegativeButton(R.string.cancel_button, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 dialog.cancel();
+                mapsActivity.refreshCurrentLocation();
             }
         });
         return builder.create();

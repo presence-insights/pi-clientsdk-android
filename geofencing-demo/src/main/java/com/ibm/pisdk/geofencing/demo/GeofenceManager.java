@@ -64,7 +64,7 @@ public class GeofenceManager {
     }
 
     /**
-     * Remove the spêcified geofence.
+     * Remove the specified geofence.
      * @param fence the geofence to remove.
      */
     public void removeGeofence(PIGeofence fence) {
@@ -130,9 +130,31 @@ public class GeofenceManager {
      * Remove the specified fence from the active list.
      * @return <code>true</code> there is at least one active fence, <code>false</code> otherwise.
      */
+    public boolean hasActiveFence(String uuid) {
+        synchronized (activeSet) {
+            return activeSet.contains(uuid);
+        }
+    }
+
+    /**
+     * Remove the specified fence from the active list.
+     * @return <code>true</code> there is at least one active fence, <code>false</code> otherwise.
+     */
     public boolean hasActiveFence() {
         synchronized (activeSet) {
             return !activeSet.isEmpty();
+        }
+    }
+
+    /**
+     * Remove all the fences.
+     */
+    public void clearFences() {
+        synchronized (activeSet) {
+            activeSet.clear();
+        }
+        synchronized (fenceMap) {
+            fenceMap.clear();
         }
     }
 }

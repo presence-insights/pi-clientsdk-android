@@ -84,6 +84,7 @@ public class MapsActivity extends FragmentActivity {
      * Marker on the map for the user's current position.
      */
     private Marker currentMarker = null;
+    Location currentLocation = null;
     /**
      *
      */
@@ -159,8 +160,14 @@ public class MapsActivity extends FragmentActivity {
             }
         }
         */
-        PIHttpService httpService = new PIHttpService(this, "http://192.168.1.10:3000", "lolo4j", "a94e5011c7d14a51bf41237a22bc27a0", "lolo4j");
+        //PIHttpService httpService = new PIHttpService(this, "http://192.168.1.10:3000", "lolo4j", "a94e5011c7d14a51bf41237a22bc27a0", "lolo4j");
+        PIHttpService httpService = new PIHttpService(this, null, "lolo4j", "a94e5011c7d14a51bf41237a22bc27a0", "lolo4j");
         service = new PIGeofencingService(httpService, this, new MyGeofenceCallback(this));
+        try {
+            startSimulation(geofenceManager.getFences());
+        } catch(Exception e) {
+            Log.e(LOG_TAG, "error in startSimulation()", e);
+        }
     }
 
     /**
@@ -183,6 +190,7 @@ public class MapsActivity extends FragmentActivity {
                 for (PIGeofence g : geofences) {
                     refreshGeofenceInfo(g, false);
                 }
+                /*
                 LocationServices.FusedLocationApi.requestLocationUpdates(service.getGoogleApiClient(), locationRequest, new LocationListener() {
                     @Override
                     public void onLocationChanged(Location location) {
@@ -190,6 +198,7 @@ public class MapsActivity extends FragmentActivity {
                         refreshCurrentLocation(location.getLatitude(), location.getLongitude());
                     }
                 });
+                */
             }
         });
         /*
@@ -217,14 +226,32 @@ public class MapsActivity extends FragmentActivity {
                 List<PIGeofence> fences = geofenceManager.getFences();
                 LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
                 //Location currentLoc = LocationServices.FusedLocationApi.getLastLocation(service.getGoogleApiClient());
-                Location currentLoc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                if ((fences != null) && !fences.isEmpty()) {
-                    Map<String, Object> map = DemoUtils.computeBounds(fences, new LatLng(currentLoc.getLatitude(), currentLoc.getLongitude()));
-                    LatLngBounds bounds = (LatLngBounds) map.get("bounds");
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100));
-                    LatLng loc = (LatLng) map.get("center");
-                    refreshCurrentLocation(loc.latitude, loc.longitude);
-                }
+                currentLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 10f, new android.location.LocationListener() {
+                    @Override
+                    public void onLocationChanged(Location location) {
+                        currentLocation = location;
+                        refreshCurrentLocation();
+                    }
+                    @Override
+                    public void onStatusChanged(String provider, int status, Bundle extras) { }
+                    @Override
+                    public void onProviderEnabled(String provider) { }
+                    @Override
+                    public void onProviderDisabled(String provider) { }
+                 });
+                LatLng latlng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                Map<String, Object> map = (fences != null) && !fences.isEmpty() ? DemoUtils.computeBounds(fences, latlng) : DemoUtils.computeBounds(latlng, 0.002, 0.002);
+                Log.v(LOG_TAG, "setUpMapIfNeeded() : bounds map = " + map);
+                final LatLngBounds bounds = (LatLngBounds) map.get("bounds");
+                final LatLng loc = (LatLng) map.get("center");
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 400, 400, 100));
+                        refreshCurrentLocation(loc.latitude, loc.longitude);
+                    }
+                });
                 googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                     @Override
                     public boolean onMarkerClick(Marker marker) {
@@ -246,14 +273,22 @@ public class MapsActivity extends FragmentActivity {
     /**
      * Update the marker for the device's current location.
      */
+    void refreshCurrentLocation() {
+        refreshCurrentLocation(currentLocation.getLatitude(), currentLocation.getLongitude());
+    }
+
+    /**
+     * Update the marker for the device's current location.
+     */
     private void refreshCurrentLocation(final double latitude, final double longitude) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                LatLng pos = new LatLng(latitude, longitude);
                 if (currentMarker == null) {
-                    currentMarker = googleMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)).title("HappyUser"));
+                    currentMarker = googleMap.addMarker(new MarkerOptions().position(pos).title("HappyUser"));
                 } else {
-                    currentMarker.setPosition(new LatLng(latitude, longitude));
+                    currentMarker.setPosition(pos);
                 }
                 updateCurrentMarker();
             }

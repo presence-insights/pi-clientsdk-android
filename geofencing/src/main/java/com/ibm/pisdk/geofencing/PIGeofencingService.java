@@ -131,8 +131,8 @@ public class PIGeofencingService {
         else if (n == ConnectionResult.SERVICE_INVALID) s = "SERVICE_INVALID";
         Log.v(LOG_TAG, "AEGeofencingService() google play service availability = " + s);
         geofenceManager = new GeofenceManager(this);
-        GoogleLocationAPICallback serviceCallabck = new GoogleLocationAPICallback(this);
-        googleApiClient = new GoogleApiClient.Builder(context).addApi(LocationServices.API).addConnectionCallbacks(serviceCallabck).addOnConnectionFailedListener(serviceCallabck).build();
+        GoogleLocationAPICallback serviceCallback = new GoogleLocationAPICallback(this);
+        googleApiClient = new GoogleApiClient.Builder(context).addApi(LocationServices.API).addConnectionCallbacks(serviceCallback).addOnConnectionFailedListener(serviceCallback).build();
         Log.v(LOG_TAG, "initGms() connecting to google play services ...");
         googleApiClient.connect();
     }
@@ -157,7 +157,9 @@ public class PIGeofencingService {
                 .build();
             list.add(g);
         }
-        GeofencingRequest request = new GeofencingRequest.Builder().setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER).addGeofences(list).build();
+        GeofencingRequest request = new GeofencingRequest.Builder()
+            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER|GeofencingRequest.INITIAL_TRIGGER_DWELL)
+            .addGeofences(list).build();
         // used to keep track of the add request
         String uuid = UUID.randomUUID().toString();
         callbackMap.put(uuid, geofenceCallback);
@@ -210,7 +212,7 @@ public class PIGeofencingService {
      */
     void loadGeofences() {
         Iterator<PIGeofence> it = PIGeofence.findAll(PIGeofence.class);
-        if (!it.hasNext()) {
+        if ((httpService.getServerURL() != null) && !it.hasNext()) {
             Log.v(LOG_TAG, "loadGeofences() loading geofences from the server");
             loadGeofencesFromServer(true);
         } else {

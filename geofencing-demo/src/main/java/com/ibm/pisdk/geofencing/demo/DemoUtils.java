@@ -163,6 +163,19 @@ public class DemoUtils {
         return map;
     }
 
+    /**
+     * Compute the center of the provided geofences, along with the bounds of a box their centers fit in.
+     * @param centerLocation .
+     */
+    static Map<String, Object> computeBounds(LatLng centerLocation, double latDelta, double lngDelta) {
+        Map<String, Object> map = new HashMap<>();
+        LatLngBounds bounds = new LatLngBounds(new LatLng(centerLocation.latitude - latDelta, centerLocation.longitude - lngDelta),
+            new LatLng(centerLocation.latitude + latDelta, centerLocation.longitude + lngDelta));
+        map.put("center", centerLocation);
+        map.put("bounds", bounds);
+        return map;
+    }
+
     static byte[] loadResourceBytes(String name) {
         try {
             InputStream is = DemoUtils.class.getClassLoader().getResourceAsStream(name);

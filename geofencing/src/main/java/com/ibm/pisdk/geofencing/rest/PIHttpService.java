@@ -157,7 +157,7 @@ public class PIHttpService {
     }
 
     private void initialize(Context context, String serverURL, String contextRoot, String tenant, String org) {
-        this.connectivityHandler = new NetworkConnectivityHandler(context, this, true);
+        this.connectivityHandler = new NetworkConnectivityHandler(context, this, false);
         this.serverURL = serverURL;
         this.contextRoot = (contextRoot == null) ? "ae-mobile-services" : contextRoot;
         this.tenant = tenant;

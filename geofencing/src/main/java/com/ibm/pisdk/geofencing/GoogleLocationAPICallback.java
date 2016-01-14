@@ -44,10 +44,10 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
         Log.v(LOG_TAG, "connected to google API");
         // register a location change listener
         final LocationRequest locationRequest = LocationRequest.create()
-            //.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY)
-            .setPriority(LocationRequest.PRIORITY_LOW_POWER)
+            .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY)
+            //.setPriority(LocationRequest.PRIORITY_LOW_POWER)
             .setInterval(60000L)
-            .setFastestInterval(60000L);
+            .setFastestInterval(10000L);
         Runnable r = new Runnable() {
             @Override
             public void run() {
