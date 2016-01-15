@@ -149,8 +149,8 @@ public class PIGeofencingService {
             String requestId = geofence.getUuid();
             Geofence g = new Geofence.Builder().setRequestId(requestId)
                 .setCircularRegion(geofence.getLatitude(), geofence.getLongitude(), (float) geofence.getRadius())
-                //.setExpirationDuration(Geofence.NEVER_EXPIRE)
-                .setExpirationDuration(15L * 60L * 1000L) /* 15 minutes */
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                //.setExpirationDuration(15L * 60L * 1000L) /* 15 minutes */
                 .setNotificationResponsiveness(100)
                 .setLoiteringDelay(100)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)

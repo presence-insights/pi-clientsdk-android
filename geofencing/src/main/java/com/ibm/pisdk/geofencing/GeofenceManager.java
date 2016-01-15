@@ -42,14 +42,14 @@ class GeofenceManager implements LocationListener {
     /**
      * Mapping of registered geofences to their uuids.
      */
-    private final Map<String, PIGeofence> fenceMap = new LinkedHashMap<String, PIGeofence>();
+    private final Map<String, PIGeofence> fenceMap = new LinkedHashMap<>();
     private final PIGeofencingService service;
     private Location referenceLocation = null;
     private double distanceThreshold;
 
     GeofenceManager(PIGeofencingService service) {
         this.service = service;
-        distanceThreshold = 500d;
+        distanceThreshold = 10_000d;
     }
 
     /**
@@ -109,7 +109,7 @@ class GeofenceManager implements LocationListener {
      */
     List<PIGeofence> getFences() {
         synchronized (fenceMap) {
-            return new ArrayList<PIGeofence>(fenceMap.values());
+            return new ArrayList<>(fenceMap.values());
         }
     }
 
@@ -124,7 +124,7 @@ class GeofenceManager implements LocationListener {
             String where = createWhereClause(location.getLatitude(), location.getLongitude(), distanceThreshold);
             List<PIGeofence> list = PIGeofence.find(PIGeofence.class, where);
             if ((list != null) && !list.isEmpty()) {
-                TreeMap<Float, PIGeofence> map = new TreeMap<Float, PIGeofence>();
+                TreeMap<Float, PIGeofence> map = new TreeMap<>();
                 for (PIGeofence g : list) {
                     Location l = new Location(LocationManager.NETWORK_PROVIDER);
                     l.setLatitude(g.getLatitude());
