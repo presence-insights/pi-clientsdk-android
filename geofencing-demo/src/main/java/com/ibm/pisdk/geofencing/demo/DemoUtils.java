@@ -149,12 +149,15 @@ public class DemoUtils {
         Map<String, Object> map = new HashMap<>();
         double maxLat = 0d;
         double maxLng = 0d;
-        //centerLocation.
         for (PIGeofence geofence : geofences) {
             double diff = Math.abs(centerLocation.latitude - geofence.getLatitude());
-            if (diff > maxLat) maxLat = diff;
+            if (diff > maxLat) {
+                maxLat = diff;
+            }
             diff = Math.abs(centerLocation.longitude - geofence.getLongitude());
-            if (diff > maxLng) maxLng = diff;
+            if (diff > maxLng) {
+                maxLng = diff;
+            }
         }
         LatLngBounds bounds = new LatLngBounds(new LatLng(centerLocation.latitude - maxLat, centerLocation.longitude - maxLng),
             new LatLng(centerLocation.latitude + maxLat, centerLocation.longitude + maxLng));

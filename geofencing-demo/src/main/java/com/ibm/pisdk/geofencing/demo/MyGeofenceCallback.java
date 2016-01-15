@@ -16,14 +16,21 @@
 
 package com.ibm.pisdk.geofencing.demo;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
+import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
 import android.location.LocationManager;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.ibm.pisdk.geofencing.PIGeofence;
 import com.ibm.pisdk.geofencing.PIGeofenceCallback;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This callback manages updates to the map based on geofence events.
@@ -34,6 +41,7 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
      */
     private static final String LOG_TAG = MyGeofenceCallback.class.getSimpleName();
     private static final String SLACK_CHANNEL = "#geo-spam";
+    private static final AtomicInteger notifId = new AtomicInteger(0);
     //#private static final String SLACK_CHANNEL = "@lolo4j";
     private final MapsActivity activity;
     private final SlackHTTPService slackService;
@@ -57,6 +65,7 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
     public void onGeofencesEnter(final List<PIGeofence> geofences) {
         Log.v(LOG_TAG, "entering geofence(s) " + geofences);
         updateUI(geofences, true);
+        sendNotification(geofences, "enter");
         slackService.postGeofenceMessages(geofences, "enter", SLACK_CHANNEL);
     }
 
@@ -64,6 +73,7 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
     public void onGeofencesExit(final List<PIGeofence> geofences) {
         Log.v(LOG_TAG, "exiting geofence(s) " + geofences);
         updateUI(geofences, false);
+        sendNotification(geofences, "exit");
         slackService.postGeofenceMessages(geofences, "exit", SLACK_CHANNEL);
     }
 
@@ -81,5 +91,33 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
                 }
             });
         }
+    }
+
+    private void sendNotification(List<PIGeofence> fences, String type) {
+        String title = "Geofence: " + type;
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        for (PIGeofence g: fences) {
+            if (count > 0) sb.append('\n');
+            sb.append(String.format("%s : lat=%.6f; lng=%.6f; radius=%.6f", g.getName(), g.getLatitude(), g.getLongitude(), g.getRadius()));
+            count++;
+        }
+        NotificationCompat.Builder mBuilder =
+            new NotificationCompat.Builder(activity).setSmallIcon(android.R.drawable.ic_notification_overlay).setContentTitle(title).setContentText(sb.toString());
+        // Creates an explicit intent for an Activity in your app
+        Intent resultIntent = new Intent(activity, MapsActivity.class);
+
+        // The stack builder object will contain an artificial back stack for the started Activity.
+        // This ensures that navigating backward from the Activity leads out of your application to the Home screen.
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(activity);
+        // Adds the back stack for the Intent (but not the Intent itself)
+        stackBuilder.addParentStack(MapsActivity.class);
+        // Adds the Intent that starts the Activity to the top of the stack
+        stackBuilder.addNextIntent(resultIntent);
+        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+        mBuilder.setContentIntent(resultPendingIntent);
+        NotificationManager mNotificationManager = (NotificationManager) activity.getSystemService(Context.NOTIFICATION_SERVICE);
+        // mId allows you to update the notification later on.
+        mNotificationManager.notify(notifId.incrementAndGet(), mBuilder.build());
     }
 }

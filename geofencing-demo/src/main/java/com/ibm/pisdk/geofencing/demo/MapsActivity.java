@@ -83,6 +83,7 @@ public class MapsActivity extends FragmentActivity {
      */
     private Marker currentMarker = null;
     Location currentLocation = null;
+    float currentZoom = -1f;
     /**
      *
      */
@@ -120,6 +121,40 @@ public class MapsActivity extends FragmentActivity {
     };
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (currentLocation != null) {
+            outState.putDoubleArray("currentLocation", new double[] {currentLocation.getLatitude(), currentLocation.getLongitude()});
+        }
+        if (googleMap != null) {
+            outState.putFloat("zoom", googleMap.getCameraPosition().zoom);
+        }
+        Log.v(LOG_TAG, "onSaveInstanceState()");
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if (savedInstanceState != null) {
+            double[] loc = savedInstanceState.getDoubleArray("currentLocation");
+            if (loc != null) {
+                currentLocation = new Location(LocationManager.NETWORK_PROVIDER);
+                currentLocation.setLatitude(loc[0]);
+                currentLocation.setLongitude(loc[1]);
+                currentLocation.setTime(System.currentTimeMillis());
+            }
+            currentZoom = savedInstanceState.getFloat("zoom", -1f);
+            Log.v(LOG_TAG, String.format("restored currentLocation=%s; currentZoom=%f", currentLocation, currentZoom));
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        //Bundle state = this.getP
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.v(LOG_TAG, "in onCreate()");
         super.onCreate(savedInstanceState);
@@ -144,6 +179,17 @@ public class MapsActivity extends FragmentActivity {
                 }
             }
         });
+        if (savedInstanceState != null) {
+            double[] loc = savedInstanceState.getDoubleArray("currentLocation");
+            if (loc != null) {
+                currentLocation = new Location(LocationManager.NETWORK_PROVIDER);
+                currentLocation.setLatitude(loc[0]);
+                currentLocation.setLongitude(loc[1]);
+                currentLocation.setTime(System.currentTimeMillis());
+            }
+            currentZoom = savedInstanceState.getFloat("zoom", -1f);
+            Log.v(LOG_TAG, String.format("restored currentLocation=%s; currentZoom=%f", currentLocation, currentZoom));
+        }
         Log.v(LOG_TAG, "onCreate() : init of geofencing service");
         /*
         if (!dbDeleted) {
@@ -190,29 +236,8 @@ public class MapsActivity extends FragmentActivity {
                 for (PIGeofence g : geofences) {
                     refreshGeofenceInfo(g, false);
                 }
-                /*
-                LocationServices.FusedLocationApi.requestLocationUpdates(service.getGoogleApiClient(), locationRequest, new LocationListener() {
-                    @Override
-                    public void onLocationChanged(Location location) {
-                        //Log.v(LOG_TAG, "onLocationChanged() : location=" + location);
-                        refreshCurrentLocation(location.getLatitude(), location.getLongitude());
-                    }
-                });
-                */
             }
         });
-        /*
-        Log.v(LOG_TAG, "startSimulation() : starting WalkSimulator");
-        // start the simulated user walk between the geofences locations
-        //WalkSimulator sim = new WalkSimulator(fences, 10, 1900L, new WalkSimulator.Callback() {
-        WalkSimulator sim = new WalkSimulator(service, fences, 33, 570L, new WalkSimulator.Callback() {
-            @Override
-            public void onSimulationEnded() {
-                Log.v(LOG_TAG, "in onSimulationEnded()");
-            }
-        });
-        new Thread(sim, "WalkSimulator").start();
-        */
     }
 
     /**
@@ -224,7 +249,7 @@ public class MapsActivity extends FragmentActivity {
             Log.v(LOG_TAG, "setUpMapIfNeeded() : googleMap = " + googleMap);
             if (googleMap != null) {
                 LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-                currentLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                if (currentLocation == null)  currentLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                 initGeofences();
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 10f, new android.location.LocationListener() {
                     @Override
@@ -242,13 +267,17 @@ public class MapsActivity extends FragmentActivity {
                 LatLng latlng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
                 List<PIGeofence> fences = geofenceManager.getFences();
                 Map<String, Object> map = (fences != null) && !fences.isEmpty() ? DemoUtils.computeBounds(fences, latlng) : DemoUtils.computeBounds(latlng, 0.0005, 0.0005);
-                Log.v(LOG_TAG, "setUpMapIfNeeded() : bounds map = " + map);
+                Log.v(LOG_TAG, "setUpMapIfNeeded() : bounds map = " + map + ", fences = " + fences);
                 final LatLngBounds bounds = (LatLngBounds) map.get("bounds");
                 final LatLng loc = (LatLng) map.get("center");
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 400, 400, 100));
+                        if (currentZoom >= 0f) {
+                            googleMap.moveCamera(CameraUpdateFactory.zoomTo(currentZoom));
+                        } else {
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 400, 400, 100));
+                        }
                         refreshCurrentLocation(loc.latitude, loc.longitude);
                     }
                 });

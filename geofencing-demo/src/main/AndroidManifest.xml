@@ -42,7 +42,8 @@
       <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".LoginActivity"/>
     </activity>
     -->
-    <activity android:name="com.ibm.pisdk.geofencing.demo.MapsActivity" android:label="@string/title_activity_maps" android:icon="@mipmap/aeicon" android:configChanges="orientation|screenSize" android:windowSoftInputMode="adjustResize">
+    <activity android:name="com.ibm.pisdk.geofencing.demo.MapsActivity" android:launchMode="singleTop"
+          android:label="@string/title_activity_maps" android:icon="@mipmap/aeicon" android:configChanges="orientation|screenSize" android:windowSoftInputMode="adjustResize">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>

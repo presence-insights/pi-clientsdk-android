@@ -45,6 +45,9 @@ public class EditGeofenceDialog extends DialogFragment {
     private int dialogMode = MODE_NEW;
     private MapsActivity.GeofenceInfo fenceInfo;
     private PIGeofence fence;
+    private int[] allRadius = {
+        100, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 10000
+    };
 
     public EditGeofenceDialog() {
     }
@@ -60,10 +63,11 @@ public class EditGeofenceDialog extends DialogFragment {
         TextView positionView = (TextView) view.findViewById(R.id.fence_location);
         String text = String.format("Latitude: %.6f - Longitude: %.6f", position.latitude, position.longitude);
         positionView.setText(text);
+        seekBar.setMax(allRadius.length - 1);
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                radius = 100 * (1 + progress);
+                radius = radiusFromProgress(progress);
                 radiusValueView.setText(String.format("%,d m", radius));
             }
 
@@ -76,7 +80,7 @@ public class EditGeofenceDialog extends DialogFragment {
             }
         });
         if (fence != null) {
-            seekBar.setProgress(Math.max(0, -1 + (int) fence.getRadius() / 100));
+            seekBar.setProgress(progressFromRadius((int) fence.getRadius()));
             radiusValueView.setText(String.format("%,d m", (int) fence.getRadius()));
             nameView.setText(fence.getName());
         }
@@ -143,5 +147,22 @@ public class EditGeofenceDialog extends DialogFragment {
             fence = mapsActivity.getGeofenceManager().getGeofence(fenceInfo.uuid);
             this.position = new LatLng(fence.getLatitude(), fence.getLongitude());
         }
+    }
+
+    private int progressFromRadius(int radius) {
+        int minDiff = Integer.MAX_VALUE;
+        int minProgress = -1;
+        for (int i=0; i<allRadius.length; i++) {
+            int diff = Math.abs(radius - allRadius[i]);
+            if (diff < minDiff) {
+                minProgress = i;
+                minDiff = diff;
+            }
+        }
+        return minProgress;
+    }
+
+    private int radiusFromProgress(int progress) {
+        return allRadius[progress];
     }
 }

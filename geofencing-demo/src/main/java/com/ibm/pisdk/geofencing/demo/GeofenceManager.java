@@ -100,7 +100,7 @@ public class GeofenceManager {
      */
     public List<PIGeofence> getFences() {
         synchronized (fenceMap) {
-            return new ArrayList<PIGeofence>(fenceMap.values());
+            return new ArrayList<>(fenceMap.values());
         }
     }
 
