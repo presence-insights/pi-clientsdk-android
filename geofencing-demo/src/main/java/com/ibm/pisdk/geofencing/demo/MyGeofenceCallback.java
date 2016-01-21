@@ -21,8 +21,6 @@ import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
-import android.location.Location;
-import android.location.LocationManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -64,17 +62,21 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
     @Override
     public void onGeofencesEnter(final List<PIGeofence> geofences) {
         Log.v(LOG_TAG, "entering geofence(s) " + geofences);
-        updateUI(geofences, true);
-        sendNotification(geofences, "enter");
-        slackService.postGeofenceMessages(geofences, "enter", SLACK_CHANNEL);
+        if (activity.trackingEnabled) {
+            updateUI(geofences, true);
+            sendNotification(geofences, "enter");
+            slackService.postGeofenceMessages(geofences, "enter", SLACK_CHANNEL);
+        }
     }
 
     @Override
     public void onGeofencesExit(final List<PIGeofence> geofences) {
         Log.v(LOG_TAG, "exiting geofence(s) " + geofences);
-        updateUI(geofences, false);
-        sendNotification(geofences, "exit");
-        slackService.postGeofenceMessages(geofences, "exit", SLACK_CHANNEL);
+        if (activity.trackingEnabled) {
+            updateUI(geofences, false);
+            sendNotification(geofences, "exit");
+            slackService.postGeofenceMessages(geofences, "exit", SLACK_CHANNEL);
+        }
     }
 
     void updateUI(final List<PIGeofence> geofences, final boolean isEntry) {
@@ -99,11 +101,13 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
         int count = 0;
         for (PIGeofence g: fences) {
             if (count > 0) sb.append('\n');
-            sb.append(String.format("%s : lat=%.6f; lng=%.6f; radius=%.6f", g.getName(), g.getLatitude(), g.getLongitude(), g.getRadius()));
+            sb.append(String.format("%s : lat=%.6f; lng=%.6f; radius=%.0f m", g.getName(), g.getLatitude(), g.getLongitude(), g.getRadius()));
             count++;
         }
-        NotificationCompat.Builder mBuilder =
-            new NotificationCompat.Builder(activity).setSmallIcon(android.R.drawable.ic_notification_overlay).setContentTitle(title).setContentText(sb.toString());
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(activity)
+            .setAutoCancel(true)
+            .setSmallIcon(android.R.drawable.ic_notification_overlay)
+            .setContentTitle(title).setContentText(sb.toString());
         // Creates an explicit intent for an Activity in your app
         Intent resultIntent = new Intent(activity, MapsActivity.class);
 

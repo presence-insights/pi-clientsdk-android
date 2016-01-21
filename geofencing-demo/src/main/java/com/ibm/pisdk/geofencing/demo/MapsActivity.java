@@ -17,16 +17,18 @@
 package com.ibm.pisdk.geofencing.demo;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
-import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -104,6 +106,7 @@ public class MapsActivity extends FragmentActivity {
      *
      */
     int mapMode = MODE_NORMAL;
+    boolean trackingEnabled = true;
     /**
      * Positions a marker always at the center of the map while following zoom and pan actions.
      * This isn't great, because events are only sent after the transition/movement has ended, never during the transition,
@@ -149,16 +152,12 @@ public class MapsActivity extends FragmentActivity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        //Bundle state = this.getP
-    }
-
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.v(LOG_TAG, "in onCreate()");
+        Log.v(LOG_TAG, "in onCreate() googleMap = " + googleMap);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.maps_activity);
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+        trackingEnabled = prefs.getBoolean("tracking.enabled", true);
         final Button btn = (Button) findViewById(R.id.addFenceButton);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -219,22 +218,20 @@ public class MapsActivity extends FragmentActivity {
     /**
      * Start the simulation of a user walking between the geofences.
      */
-    void startSimulation(List<PIGeofence> fences) {
+    void startSimulation(final List<PIGeofence> fences) {
         for (PIGeofence g : fences) {
             geofenceManager.updateGeofence(g);
         }
-        // register a location listener to handle the user's position on the map
-        final LocationRequest locationRequest = LocationRequest.create()
-            .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY)
-            .setInterval(60000L)
-            .setFastestInterval(1000L);
-        final List<PIGeofence> geofences = fences;
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                setUpMapIfNeeded();
-                for (PIGeofence g : geofences) {
-                    refreshGeofenceInfo(g, false);
+                try {
+                    setUpMapIfNeeded();
+                    for (PIGeofence g : fences) {
+                        refreshGeofenceInfo(g, false);
+                    }
+                } catch(Exception e) {
+                    Log.e(LOG_TAG, "error in startSimulation()", e);
                 }
             }
         });
@@ -251,6 +248,7 @@ public class MapsActivity extends FragmentActivity {
                 LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
                 if (currentLocation == null)  currentLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                 initGeofences();
+                // receive updates for th ecurrent location
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 10f, new android.location.LocationListener() {
                     @Override
                     public void onLocationChanged(Location location) {
@@ -270,17 +268,26 @@ public class MapsActivity extends FragmentActivity {
                 Log.v(LOG_TAG, "setUpMapIfNeeded() : bounds map = " + map + ", fences = " + fences);
                 final LatLngBounds bounds = (LatLngBounds) map.get("bounds");
                 final LatLng loc = (LatLng) map.get("center");
-                runOnUiThread(new Runnable() {
+                // set the map center and zoom level/bounds once it is loaded
+                googleMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
                     @Override
-                    public void run() {
-                        if (currentZoom >= 0f) {
-                            googleMap.moveCamera(CameraUpdateFactory.zoomTo(currentZoom));
-                        } else {
-                            googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 400, 400, 100));
-                        }
-                        refreshCurrentLocation(loc.latitude, loc.longitude);
+                    public void onMapLoaded() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (currentZoom >= 0f) {
+                                    Log.v(LOG_TAG, "setUpMapIfNeeded() setting zoom");
+                                    googleMap.moveCamera(CameraUpdateFactory.zoomTo(currentZoom));
+                                } else {
+                                    Log.v(LOG_TAG, "setUpMapIfNeeded() setting bounds");
+                                    googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100));
+                                }
+                                refreshCurrentLocation(loc.latitude, loc.longitude);
+                            }
+                        });
                     }
                 });
+                // respond to taps on the fences labels
                 googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                     @Override
                     public boolean onMarkerClick(Marker marker) {
@@ -342,6 +349,9 @@ public class MapsActivity extends FragmentActivity {
      */
     void refreshGeofenceInfo(PIGeofence fence, boolean active) {
         String uuid = fence.getUuid();
+        if (geofenceManager.getGeofence(uuid) == null) {
+            geofenceManager.updateGeofence(fence);
+        }
         if (active) {
             geofenceManager.addActiveFence(uuid);
         } else {
@@ -371,16 +381,6 @@ public class MapsActivity extends FragmentActivity {
             info.marker = googleMap.addMarker(new MarkerOptions().position(pos).icon(btDesc));
         }
         info.name = fence.getName();
-        /*
-        if (active) {
-            // set a marker with the name/label associated with the geofence
-            BitmapDescriptor btDesc = BitmapDescriptorFactory.fromBitmap(getOrCreateBitmap(fence));
-            info.marker = googleMap.addMarker(new MarkerOptions().position(pos).icon(btDesc));
-        } else if (info.marker != null) {
-            info.marker.remove();
-            info.marker = null;
-        }
-        */
     }
 
     void removeGeofence(PIGeofence fence) {
@@ -441,6 +441,30 @@ public class MapsActivity extends FragmentActivity {
             }
             refreshGeofenceInfo(g, active);
         }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_tracking:
+                trackingEnabled = !trackingEnabled;
+                SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putBoolean("tracking.enabled", trackingEnabled);
+                editor.apply();
+                item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
+                Log.v(LOG_TAG, String.format("onOptionsItemSelected() tracking is now %s", trackingEnabled ? "enabled" : "disabled"));
+                break;
+        }
+       return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu, menu);
+        MenuItem item = menu.findItem(R.id.action_tracking);
+        item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
+        return true;
     }
 
     /**

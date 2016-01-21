@@ -75,6 +75,10 @@ public class PIGeofence extends SugarRecord<PIGeofence> {
         return radius;
     }
 
+    public void setRadius(double radius) {
+        this.radius = radius;
+    }
+
     public String getMessageIn() {
         return messageIn;
     }
@@ -101,5 +105,10 @@ public class PIGeofence extends SugarRecord<PIGeofence> {
 
     public void setLastExitDateAndTime(String lastExitDateAndTime) {
         this.lastExitDateAndTime = lastExitDateAndTime;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + name + "]";
     }
 }

@@ -41,13 +41,13 @@ public class EditGeofenceDialog extends DialogFragment {
     static final int MODE_UPDATE_DELETE = 2;
     private LatLng position;
     private MapsActivity mapsActivity;
-    private int radius = 100;
     private int dialogMode = MODE_NEW;
     private MapsActivity.GeofenceInfo fenceInfo;
     private PIGeofence fence;
     private int[] allRadius = {
         100, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 10000
     };
+    private int radius = allRadius[0];
 
     public EditGeofenceDialog() {
     }
@@ -80,7 +80,8 @@ public class EditGeofenceDialog extends DialogFragment {
             }
         });
         if (fence != null) {
-            seekBar.setProgress(progressFromRadius((int) fence.getRadius()));
+            radius = (int) fence.getRadius();
+            seekBar.setProgress(progressFromRadius(radius));
             radiusValueView.setText(String.format("%,d m", (int) fence.getRadius()));
             nameView.setText(fence.getName());
         }
@@ -101,14 +102,21 @@ public class EditGeofenceDialog extends DialogFragment {
                 }
             });
         } else if (dialogMode == MODE_UPDATE_DELETE) {
-            // todo: handle when the radius has changed, including registering the fence anew in the location API
-            // for now we just disable it
-            seekBar.setEnabled(false);
             builder.setPositiveButton(R.string.update_button, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int id) {
                     String name = nameView.getText().toString();
                     fence.setName(name);
+                    if (radius != (int) fence.getRadius()) {
+                        fence.setRadius(radius);
+                        List<PIGeofence> list = new ArrayList<>();
+                        list.add(fence);
+                        mapsActivity.service.removeGeofences(list);
+                        mapsActivity.service.addGeofences(list);
+                        mapsActivity.removeGeofence(fence);
+                        mapsActivity.refreshGeofenceInfo(fence, (fenceInfo != null) && fenceInfo.active);
+                        mapsActivity.refreshCurrentLocation();
+                    }
                     fence.save();
                     dialog.cancel();
                     mapsActivity.refreshGeofenceInfo(fence, (fenceInfo != null) && fenceInfo.active);
@@ -149,6 +157,9 @@ public class EditGeofenceDialog extends DialogFragment {
         }
     }
 
+    /**
+     * Compute the seek bar position from the specified geofence's radius.
+     */
     private int progressFromRadius(int radius) {
         int minDiff = Integer.MAX_VALUE;
         int minProgress = -1;
@@ -162,6 +173,9 @@ public class EditGeofenceDialog extends DialogFragment {
         return minProgress;
     }
 
+    /**
+     * Compute the radius value from the seek bar position.
+     */
     private int radiusFromProgress(int progress) {
         return allRadius[progress];
     }

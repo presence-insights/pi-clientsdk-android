@@ -124,6 +124,7 @@ public class DemoUtils {
      * @param geofences the list of geofences from which to perform the computations.
      */
     static Map<String, Object> computeCenterLocationAndBounds(List<PIGeofence> geofences) {
+        Log.v(LOG_TAG, String.format("computeCenterLocationAndBounds(geofences=%s)", geofences));
         Map<String, Object> map = new HashMap<>();
         double minLat = Double.MAX_VALUE;
         double maxLat = 0d;
@@ -141,10 +142,11 @@ public class DemoUtils {
     }
 
     /**
-     * Compute the center of the provided geofences, along with the bounds of a box their centers fit in.
+     * Find a box that fits all specified geofences and with the specified center.
      * @param geofences the list of geofences from which to perform the computations.
      */
     static Map<String, Object> computeBounds(List<PIGeofence> geofences, LatLng centerLocation) {
+        Log.v(LOG_TAG, String.format("computeBounds(geofences=%s, centerLocation=%s)", geofences, centerLocation));
         if (centerLocation == null) return computeCenterLocationAndBounds(geofences);
         Map<String, Object> map = new HashMap<>();
         double maxLat = 0d;
@@ -159,6 +161,7 @@ public class DemoUtils {
                 maxLng = diff;
             }
         }
+        Log.v(LOG_TAG, String.format("computeBounds() maxLat=%.6f, maxLng=%.6f", maxLat, maxLng));
         LatLngBounds bounds = new LatLngBounds(new LatLng(centerLocation.latitude - maxLat, centerLocation.longitude - maxLng),
             new LatLng(centerLocation.latitude + maxLat, centerLocation.longitude + maxLng));
         map.put("center", centerLocation);
@@ -171,6 +174,7 @@ public class DemoUtils {
      * @param centerLocation .
      */
     static Map<String, Object> computeBounds(LatLng centerLocation, double latDelta, double lngDelta) {
+        Log.v(LOG_TAG, String.format("computeBounds(geofences=%s, latDelta=%.6f, lngDelta=%.6f)", centerLocation, latDelta, lngDelta));
         Map<String, Object> map = new HashMap<>();
         LatLngBounds bounds = new LatLngBounds(new LatLng(centerLocation.latitude - latDelta, centerLocation.longitude - lngDelta),
             new LatLng(centerLocation.latitude + latDelta, centerLocation.longitude + lngDelta));

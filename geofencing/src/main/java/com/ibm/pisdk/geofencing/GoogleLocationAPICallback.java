@@ -46,7 +46,7 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
         final LocationRequest locationRequest = LocationRequest.create()
             .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY)
             //.setPriority(LocationRequest.PRIORITY_LOW_POWER)
-            .setInterval(60000L)
+            .setInterval(10000L)
             .setFastestInterval(10000L);
         Runnable r = new Runnable() {
             @Override

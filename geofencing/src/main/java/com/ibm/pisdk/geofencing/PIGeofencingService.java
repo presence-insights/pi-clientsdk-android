@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -55,6 +54,7 @@ public class PIGeofencingService {
     private static final String LOG_TAG = PIGeofencingService.class.getSimpleName();
     static final String SHARED_PREFS_NAME = "pi";
     static final String GEOFENCE_ANCHOR_NAME = "geofence.anchor";
+    static final String INTENT_ID = "com.ibm.pisdk.geofencing.PIGeofencingService";
     /**
      * The restful service which connects to and communicates with the Adaptive Experience server.
      */
@@ -79,6 +79,7 @@ public class PIGeofencingService {
      * An internal cache of the "add geofences" requests, so the geofence transition service knows which callback to invoke.
      */
     static final Map<String, PIGeofenceCallback> callbackMap = new ConcurrentHashMap<>();
+    private PendingIntent pendingIntent = null;
     /**
      * Detects the app's background or foreground state and emits notifications accordingly.
      */
@@ -120,6 +121,7 @@ public class PIGeofencingService {
         });
 
         this.geofenceCallback = new DelegatingGeofenceCallback(this, geofenceCallback);
+        callbackMap.put(INTENT_ID, geofenceCallback);
         this.context = context;
         int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
         String s = "undefined";
@@ -129,7 +131,7 @@ public class PIGeofencingService {
         else if (n == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED) s = "SERVICE_VERSION_UPDATE_REQUIRED";
         else if (n == ConnectionResult.SERVICE_DISABLED) s = "SERVICE_DISABLED";
         else if (n == ConnectionResult.SERVICE_INVALID) s = "SERVICE_INVALID";
-        Log.v(LOG_TAG, "AEGeofencingService() google play service availability = " + s);
+        Log.v(LOG_TAG, "google play service availability = " + s);
         geofenceManager = new GeofenceManager(this);
         GoogleLocationAPICallback serviceCallback = new GoogleLocationAPICallback(this);
         googleApiClient = new GoogleApiClient.Builder(context).addApi(LocationServices.API).addConnectionCallbacks(serviceCallback).addOnConnectionFailedListener(serviceCallback).build();
@@ -144,33 +146,35 @@ public class PIGeofencingService {
     public void addGeofences(List<PIGeofence> geofences) {
         //LocationServices.FusedLocationApi.setMockMode(googleApiClient, true);
         Log.v(LOG_TAG, "addGeofences(" + geofences + ")");
-        List<Geofence> list = new ArrayList<>();
-        for (PIGeofence geofence : geofences) {
-            String requestId = geofence.getUuid();
-            Geofence g = new Geofence.Builder().setRequestId(requestId)
-                .setCircularRegion(geofence.getLatitude(), geofence.getLongitude(), (float) geofence.getRadius())
-                .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                //.setExpirationDuration(15L * 60L * 1000L) /* 15 minutes */
-                .setNotificationResponsiveness(100)
-                .setLoiteringDelay(100)
-                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)
-                .build();
-            list.add(g);
-        }
-        GeofencingRequest request = new GeofencingRequest.Builder()
-            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER|GeofencingRequest.INITIAL_TRIGGER_DWELL)
-            .addGeofences(list).build();
-        // used to keep track of the add request
-        String uuid = UUID.randomUUID().toString();
-        callbackMap.put(uuid, geofenceCallback);
-        PendingIntent pi = getPendingIntent(uuid);
-        LocationServices.GeofencingApi.addGeofences(googleApiClient, request, pi).setResultCallback(new ResultCallback<Status>() {
-            @Override
-            public void onResult(Status status) {
-                Log.v(LOG_TAG, "add geofence request status " + status);
+        geofences = geofenceManager.filterFromPrefs(geofences);
+        if (!geofences.isEmpty()) {
+            List<Geofence> list = new ArrayList<>(geofences.size());
+            for (PIGeofence geofence : geofences) {
+                String requestId = geofence.getUuid();
+                Geofence g = new Geofence.Builder().setRequestId(requestId)
+                    .setCircularRegion(geofence.getLatitude(), geofence.getLongitude(), (float) geofence.getRadius())
+                    .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                    //.setExpirationDuration(15L * 60L * 1000L) /* 15 minutes */
+                    .setNotificationResponsiveness(100)
+                    .setLoiteringDelay(100)
+                    .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)
+                    .build();
+                list.add(g);
             }
-        });
-        geofenceCallback.onGeofencesMonitored(geofences);
+            GeofencingRequest request = new GeofencingRequest.Builder()
+                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                .addGeofences(list).build();
+            // used to keep track of the add request
+            PendingIntent pi = getPendingIntent(INTENT_ID);
+            LocationServices.GeofencingApi.addGeofences(googleApiClient, request, pi).setResultCallback(new ResultCallback<Status>() {
+                @Override
+                public void onResult(Status status) {
+                    Log.v(LOG_TAG, "add geofence request status " + status);
+                }
+            });
+            geofenceManager.addFencesToPrefs(geofences);
+            geofenceCallback.onGeofencesMonitored(geofences);
+        }
     }
 
     /**
@@ -179,12 +183,16 @@ public class PIGeofencingService {
      */
     public void removeGeofences(List<PIGeofence> geofences) {
         Log.v(LOG_TAG, "removeGeofences(" + geofences + ")");
-        List<String> uuidsToRemove = new ArrayList<>();
-        for (PIGeofence g : geofences) {
-            uuidsToRemove.add(g.getUuid());
+        geofences = geofenceManager.filterFromPrefs(geofences);
+        if (!geofences.isEmpty()) {
+            List<String> uuidsToRemove = new ArrayList<>(geofences.size());
+            for (PIGeofence g : geofences) {
+                uuidsToRemove.add(g.getUuid());
+            }
+            LocationServices.GeofencingApi.removeGeofences(googleApiClient, uuidsToRemove);
+            geofenceManager.removeFencesFromPrefs(geofences);
+            geofenceCallback.onGeofencesUnmonitored(geofences);
         }
-        LocationServices.GeofencingApi.removeGeofences(googleApiClient, uuidsToRemove);
-        geofenceCallback.onGeofencesUnmonitored(geofences);
     }
 
     /**
@@ -193,11 +201,13 @@ public class PIGeofencingService {
      * @return a <code>PendingIntent</code> instance.
      */
     private PendingIntent getPendingIntent(String geofenceCallbackUuid) {
-        Intent intent = new Intent(context, GeofenceTransitionsService.class);
-        String pkg = context.getApplicationInfo().packageName;
-        intent.putExtra(pkg + ".AEGeofencingCallback", geofenceCallbackUuid);
-        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling addGeofences() and removeGeofences().
-        return PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        if (pendingIntent == null) {
+            Intent intent = new Intent(context, GeofenceTransitionsService.class);
+            intent.putExtra(INTENT_ID, geofenceCallbackUuid);
+            // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling addGeofences() and removeGeofences()
+            pendingIntent = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        }
+        return pendingIntent;
     }
 
     /**

@@ -16,8 +16,10 @@
 
 package com.ibm.pisdk.geofencing;
 
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationManager;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.android.gms.location.LocationListener;
@@ -25,10 +27,13 @@ import com.google.android.gms.maps.model.LatLng;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -39,6 +44,14 @@ class GeofenceManager implements LocationListener {
      * Log tag for this class.
      */
     private static final String LOG_TAG = GeofenceManager.class.getSimpleName();
+    /**
+     * Key for the shared preferences that stores the uuids of the registered fences.
+     */
+    private static final String GEOFENCES_PREF_KEY = "com.ibm.pisdk.geofencing.geofences";
+    /**
+     * Key for the shared preferences that stores the uuids of the registered fences.
+     */
+    private static final Set<String> GEOFENCES_PREF_DEFAULT = Collections.emptySet();
     /**
      * Mapping of registered geofences to their uuids.
      */
@@ -57,10 +70,11 @@ class GeofenceManager implements LocationListener {
      * @param fence the geofence to update.
      */
     public void updateGeofence(PIGeofence fence) {
-        PIGeofence g = getGeofence(fence.getUuid());
-        if (g == null) {
-            g = fence;
-            synchronized (fenceMap) {
+        PIGeofence g = null;
+        synchronized (fenceMap) {
+            g = fenceMap.get(fence.getUuid());
+            if (g == null) {
+                g = fence;
                 fenceMap.put(g.getUuid(), g);
             }
         }
@@ -73,16 +87,6 @@ class GeofenceManager implements LocationListener {
         time = fence.getLastExitDateAndTime();
         if (time != null) {
             g.setLastExitDateAndTime(time);
-        }
-    }
-
-    /**
-     * Get a geofence from the cache.
-     * @param uuid the uuid of the fence to get.
-     */
-    public PIGeofence getGeofence(String uuid) {
-        synchronized (fenceMap) {
-            return fenceMap.get(uuid);
         }
     }
 
@@ -116,6 +120,7 @@ class GeofenceManager implements LocationListener {
     @Override
     public void onLocationChanged(Location location) {
         double d = distanceThreshold + 1d;
+        Log.v(LOG_TAG, "onLocationChanged(location=" + location + ") new location");
         if (referenceLocation != null) d = referenceLocation.distanceTo(location);
         if (d > distanceThreshold) {
             Log.v(LOG_TAG, "onLocationChanged(location=" + location + ")");
@@ -154,7 +159,7 @@ class GeofenceManager implements LocationListener {
     private LatLng calculateDerivedPosition(double latitude, double longitude, double distance, double bearing) {
         double latitudeRadians = Math.toRadians(latitude);
         double longitudeRadians = Math.toRadians(longitude);
-        double EarthRadius = 6371000; // meters
+        double EarthRadius = 6371000d; // meters
         double angularDistance = distance / EarthRadius;
         double trueCourse = Math.toRadians(bearing);
         double lat = Math.asin(Math.sin(latitudeRadians) * Math.cos(angularDistance) + Math.cos(latitudeRadians) * Math.sin(angularDistance) * Math.cos(trueCourse));
@@ -167,10 +172,55 @@ class GeofenceManager implements LocationListener {
      * Create a where clause to find the geofences closest to the specified location and in the specified range.
      */
     private String createWhereClause(double latitude, double longitude, double radius) {
-        LatLng pos1 = calculateDerivedPosition(latitude, longitude, radius, 0);
-        LatLng pos2 = calculateDerivedPosition(latitude, longitude, radius, 90);
-        LatLng pos3 = calculateDerivedPosition(latitude, longitude, radius, 180);
-        LatLng pos4 = calculateDerivedPosition(latitude, longitude, radius, 270);
+        LatLng pos1 = calculateDerivedPosition(latitude, longitude, radius, 0d);
+        LatLng pos2 = calculateDerivedPosition(latitude, longitude, radius, 90d);
+        LatLng pos3 = calculateDerivedPosition(latitude, longitude, radius, 180d);
+        LatLng pos4 = calculateDerivedPosition(latitude, longitude, radius, 270d);
         return String.format(Locale.US, "latitude < %f AND longitude < %f AND latitude > %f AND longitude > %f", pos1.latitude, pos2.longitude, pos3.latitude, pos4.longitude);
+    }
+
+    List<PIGeofence> filterFromPrefs(List<PIGeofence> fences) {
+        List<PIGeofence> filtered = new ArrayList<>();
+        Set<String> uuids = PreferenceManager.getDefaultSharedPreferences(service.context).getStringSet(GEOFENCES_PREF_KEY, GEOFENCES_PREF_DEFAULT);
+        if (uuids == null) {
+            uuids = GEOFENCES_PREF_DEFAULT;
+        }
+        for (PIGeofence fence: fences) {
+            if (!uuids.contains(fence.getUuid())) {
+                filtered.add(fence);
+            }
+        }
+        return filtered;
+    }
+
+    void addFencesToPrefs(List<PIGeofence> fences) {
+        updatePrefs(fences, false);
+    }
+
+    void removeFencesFromPrefs(List<PIGeofence> fences) {
+        updatePrefs(fences, true);
+    }
+
+    private void updatePrefs(List<PIGeofence> fences, boolean remove) {
+        Set<String> uuids = getUuidsFromPrefs();
+        for (PIGeofence fence: fences) {
+            if (remove) {
+                uuids.remove(fence.getUuid());
+            } else {
+                uuids.add(fence.getUuid());
+            }
+        }
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(service.context);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putStringSet(GEOFENCES_PREF_KEY, uuids);
+        editor.apply();
+    }
+
+    private Set<String> getUuidsFromPrefs() {
+        Set<String> uuids = PreferenceManager.getDefaultSharedPreferences(service.context).getStringSet(GEOFENCES_PREF_KEY, GEOFENCES_PREF_DEFAULT);
+        if ((uuids == null) || (uuids == GEOFENCES_PREF_DEFAULT)) {
+            uuids = new HashSet<>();
+        }
+        return uuids;
     }
 }

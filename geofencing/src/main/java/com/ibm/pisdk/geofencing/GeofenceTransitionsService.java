@@ -36,7 +36,7 @@ public class GeofenceTransitionsService extends IntentService {
     private static final String LOG_TAG = GeofenceTransitionsService.class.getSimpleName();
 
     public GeofenceTransitionsService() {
-        super("AEGeofenceService");
+        super("PIGeofencingService");
     }
 
     public GeofenceTransitionsService(String name) {
@@ -59,9 +59,8 @@ public class GeofenceTransitionsService extends IntentService {
             // Get the geofences that were triggered. A single event can trigger multiple geofences.
             List<Geofence> triggeringGeofences = event.getTriggeringGeofences();
             Log.v(LOG_TAG, "geofence transition: " + triggeringGeofences);
-            String pkg = getApplicationContext().getApplicationInfo().packageName;
-            PIGeofenceCallback callback = PIGeofencingService.callbackMap.get(intent.getStringExtra(pkg + ".AEGeofencingCallback"));
-            List<PIGeofence> geofences = new ArrayList<PIGeofence>(triggeringGeofences.size());
+            PIGeofenceCallback callback = PIGeofencingService.callbackMap.get(intent.getStringExtra(PIGeofencingService.INTENT_ID));
+            List<PIGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
             for (Geofence g : triggeringGeofences) {
                 String uuid = g.getRequestId();
                 List<PIGeofence> list = PIGeofence.find(PIGeofence.class, "uuid = ?", uuid);
