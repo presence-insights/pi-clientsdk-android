@@ -23,11 +23,11 @@ enum GeofenceNotificationType {
     /**
      * Geofence entry.
      */
-    IN("in"),
+    IN("enter"),
     /**
      * Geofence exit.
      */
-    OUT("out");
+    OUT("exit");
 
     private final String op;
 
@@ -44,6 +44,6 @@ enum GeofenceNotificationType {
             return null;
         }
         String s = source.trim().toLowerCase();
-        return "in".equals(s) ? IN : ("out".equals(s) ? OUT : null);
+        return IN.operation().equals(s) ? IN : (OUT.operation().equals(s) ? OUT : null);
     }
 }

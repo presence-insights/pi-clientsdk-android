@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- "Mark Favorite", should appear as action button if possible -->
+    <item
+        android:id="@+id/action_tracking"
+        android:icon="@android:drawable/presence_video_online"
+        android:title=""
+        android:showAsAction="ifRoom"/>
+
+</menu>

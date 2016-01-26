@@ -19,7 +19,6 @@ package com.ibm.pisdk.geofencing;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.location.Location;
 import android.util.Log;
 
@@ -31,6 +30,8 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
+import com.ibm.pisdk.PIDeviceID;
+import com.ibm.pisdk.PIDeviceIDFactory;
 import com.ibm.pisdk.geofencing.rest.PIHttpService;
 import com.ibm.pisdk.geofencing.rest.PIJSONPayloadRequest;
 import com.ibm.pisdk.geofencing.rest.PIRequestCallback;
@@ -41,6 +42,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -52,9 +54,8 @@ public class PIGeofencingService {
      * Log tag for this class.
      */
     private static final String LOG_TAG = PIGeofencingService.class.getSimpleName();
-    static final String SHARED_PREFS_NAME = "pi";
-    static final String GEOFENCE_ANCHOR_NAME = "geofence.anchor";
     static final String INTENT_ID = "com.ibm.pisdk.geofencing.PIGeofencingService";
+    static final String GEOFENCE_CONNECTOR_PATH = "conn-geofence/v1";
     /**
      * The restful service which connects to and communicates with the Adaptive Experience server.
      */
@@ -88,6 +89,10 @@ public class PIGeofencingService {
      * The current session information.
      */
     private Session session;
+    /**
+     * Provides uniquely identifying information for the device.
+     */
+    private final PIDeviceID deviceID;
 
     /**
      * Initialize this service.
@@ -123,6 +128,7 @@ public class PIGeofencingService {
         this.geofenceCallback = new DelegatingGeofenceCallback(this, geofenceCallback);
         callbackMap.put(INTENT_ID, geofenceCallback);
         this.context = context;
+        this.deviceID = PIDeviceIDFactory.newInstance(context);
         int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
         String s = "undefined";
         if (n == ConnectionResult.SUCCESS) s = "SUCCESS";
@@ -140,26 +146,49 @@ public class PIGeofencingService {
     }
 
     /**
+     * Send a notification to the geofence connector as an HTTP request.
+     * @param fences the geofences for which to send a notification.
+     * @param type the type of geofence notification: either {@link GeofenceNotificationType#IN IN} or {@link GeofenceNotificationType#OUT OUT}.
+     */
+    void sendGeofenceNotification(final List<PIGeofence> fences, final GeofenceNotificationType type) {
+        PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                Log.v(LOG_TAG, "sucessfully notified connector for geofences " + fences);
+            }
+
+            @Override
+            public void onError(PIRequestError error) {
+                Log.e(LOG_TAG, "error notifyiing connector for geofences " + fences + " : " + error.toString());
+            }
+        };
+        JSONObject payload = GeofencingJSONUtils.toJSON(fences, type, deviceID.getHardwareId());
+        PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, "POST", payload.toString());
+        String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s",
+            GEOFENCE_CONNECTOR_PATH, httpService.getTenant(), httpService.getOrg());
+        request.setPath(path);
+        request.setBasicAuthRequired(true);
+        httpService.executeRequest(request);
+    }
+
+    /**
      * Add the specified geofences to the monitored geofences.
      * @param geofences the geofences to add.
      */
     public void addGeofences(List<PIGeofence> geofences) {
-        //LocationServices.FusedLocationApi.setMockMode(googleApiClient, true);
         Log.v(LOG_TAG, "addGeofences(" + geofences + ")");
         geofences = geofenceManager.filterFromPrefs(geofences);
         if (!geofences.isEmpty()) {
             List<Geofence> list = new ArrayList<>(geofences.size());
             for (PIGeofence geofence : geofences) {
-                String requestId = geofence.getUuid();
-                Geofence g = new Geofence.Builder().setRequestId(requestId)
+                list.add(new Geofence.Builder().setRequestId(geofence.getUuid())
                     .setCircularRegion(geofence.getLatitude(), geofence.getLongitude(), (float) geofence.getRadius())
                     .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                    //.setExpirationDuration(15L * 60L * 1000L) /* 15 minutes */
                     .setNotificationResponsiveness(100)
                     .setLoiteringDelay(100)
                     .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)
-                    .build();
-                list.add(g);
+                    .build()
+                );
             }
             GeofencingRequest request = new GeofencingRequest.Builder()
                 .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
@@ -239,9 +268,8 @@ public class PIGeofencingService {
             @Override
             public void onSuccess(JSONObject result) {
                 try {
-                    PIGeofenceList list = GeofencingJSONParser.parseGeofences(result);
+                    PIGeofenceList list = GeofencingJSONUtils.parseGeofences(result);
                     List<PIGeofence> geofences = list.getGeofences();
-                    setCurrentAnchor(list.getAnchor());
                     if (!geofences.isEmpty()) {
                         PIGeofence.saveInTx(geofences);
                         geofenceManager.addFences(geofences);
@@ -263,9 +291,6 @@ public class PIGeofencingService {
         };
         PIJSONPayloadRequest request = new PIJSONPayloadRequest(cb);
         request.setPath("geofences");
-        if (initialRequest) {
-            request.addParameter("anchor", String.valueOf(getCurrentAnchor()));
-        }
         httpService.executeRequest(request);
     }
 
@@ -282,33 +307,6 @@ public class PIGeofencingService {
         };
         new Thread(r).start();
     }
-
-    /**
-     * Get the current anchor from the shared preferences.
-     */
-    int getCurrentAnchor() {
-        SharedPreferences prefs = context.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE);
-        int anchor = 0;
-        if (!prefs.contains(GEOFENCE_ANCHOR_NAME)) {
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putInt(GEOFENCE_ANCHOR_NAME, anchor);
-            editor.apply();
-        } else {
-            anchor = prefs.getInt(GEOFENCE_ANCHOR_NAME, 0);
-        }
-        return anchor;
-    }
-
-    /**
-     * Persist the anchor to the shared preferences.
-     */
-    void setCurrentAnchor(int anchor) {
-        SharedPreferences prefs = context.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putInt(GEOFENCE_ANCHOR_NAME, anchor);
-        editor.apply();
-    }
-
 
     /**
      * Holds the mobile session information.

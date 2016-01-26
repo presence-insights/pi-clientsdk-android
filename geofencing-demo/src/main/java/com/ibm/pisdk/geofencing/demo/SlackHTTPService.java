@@ -41,7 +41,7 @@ public class SlackHTTPService extends PIHttpService {
     private static final String LOG_TAG = SlackHTTPService.class.getSimpleName();
 
     public SlackHTTPService(Context context) {
-        super(context, "https://cloudplatform.slack.com", "api", null, null, null, null);
+        super(context, "https://cloudplatform.slack.com", null, null, null, null);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class SlackHTTPService extends PIHttpService {
         PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
             @Override
             public void onSuccess(JSONObject result) {
-                Log.d(LOG_TAG, "slack request successfull");
+                Log.d(LOG_TAG, "slack request successful");
             }
 
             @Override

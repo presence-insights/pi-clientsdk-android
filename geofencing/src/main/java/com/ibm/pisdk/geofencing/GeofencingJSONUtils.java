@@ -16,16 +16,30 @@
 
 package com.ibm.pisdk.geofencing;
 
+import android.util.Log;
+
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
  * Utility methods to parse one or more geofences in geojson format.
  */
-public class GeofencingJSONParser {
+public class GeofencingJSONUtils {
+    /**
+     * Log tag for this class.
+     */
+    private static final String LOG_TAG = GeofencingJSONUtils.class.getSimpleName();
+    /**
+     * Date format used to convert dates from/to UTC format such as "2015-08-24T09:00:00-05:00".
+     */
+    private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZZZZZ";
+
     /**
      * Parse a list of geofences.
      * @param json json object representing the list of fences.
@@ -33,7 +47,7 @@ public class GeofencingJSONParser {
      * @throws Exception if a parsing error occurs.
      */
     public static PIGeofenceList parseGeofences(JSONObject json) throws Exception {
-        List<PIGeofence> result = new ArrayList<PIGeofence>();
+        List<PIGeofence> result = new ArrayList<>();
         int anchor = json.getInt("anchor");
         JSONObject geojson = json.getJSONObject("geojson");
         JSONArray features = geojson.getJSONArray("features");
@@ -81,11 +95,11 @@ public class GeofencingJSONParser {
      * @throws Exception if a parsing error occurs.
      */
     static PIGeofence parseGeofenceVisitRecord(JSONObject visits) throws Exception {
-    /*
-    String appId = visitRecord.getString("application");
-    String user = visitRecord.getString("user");
-    String lastUpdate = visitRecord.getString("lastUpdate");
-    */
+        /*
+        String appId = visitRecord.getString("application");
+        String user = visitRecord.getString("user");
+        String lastUpdate = visitRecord.getString("lastUpdate");
+        */
         JSONObject visit = visits.getJSONObject("visits");
         GeofenceNotificationType action = GeofenceNotificationType.fromString(visit.getString("action"));
         String timestamp = visit.getString("timestamp");
@@ -99,5 +113,35 @@ public class GeofencingJSONParser {
                 break;
         }
         return g;
+    }
+
+    static JSONObject toJSON(List<PIGeofence> fences, GeofenceNotificationType type, String deviceID) {
+        JSONObject json = new JSONObject();
+        try {
+            JSONArray notifications = new JSONArray();
+            json.put("notifications", notifications);
+            String date = new SimpleDateFormat(DATE_FORMAT).format(new Date());
+            for (PIGeofence fence: fences) {
+                notifications.put(toJSON(fence, deviceID, date, type));
+            }
+        } catch(JSONException e) {
+            Log.e(LOG_TAG, "exception generating json for geofence list", e);
+        }
+        return json;
+    }
+
+    static JSONObject toJSON(PIGeofence fence, String deviceID, String date, GeofenceNotificationType type) {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("descriptor", deviceID);
+            json.put("detectedTime", date);
+            JSONObject data = new JSONObject();
+            json.put("data", data);
+            data.put("fenceCode", fence.getUuid());
+            data.put("crossingType", type.operation());
+        } catch(JSONException e) {
+            Log.e(LOG_TAG, "exception generating json for geofence list", e);
+        }
+        return json;
     }
 }

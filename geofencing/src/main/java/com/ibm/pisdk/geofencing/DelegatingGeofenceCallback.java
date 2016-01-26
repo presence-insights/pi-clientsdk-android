@@ -32,7 +32,7 @@ class DelegatingGeofenceCallback implements PIGeofenceCallback {
 
     @Override
     public void onGeofencesEnter(List<PIGeofence> geofences) {
-        //service.notifyGeofences(geofences, GeofenceNotificationType.IN);
+        service.sendGeofenceNotification(geofences, GeofenceNotificationType.IN);
         if (delegate != null) {
             delegate.onGeofencesEnter(geofences);
         }
@@ -40,7 +40,7 @@ class DelegatingGeofenceCallback implements PIGeofenceCallback {
 
     @Override
     public void onGeofencesExit(List<PIGeofence> geofences) {
-        //service.notifyGeofences(geofences, GeofenceNotificationType.OUT);
+        service.sendGeofenceNotification(geofences, GeofenceNotificationType.OUT);
         if (delegate != null) {
             delegate.onGeofencesExit(geofences);
         }

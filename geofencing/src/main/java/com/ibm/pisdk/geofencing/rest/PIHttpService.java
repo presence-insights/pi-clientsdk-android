@@ -61,10 +61,6 @@ public class PIHttpService {
      */
     String serverURL;
     /**
-     * The context root, generally "".
-     */
-    String contextRoot;
-    /**
      * The tenant id.
      */
     String tenant;
@@ -84,10 +80,6 @@ public class PIHttpService {
      * Android application <code>Context</code> required to access location services.
      */
     Context androidContext = null;
-    /**
-     * Version of the data to use.
-     */
-    String version = "v1";
     /**
      * Whether to allow untrusted certificates for HTTPS connections.
      */
@@ -135,34 +127,18 @@ public class PIHttpService {
     /**
      * Initialize this service with the specified server URL, context root, tenant name and credentials.
      * @param serverURL the base server URL in the form <code>http[s]://hostname[:port]</code>.
-     * @param contextRoot the web context root name, for instance "wps".
-     * @param tenant the id of the tenant to use.
-     * @param org the application id.
      * @param username the user name for HTTP authentication.
      * @param password the password for HTTP authentication.
      */
-    public PIHttpService(Context context, String serverURL, String contextRoot, String tenant, String org, String username, String password) {
+    public PIHttpService(Context context, String serverURL, String tenant, String org, String username, String password) {
         this.username = username;
         this.password = password;
-        initialize(context, serverURL, contextRoot, tenant, org);
-    }
-
-    /**
-     * Initialize this service with the specified server URL, context root and tenant.
-     * @param serverURL the base server URL in the form <code>http[s]://hostname[:port]</code>.
-     * @param contextRoot the web context root name, for instance "wps".
-     */
-    public PIHttpService(Context context, String serverURL, String contextRoot, String tenant, String org) {
-        initialize(context, serverURL, contextRoot, tenant, org);
-    }
-
-    private void initialize(Context context, String serverURL, String contextRoot, String tenant, String org) {
         this.connectivityHandler = new NetworkConnectivityHandler(context, this, false);
         this.serverURL = serverURL;
-        this.contextRoot = (contextRoot == null) ? "ae-mobile-services" : contextRoot;
         this.tenant = tenant;
         this.org = org;
     }
+
 
     /**
      * Get the base server URL.
@@ -173,11 +149,10 @@ public class PIHttpService {
     }
 
     /**
-     * Get the context root for the server.
-     * @return the context root name.
+     * Get the Android application <code>Context</code> required to access location services.
      */
-    public String getContextRoot() {
-        return contextRoot;
+    public Context getAndroidContext() {
+        return androidContext;
     }
 
     /**
@@ -188,65 +163,18 @@ public class PIHttpService {
     }
 
     /**
-     * Set the tenant id.
-     */
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
-    }
-
-    /**
      * Get the app id.
      */
     public String getOrg() {
         return org;
     }
 
-    /**
-     * Set the org.
-     */
-    public void setOrg(String org) {
-        this.org = org;
+    public String getUsername() {
+        return username;
     }
 
-    /**
-     * Return the version used in requests.
-     */
-    public String getVersion() {
-        return version;
-    }
-
-    /**
-     * Set the version used in requests.
-     */
-    void setVersion(String version) {
-        this.version = version;
-    }
-
-    /**
-     * Get the Android application <code>Context</code> required to access location services.
-     */
-    public Context getAndroidContext() {
-        return androidContext;
-    }
-
-    /**
-     * Get the Android application <code>Context</code> required to access location services.
-     */
-    public void setAndroidContext(Context androidContext) {
-        this.androidContext = androidContext;
-    }
-
-    /**
-     * Perform server basic authentication using the server URL, context root and tenant provided in the constructor.
-     * @param userName the user name for HTTP authentication.
-     * @param password the user password for HTTP authentication.
-     * @param callback callback for asynchronous propagation of the authentication result.
-     */
-    public void signIn(final String userName, final String password, final PIRequestCallback<Void> callback) {
-        Log.d(LOG_TAG, "attempting authentication ...");
-        manager = new CookieManager();
-        SignInTask task = new SignInTask(this, userName, password, callback);
-        task.execute();
+    public String getPassword() {
+        return password;
     }
 
     /**
@@ -320,23 +248,6 @@ public class PIHttpService {
         int port = url.getPort();
         String portStr = (port < 0) ? "" : ":" + port;
         Uri.Builder builder = new Uri.Builder().scheme(url.getProtocol()).encodedAuthority(url.getHost() + portStr);
-        if (!Utils.isNullOrBlank(version)) builder.appendEncodedPath(getContextRoot()).appendEncodedPath(version);
-        builder.appendEncodedPath("tenants").appendEncodedPath(tenant);
-        builder.appendEncodedPath("applications").appendEncodedPath(org);
-        return builder.build();
-    }
-
-    /**
-     * Return the base URL for basic authentication.
-     * @return the URL as a {@link Uri} object.
-     * @throws Exception if any error occurs.
-     */
-    Uri getBasicAuthenticationURI() throws Exception {
-        URL url = new URL(getServerURL());
-        int port = url.getPort();
-        String portStr = (port < 0) ? "" : ":" + port;
-        Uri.Builder builder = new Uri.Builder().scheme(url.getProtocol()).encodedAuthority(url.getHost() + portStr);
-        if (!Utils.isNullOrBlank(getContextRoot())) builder.appendEncodedPath(getContextRoot());
         return builder.build();
     }
 
@@ -356,7 +267,6 @@ public class PIHttpService {
     public String toString() {
         final StringBuilder sb = new StringBuilder(getClass().getSimpleName()).append('[');
         sb.append("serverURL=").append(serverURL);
-        sb.append(", contextRoot=").append(contextRoot);
         sb.append(']');
         return sb.toString();
     }

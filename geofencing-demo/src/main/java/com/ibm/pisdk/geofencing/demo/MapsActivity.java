@@ -205,8 +205,7 @@ public class MapsActivity extends FragmentActivity {
             }
         }
         */
-        //PIHttpService httpService = new PIHttpService(this, "http://192.168.1.10:3000", "lolo4j", "a94e5011c7d14a51bf41237a22bc27a0", "lolo4j");
-        PIHttpService httpService = new PIHttpService(this, null, "lolo4j", "a94e5011c7d14a51bf41237a22bc27a0", "lolo4j");
+        PIHttpService httpService = new PIHttpService(this, "http://starterapp.mybluemix.net", "xf504jy", "bj6s0rw5", "a6su7f", "8xdr5vfh");
         service = new PIGeofencingService(httpService, this, new MyGeofenceCallback(this));
         try {
             startSimulation(geofenceManager.getFences());
