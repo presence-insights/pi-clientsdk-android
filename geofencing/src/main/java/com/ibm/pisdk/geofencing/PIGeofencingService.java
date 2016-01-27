@@ -82,14 +82,6 @@ public class PIGeofencingService {
     static final Map<String, PIGeofenceCallback> callbackMap = new ConcurrentHashMap<>();
     private PendingIntent pendingIntent = null;
     /**
-     * Detects the app's background or foreground state and emits notifications accordingly.
-     */
-    private final ForegroundBackgroundHandler appStateHandler;
-    /**
-     * The current session information.
-     */
-    private Session session;
-    /**
      * Provides uniquely identifying information for the device.
      */
     private final PIDeviceID deviceID;
@@ -102,29 +94,6 @@ public class PIGeofencingService {
      */
     public PIGeofencingService(PIHttpService httpService, Context context, PIGeofenceCallback geofenceCallback) {
         this.httpService = httpService;
-        this.appStateHandler = new ForegroundBackgroundHandler(context);
-        session = new Session(System.currentTimeMillis());
-        this.appStateHandler.registerAppStateCallbacks(new ForegroundBackgroundHandler.AppStateCallbacks() {
-            @Override
-            public void onAppInForeground() {
-                // store the session start date and send notif of previous session, if any
-                Log.v(LOG_TAG, "application went to foreground!!!");
-                if (session != null) {
-                    //postMobileSessionData(session, null);
-                }
-                session = new Session(System.currentTimeMillis());
-            }
-
-            @Override
-            public void onAppInBackground() {
-                // store the session end date and/or duration
-                Log.v(LOG_TAG, "application went to background!!!");
-                if (session != null) {
-                    session.duration = (System.currentTimeMillis() - session.start) / 1_000L;
-                }
-            }
-        });
-
         this.geofenceCallback = new DelegatingGeofenceCallback(this, geofenceCallback);
         callbackMap.put(INTENT_ID, geofenceCallback);
         this.context = context;
@@ -306,37 +275,5 @@ public class PIGeofencingService {
             }
         };
         new Thread(r).start();
-    }
-
-    /**
-     * Holds the mobile session information.
-     */
-    static class Session {
-        /**
-         * start timestamp.
-         */
-        long start;
-        /**
-         * duration in seconds.
-         */
-        long duration;
-
-        Session(long start) {
-            this.start = start;
-        }
-
-        /**
-         * Convert this session into an in-app eevnt.
-         * @return an {@link AEInAppEvent} instance.
-         */
-        /*
-        AEInAppEvent toInAppEvent() {
-          AEInAppEvent event = new AEInAppEvent("mobileSession");
-          event.setDate(new Date());
-          event.setAttribute("startDate", new Date(start));
-          event.setAttribute("duration", duration);
-          return event;
-        }
-        */
     }
 }
