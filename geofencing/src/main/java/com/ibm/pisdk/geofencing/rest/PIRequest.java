@@ -24,8 +24,6 @@ import java.util.List;
  */
 public abstract class PIRequest<C> {
     private static final String LOG_TAG = PIRequest.class.getSimpleName();
-    public static final int REMOTE_VARIABLE = 1;
-    public static final int USER_CONTEXT = 2;
     /**
      * The callback associated with the request.
      */
@@ -41,12 +39,11 @@ public abstract class PIRequest<C> {
     /**
      * HTTP request method to use.
      */
-    String method = "GET";
+    HttpMethod method = HttpMethod.GET;
     /**
      * The payload to send along with the request (for PUT and POST requests).
      */
     String payload;
-    private int requestType = REMOTE_VARIABLE;
     /**
      * Whether basic authentication is required for this request.
      */
@@ -58,15 +55,10 @@ public abstract class PIRequest<C> {
      * @param method the HTTP request method to use.
      * @param payload the payload to send along with the request (for PUT and POST requests).
      */
-    public PIRequest(PIRequestCallback<C> callback, String method, String payload, int requestType) {
+    public PIRequest(PIRequestCallback<C> callback, HttpMethod method, String payload) {
         this.callback = callback;
         this.method = method;
         this.payload = payload;
-        this.requestType = requestType;
-    }
-
-    public int getRequestType() {
-        return requestType;
     }
 
     /**
@@ -118,7 +110,7 @@ public abstract class PIRequest<C> {
     /**
      * Get the HTTP request method to use.
      */
-    public String getMethod() {
+    public HttpMethod getMethod() {
         return method;
     }
 

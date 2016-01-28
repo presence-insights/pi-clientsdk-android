@@ -81,7 +81,7 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
                 connection.setInstanceFollowRedirects(true);
                 connection.setConnectTimeout(30_000);
                 if (request.isBasicAuthRequired()) service.setAuthHeader(connection);
-                String method = request.getMethod().trim().toUpperCase();
+                String method = request.getMethod().name();
                 connection.setRequestMethod(method);
                 Utils.logRequestHeaders(connection);
                 if ("POST".equals(method) || "PUT".equals(method)) {

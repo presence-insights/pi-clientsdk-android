@@ -27,7 +27,7 @@ public class PIJSONPayloadRequest extends PIRequest<JSONObject> {
      * @param callback the callback instance to which the request results will be dispatched asynchronously.
      */
     public PIJSONPayloadRequest(PIRequestCallback<JSONObject> callback) {
-        this(callback, "GET", null, REMOTE_VARIABLE);
+        this(callback, HttpMethod.GET, null);
     }
 
     /**
@@ -36,18 +36,8 @@ public class PIJSONPayloadRequest extends PIRequest<JSONObject> {
      * @param method the HTTP request method to use.
      * @param payload the payload to send along with the request (for PUT and POST requests).
      */
-    public PIJSONPayloadRequest(PIRequestCallback<JSONObject> callback, String method, String payload) {
-        this(callback, method, payload, REMOTE_VARIABLE);
-    }
-
-    /**
-     * Initialize this request with the specified callback.
-     * @param callback the callback instance to which the request results will be dispatched asynchronously.
-     * @param method the HTTP request method to use.
-     * @param payload the payload to send along with the request (for PUT and POST requests).
-     */
-    public PIJSONPayloadRequest(PIRequestCallback<JSONObject> callback, String method, String payload, int type) {
-        super(callback, method, payload, type);
+    public PIJSONPayloadRequest(PIRequestCallback<JSONObject> callback, HttpMethod method, String payload) {
+        super(callback, method, payload);
     }
 
     @Override

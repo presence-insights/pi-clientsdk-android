@@ -186,10 +186,9 @@ class NetworkConnectivityHandler {
          * The payload to send along with the request (for PUT and POST requests).
          */
         String payload;
-        int requestType;
 
         public PersistentRequest(PIRequest<?> request) {
-            this.method = request.getMethod();
+            this.method = request.getMethod().name();
             this.payload = request.getPayload();
             this.path = request.getPath();
             try {
@@ -198,7 +197,6 @@ class NetworkConnectivityHandler {
             } catch (Exception e) {
                 Log.e(LOG_TAG, "error converting query parameters", e);
             }
-            this.requestType = request.getRequestType();
         }
 
         /**
@@ -224,8 +222,8 @@ class NetworkConnectivityHandler {
          */
         PIRequest<?> toRequest() {
             PIRequestCallback<JSONObject> cb = null;
-            switch(requestType) {
             /*
+            switch(requestType) {
             case PIRequest.USER_CONTEXT:
                   cb = new DefaultUserContextRequestCallback(null);
                   break;
@@ -233,7 +231,6 @@ class NetworkConnectivityHandler {
             case PIRequest.REMOTE_VARIABLE:
                   cb = new DefaultRemoteVariablesRequestCallback(null);
                   break;
-            */
             default:
                   break;
             }
@@ -241,6 +238,8 @@ class NetworkConnectivityHandler {
             request.setPath(path);
             request.parameters.addAll(parseQueryParameters());
             return request;
+            */
+            return null;
         }
     }
 }

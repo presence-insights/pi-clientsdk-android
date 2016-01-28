@@ -32,6 +32,7 @@ import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
 import com.ibm.pisdk.PIDeviceID;
 import com.ibm.pisdk.PIDeviceIDFactory;
+import com.ibm.pisdk.geofencing.rest.HttpMethod;
 import com.ibm.pisdk.geofencing.rest.PIHttpService;
 import com.ibm.pisdk.geofencing.rest.PIJSONPayloadRequest;
 import com.ibm.pisdk.geofencing.rest.PIRequestCallback;
@@ -55,6 +56,9 @@ public class PIGeofencingService {
      */
     private static final String LOG_TAG = PIGeofencingService.class.getSimpleName();
     static final String INTENT_ID = "com.ibm.pisdk.geofencing.PIGeofencingService";
+    /**
+     * Part of a request path pointing to the geofence connector.
+     */
     static final String GEOFENCE_CONNECTOR_PATH = "conn-geofence/v1";
     /**
      * The restful service which connects to and communicates with the Adaptive Experience server.
@@ -80,7 +84,10 @@ public class PIGeofencingService {
      * An internal cache of the "add geofences" requests, so the geofence transition service knows which callback to invoke.
      */
     static final Map<String, PIGeofenceCallback> callbackMap = new ConcurrentHashMap<>();
-    private PendingIntent pendingIntent = null;
+    /**
+     * Pending intent used to register a set of geofences.
+     */
+    private PendingIntent pendingIntent;
     /**
      * Provides uniquely identifying information for the device.
      */
@@ -88,25 +95,17 @@ public class PIGeofencingService {
 
     /**
      * Initialize this service.
-     * @param httpService The restful service which connects to and communicates with the Adaptive Experience server.
-     * @param context the Android application context.
      * @param geofenceCallback callback invoked a geofence is triggered.
+     * @param context the Android application context.
      */
-    public PIGeofencingService(PIHttpService httpService, Context context, PIGeofenceCallback geofenceCallback) {
-        this.httpService = httpService;
+    public PIGeofencingService(PIGeofenceCallback geofenceCallback, Context context, String serverURL, String tenant, String org, String username, String password) {
+        this.httpService = new PIHttpService(context, serverURL, tenant, org, username, password);
         this.geofenceCallback = new DelegatingGeofenceCallback(this, geofenceCallback);
         callbackMap.put(INTENT_ID, geofenceCallback);
         this.context = context;
         this.deviceID = PIDeviceIDFactory.newInstance(context);
         int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
-        String s = "undefined";
-        if (n == ConnectionResult.SUCCESS) s = "SUCCESS";
-        else if (n == ConnectionResult.SERVICE_MISSING) s = "SERVICE_MISSING";
-        else if (n == ConnectionResult.SERVICE_UPDATING) s = "SERVICE_UPDATING";
-        else if (n == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED) s = "SERVICE_VERSION_UPDATE_REQUIRED";
-        else if (n == ConnectionResult.SERVICE_DISABLED) s = "SERVICE_DISABLED";
-        else if (n == ConnectionResult.SERVICE_INVALID) s = "SERVICE_INVALID";
-        Log.v(LOG_TAG, "google play service availability = " + s);
+        Log.v(LOG_TAG, "google play service availability = " + getGoogleAvailabilityAsText(n));
         geofenceManager = new GeofenceManager(this);
         GoogleLocationAPICallback serviceCallback = new GoogleLocationAPICallback(this);
         googleApiClient = new GoogleApiClient.Builder(context).addApi(LocationServices.API).addConnectionCallbacks(serviceCallback).addOnConnectionFailedListener(serviceCallback).build();
@@ -132,7 +131,7 @@ public class PIGeofencingService {
             }
         };
         JSONObject payload = GeofencingJSONUtils.toJSON(fences, type, deviceID.getHardwareId());
-        PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, "POST", payload.toString());
+        PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.POST, payload.toString());
         String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s",
             GEOFENCE_CONNECTOR_PATH, httpService.getTenant(), httpService.getOrg());
         request.setPath(path);
@@ -263,6 +262,9 @@ public class PIGeofencingService {
         httpService.executeRequest(request);
     }
 
+    /**
+     * Set the initial location upon starting the app and trigger the registration of geofences, if any, around this location.
+     */
     private void setInitialLocation() {
         Runnable r = new Runnable() {
             @Override
@@ -275,5 +277,22 @@ public class PIGeofencingService {
             }
         };
         new Thread(r).start();
+    }
+
+    /**
+     * Converts a Google play services availability code into a displayable string.
+     * @param availabilityCode the google api connection result to convert.
+     * @return a readable string.
+     */
+    private String getGoogleAvailabilityAsText(int availabilityCode) {
+        switch(availabilityCode) {
+            case ConnectionResult.SUCCESS: return "SUCCESS";
+            case ConnectionResult.SERVICE_MISSING: return "SERVICE_MISSING";
+            case ConnectionResult.SERVICE_UPDATING: return "SERVICE_UPDATING";
+            case ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED: return "SERVICE_VERSION_UPDATE_REQUIRED";
+            case ConnectionResult.SERVICE_DISABLED: return "SERVICE_DISABLED";
+            case ConnectionResult.SERVICE_INVALID: return "SERVICE_INVALID";
+            default: return "undefined";
+        }
     }
 }

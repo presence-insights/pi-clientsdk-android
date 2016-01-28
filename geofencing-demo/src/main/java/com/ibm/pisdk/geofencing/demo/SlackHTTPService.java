@@ -21,6 +21,7 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.ibm.pisdk.geofencing.PIGeofence;
+import com.ibm.pisdk.geofencing.rest.HttpMethod;
 import com.ibm.pisdk.geofencing.rest.PIHttpService;
 import com.ibm.pisdk.geofencing.rest.PIJSONPayloadRequest;
 import com.ibm.pisdk.geofencing.rest.PIRequestCallback;
@@ -32,7 +33,7 @@ import java.net.URL;
 import java.util.List;
 
 /**
- *
+ * A service that sends messages to a Slack channel for each geofence enter/exit event.
  */
 public class SlackHTTPService extends PIHttpService {
     /**
@@ -53,6 +54,12 @@ public class SlackHTTPService extends PIHttpService {
         return builder.build();
     }
 
+    /**
+     * Send a single slack message for the specified geofences.
+     * @param geofences the geofences to send a message about
+     * @param type the type of geofence event: 'enter' or 'exit'.
+     * @param channel the slack channel to send the message to.
+     */
     public void postGeofenceMessages(List<PIGeofence> geofences, String type, String channel) {
         Log.d(LOG_TAG, "postGeofenceMessages() type=" + type + ", nbFences=" + geofences.size() + ", channel=" + channel);
         PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
@@ -66,7 +73,7 @@ public class SlackHTTPService extends PIHttpService {
                 Log.e(LOG_TAG, "slack request error: " + error);
             }
         };
-        PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, "POST", null, 0);
+        PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.POST, null);
         request.setPath("api/chat.postMessage");
         request.addParameter("token", "xoxb-16699261284-N2bQJgPCbgghzhPb0efFJhuw");
         request.addParameter("channel", channel);

@@ -44,7 +44,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.ui.IconGenerator;
 import com.ibm.pisdk.geofencing.PIGeofence;
 import com.ibm.pisdk.geofencing.PIGeofencingService;
-import com.ibm.pisdk.geofencing.rest.PIHttpService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -106,6 +105,9 @@ public class MapsActivity extends FragmentActivity {
      *
      */
     int mapMode = MODE_NORMAL;
+    /**
+     * Whether to send Slack and local notifications upon geofence events.
+     */
     boolean trackingEnabled = true;
     /**
      * Positions a marker always at the center of the map while following zoom and pan actions.
@@ -205,8 +207,7 @@ public class MapsActivity extends FragmentActivity {
             }
         }
         */
-        PIHttpService httpService = new PIHttpService(this, "http://starterapp.mybluemix.net", "xf504jy", "bj6s0rw5", "a6su7f", "8xdr5vfh");
-        service = new PIGeofencingService(httpService, this, new MyGeofenceCallback(this));
+        service = new PIGeofencingService(new MyGeofenceCallback(this), this, "http://starterapp.mybluemix.net", "xf504jy", "bj6s0rw5", "a6su7f", "8xdr5vfh");
         try {
             startSimulation(geofenceManager.getFences());
         } catch(Exception e) {
