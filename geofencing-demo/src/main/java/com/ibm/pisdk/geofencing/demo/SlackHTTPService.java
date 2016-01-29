@@ -18,7 +18,6 @@ package com.ibm.pisdk.geofencing.demo;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 
 import com.ibm.pisdk.geofencing.PIGeofence;
 import com.ibm.pisdk.geofencing.rest.HttpMethod;
@@ -27,6 +26,7 @@ import com.ibm.pisdk.geofencing.rest.PIJSONPayloadRequest;
 import com.ibm.pisdk.geofencing.rest.PIRequestCallback;
 import com.ibm.pisdk.geofencing.rest.PIRequestError;
 
+import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
 import java.net.URL;
@@ -37,9 +37,9 @@ import java.util.List;
  */
 public class SlackHTTPService extends PIHttpService {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private static final String LOG_TAG = SlackHTTPService.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(SlackHTTPService.class);
 
     public SlackHTTPService(Context context) {
         super(context, "https://cloudplatform.slack.com", null, null, null, null);
@@ -61,22 +61,6 @@ public class SlackHTTPService extends PIHttpService {
      * @param channel the slack channel to send the message to.
      */
     public void postGeofenceMessages(List<PIGeofence> geofences, String type, String channel) {
-        Log.d(LOG_TAG, "postGeofenceMessages() type=" + type + ", nbFences=" + geofences.size() + ", channel=" + channel);
-        PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
-            @Override
-            public void onSuccess(JSONObject result) {
-                Log.d(LOG_TAG, "slack request successful");
-            }
-
-            @Override
-            public void onError(PIRequestError error) {
-                Log.e(LOG_TAG, "slack request error: " + error);
-            }
-        };
-        PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.POST, null);
-        request.setPath("api/chat.postMessage");
-        request.addParameter("token", "xoxb-16699261284-N2bQJgPCbgghzhPb0efFJhuw");
-        request.addParameter("channel", channel);
         StringBuilder sb = new StringBuilder(":android: ").append(type).append(": ");
         int count = 0;
         for (PIGeofence fence : geofences) {
@@ -84,7 +68,31 @@ public class SlackHTTPService extends PIHttpService {
             sb.append('\'').append(fence.getName()).append('\'');
             count++;
         }
-        request.addParameter("text", sb.toString());
+        postMessage(sb.toString(), channel);
+    }
+
+    /**
+     * Send a single slack message.
+     * @param message the message to send
+     * @param channel the slack channel to send the message to.
+     */
+    public void postMessage(String message, String channel) {
+        PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject result) {
+                log.debug("slack request successful");
+            }
+
+            @Override
+            public void onError(PIRequestError error) {
+                log.error("slack request error: " + error);
+            }
+        };
+        PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.POST, null);
+        request.setPath("api/chat.postMessage");
+        request.addParameter("token", "xoxb-16699261284-N2bQJgPCbgghzhPb0efFJhuw");
+        request.addParameter("channel", channel);
+        request.addParameter("text", message);
         executeRequest(request);
     }
 }

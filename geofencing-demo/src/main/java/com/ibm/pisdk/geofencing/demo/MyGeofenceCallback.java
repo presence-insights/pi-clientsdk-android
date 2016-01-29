@@ -22,10 +22,11 @@ import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
-import android.util.Log;
 
 import com.ibm.pisdk.geofencing.PIGeofence;
 import com.ibm.pisdk.geofencing.PIGeofenceCallback;
+
+import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,9 +36,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MyGeofenceCallback implements PIGeofenceCallback {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private static final String LOG_TAG = MyGeofenceCallback.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(MyGeofenceCallback.class);
     private static final String SLACK_CHANNEL = "#geo-spam";
     private static final AtomicInteger notifId = new AtomicInteger(0);
     //#private static final String SLACK_CHANNEL = "@lolo4j";
@@ -51,17 +52,17 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
 
     @Override
     public void onGeofencesMonitored(final List<PIGeofence> geofences) {
-        Log.v(LOG_TAG, "onGeofencesMonitored() geofences = " + geofences);
+        log.debug("onGeofencesMonitored() geofences = " + geofences);
     }
 
     @Override
     public void onGeofencesUnmonitored(List<PIGeofence> geofences) {
-        Log.v(LOG_TAG, "onGeofencesUnmonitored() geofences = " + geofences);
+        log.debug("onGeofencesUnmonitored() geofences = " + geofences);
     }
 
     @Override
     public void onGeofencesEnter(final List<PIGeofence> geofences) {
-        Log.v(LOG_TAG, "entering geofence(s) " + geofences);
+        log.debug("entering geofence(s) " + geofences);
         if (activity.trackingEnabled) {
             updateUI(geofences, true);
             sendNotification(geofences, "enter");
@@ -71,7 +72,7 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
 
     @Override
     public void onGeofencesExit(final List<PIGeofence> geofences) {
-        Log.v(LOG_TAG, "exiting geofence(s) " + geofences);
+        log.debug("exiting geofence(s) " + geofences);
         if (activity.trackingEnabled) {
             updateUI(geofences, false);
             sendNotification(geofences, "exit");
@@ -85,7 +86,7 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
                 @Override
                 public void run() {
                     PIGeofence g = activity.getGeofenceManager().getGeofence(geofence.getUuid());
-                    Log.v(LOG_TAG, "Geofence " + (isEntry ? "entry" : "exit") + " for " + g + " (uuid=" + geofence + ")");
+                    log.debug("Geofence " + (isEntry ? "entry" : "exit") + " for " + g + " (uuid=" + geofence + ")");
                     if (g != null) {
                         activity.refreshGeofenceInfo(g, isEntry);
                         activity.updateCurrentMarker();

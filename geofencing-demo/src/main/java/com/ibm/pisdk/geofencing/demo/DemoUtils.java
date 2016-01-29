@@ -20,16 +20,20 @@ import android.content.Context;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.SystemClock;
-import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.ibm.pisdk.geofencing.PIGeofence;
 import com.orm.SugarDb;
 
+import org.apache.log4j.Logger;
+
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -44,9 +48,9 @@ import java.util.Random;
  */
 public class DemoUtils {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private static final String LOG_TAG = DemoUtils.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(DemoUtils.class);
     private static Random rand = new Random(System.nanoTime());
 
     /**
@@ -68,7 +72,7 @@ public class DemoUtils {
             try {
                 if (r != null) r.close();
             } catch (IOException e) {
-                Log.e(LOG_TAG, "error closing reader", e);
+                log.error("error closing reader", e);
             }
         }
         return sb.toString();
@@ -110,10 +114,10 @@ public class DemoUtils {
     static void deleteGeofenceDB(Context context) {
         SugarDb sugarDB = new SugarDb(context);
         String dbName = sugarDB.getDatabaseName();
-        Log.v(LOG_TAG, "deleteGeofenceDB() geofence db name = '" + dbName + "'");
+        log.debug("deleteGeofenceDB() geofence db name = '" + dbName + "'");
         File dbFile = context.getDatabasePath(dbName);
         boolean result = dbFile.delete();
-        Log.v(LOG_TAG, "deleteGeofenceDB() db file = '" + dbFile + "', result of delete = " + result);
+        log.debug("deleteGeofenceDB() db file = '" + dbFile + "', result of delete = " + result);
     }
 
     static void loadLocallyStoredGeofences() {
@@ -124,7 +128,7 @@ public class DemoUtils {
      * @param geofences the list of geofences from which to perform the computations.
      */
     static Map<String, Object> computeCenterLocationAndBounds(List<PIGeofence> geofences) {
-        Log.v(LOG_TAG, String.format("computeCenterLocationAndBounds(geofences=%s)", geofences));
+        log.debug(String.format("computeCenterLocationAndBounds(geofences=%s)", geofences));
         Map<String, Object> map = new HashMap<>();
         double minLat = Double.MAX_VALUE;
         double maxLat = 0d;
@@ -146,7 +150,7 @@ public class DemoUtils {
      * @param geofences the list of geofences from which to perform the computations.
      */
     static Map<String, Object> computeBounds(List<PIGeofence> geofences, LatLng centerLocation) {
-        Log.v(LOG_TAG, String.format("computeBounds(geofences=%s, centerLocation=%s)", geofences, centerLocation));
+        log.debug(String.format("computeBounds(geofences=%s, centerLocation=%s)", geofences, centerLocation));
         if (centerLocation == null) return computeCenterLocationAndBounds(geofences);
         Map<String, Object> map = new HashMap<>();
         double maxLat = 0d;
@@ -161,7 +165,7 @@ public class DemoUtils {
                 maxLng = diff;
             }
         }
-        Log.v(LOG_TAG, String.format("computeBounds() maxLat=%.6f, maxLng=%.6f", maxLat, maxLng));
+        log.debug(String.format("computeBounds() maxLat=%.6f, maxLng=%.6f", maxLat, maxLng));
         LatLngBounds bounds = new LatLngBounds(new LatLng(centerLocation.latitude - maxLat, centerLocation.longitude - maxLng),
             new LatLng(centerLocation.latitude + maxLat, centerLocation.longitude + maxLng));
         map.put("center", centerLocation);
@@ -174,7 +178,7 @@ public class DemoUtils {
      * @param centerLocation .
      */
     static Map<String, Object> computeBounds(LatLng centerLocation, double latDelta, double lngDelta) {
-        Log.v(LOG_TAG, String.format("computeBounds(geofences=%s, latDelta=%.6f, lngDelta=%.6f)", centerLocation, latDelta, lngDelta));
+        log.debug(String.format("computeBounds(geofences=%s, latDelta=%.6f, lngDelta=%.6f)", centerLocation, latDelta, lngDelta));
         Map<String, Object> map = new HashMap<>();
         LatLngBounds bounds = new LatLngBounds(new LatLng(centerLocation.latitude - latDelta, centerLocation.longitude - lngDelta),
             new LatLng(centerLocation.latitude + latDelta, centerLocation.longitude + lngDelta));
@@ -194,7 +198,7 @@ public class DemoUtils {
             }
             return baos.toByteArray();
         } catch (Exception e) {
-            Log.d(LOG_TAG, String.format("error while trying to read resource %s", name), e);
+            log.debug(String.format("error while trying to read resource %s", name), e);
         }
         return null;
     }

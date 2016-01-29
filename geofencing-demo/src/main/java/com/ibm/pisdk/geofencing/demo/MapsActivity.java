@@ -17,13 +17,14 @@
 package com.ibm.pisdk.geofencing.demo;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -42,9 +43,15 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.ui.IconGenerator;
+import com.ibm.pisdk.geofencing.LoggingConfiguration;
 import com.ibm.pisdk.geofencing.PIGeofence;
 import com.ibm.pisdk.geofencing.PIGeofencingService;
 
+import org.apache.log4j.Logger;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,9 +63,9 @@ import java.util.Map;
  */
 public class MapsActivity extends FragmentActivity {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private static final String LOG_TAG = MapsActivity.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(MapsActivity.class);
     /**
      * Color for fences active on the map.
      */
@@ -134,7 +141,7 @@ public class MapsActivity extends FragmentActivity {
         if (googleMap != null) {
             outState.putFloat("zoom", googleMap.getCameraPosition().zoom);
         }
-        Log.v(LOG_TAG, "onSaveInstanceState()");
+        log.debug("onSaveInstanceState()");
     }
 
     @Override
@@ -149,17 +156,19 @@ public class MapsActivity extends FragmentActivity {
                 currentLocation.setTime(System.currentTimeMillis());
             }
             currentZoom = savedInstanceState.getFloat("zoom", -1f);
-            Log.v(LOG_TAG, String.format("restored currentLocation=%s; currentZoom=%f", currentLocation, currentZoom));
+            log.debug(String.format("restored currentLocation=%s; currentZoom=%f", currentLocation, currentZoom));
         }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.v(LOG_TAG, "in onCreate() googleMap = " + googleMap);
+        LoggingConfiguration.configure(this);
+        log.debug("***************************************************************************************");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.maps_activity);
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         trackingEnabled = prefs.getBoolean("tracking.enabled", true);
+        log.debug("in onCreate() tracking is " + (trackingEnabled ? "enabled" : "disabled"));
         final Button btn = (Button) findViewById(R.id.addFenceButton);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -189,9 +198,9 @@ public class MapsActivity extends FragmentActivity {
                 currentLocation.setTime(System.currentTimeMillis());
             }
             currentZoom = savedInstanceState.getFloat("zoom", -1f);
-            Log.v(LOG_TAG, String.format("restored currentLocation=%s; currentZoom=%f", currentLocation, currentZoom));
+            log.debug(String.format("restored currentLocation=%s; currentZoom=%f", currentLocation, currentZoom));
         }
-        Log.v(LOG_TAG, "onCreate() : init of geofencing service");
+        log.debug("onCreate() : init of geofencing service");
         /*
         if (!dbDeleted) {
             dbDeleted = true;
@@ -211,7 +220,7 @@ public class MapsActivity extends FragmentActivity {
         try {
             startSimulation(geofenceManager.getFences());
         } catch(Exception e) {
-            Log.e(LOG_TAG, "error in startSimulation()", e);
+            log.error("error in startSimulation()", e);
         }
     }
 
@@ -231,7 +240,7 @@ public class MapsActivity extends FragmentActivity {
                         refreshGeofenceInfo(g, false);
                     }
                 } catch(Exception e) {
-                    Log.e(LOG_TAG, "error in startSimulation()", e);
+                    log.error("error in startSimulation()", e);
                 }
             }
         });
@@ -243,7 +252,7 @@ public class MapsActivity extends FragmentActivity {
     void setUpMapIfNeeded() {
         if (googleMap == null) {
             googleMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
-            Log.v(LOG_TAG, "setUpMapIfNeeded() : googleMap = " + googleMap);
+            log.debug("setUpMapIfNeeded() : googleMap = " + googleMap);
             if (googleMap != null) {
                 LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
                 if (currentLocation == null)  currentLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
@@ -265,7 +274,7 @@ public class MapsActivity extends FragmentActivity {
                 LatLng latlng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
                 List<PIGeofence> fences = geofenceManager.getFences();
                 Map<String, Object> map = (fences != null) && !fences.isEmpty() ? DemoUtils.computeBounds(fences, latlng) : DemoUtils.computeBounds(latlng, 0.0005, 0.0005);
-                Log.v(LOG_TAG, "setUpMapIfNeeded() : bounds map = " + map + ", fences = " + fences);
+                log.debug("setUpMapIfNeeded() : bounds map = " + map + ", fences = " + fences);
                 final LatLngBounds bounds = (LatLngBounds) map.get("bounds");
                 final LatLng loc = (LatLng) map.get("center");
                 // set the map center and zoom level/bounds once it is loaded
@@ -276,10 +285,10 @@ public class MapsActivity extends FragmentActivity {
                             @Override
                             public void run() {
                                 if (currentZoom >= 0f) {
-                                    Log.v(LOG_TAG, "setUpMapIfNeeded() setting zoom");
+                                    log.debug("setUpMapIfNeeded() setting zoom");
                                     googleMap.moveCamera(CameraUpdateFactory.zoomTo(currentZoom));
                                 } else {
-                                    Log.v(LOG_TAG, "setUpMapIfNeeded() setting bounds");
+                                    log.debug("setUpMapIfNeeded() setting bounds");
                                     googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100));
                                 }
                                 refreshCurrentLocation(loc.latitude, loc.longitude);
@@ -295,7 +304,7 @@ public class MapsActivity extends FragmentActivity {
                             return true;
                         }
                         GeofenceInfo info = getGeofenceInfoForMarker(marker);
-                        Log.v(LOG_TAG, String.format("onMarkerClick(marker=%s) info=%s", marker, info));
+                        log.debug(String.format("onMarkerClick(marker=%s) info=%s", marker, info));
                         EditGeofenceDialog dialog = new EditGeofenceDialog();
                         dialog.customInit(MapsActivity.this, EditGeofenceDialog.MODE_UPDATE_DELETE, info);
                         dialog.show(getFragmentManager(), "geofences");
@@ -448,12 +457,33 @@ public class MapsActivity extends FragmentActivity {
         switch (item.getItemId()) {
             case R.id.action_tracking:
                 trackingEnabled = !trackingEnabled;
+                log.debug("tracking is now " + (trackingEnabled ? "enabled" : "disabled"));
                 SharedPreferences prefs = getPreferences(MODE_PRIVATE);
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putBoolean("tracking.enabled", trackingEnabled);
                 editor.apply();
                 item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
-                Log.v(LOG_TAG, String.format("onOptionsItemSelected() tracking is now %s", trackingEnabled ? "enabled" : "disabled"));
+                log.debug(String.format("onOptionsItemSelected() tracking is now %s", trackingEnabled ? "enabled" : "disabled"));
+                break;
+            case R.id.action_mail_log:
+                try {
+                    Intent intent = new Intent(Intent.ACTION_SEND);
+                    intent.setType("message/rfc822");
+                    //intent.setType("text/plain");
+                    //intent.setData(Uri.parse("mailto:")); // only email apps should handle this
+                    intent.putExtra(Intent.EXTRA_EMAIL, new String[] {"LAURENTC@fr.ibm.com"});
+                    intent.putExtra(Intent.EXTRA_SUBJECT, "PI sdk log - " + new java.util.Date());
+                    File file = new File(LoggingConfiguration.getLogFile());
+                    intent.putExtra(Intent.EXTRA_TEXT, "See attached log file '" + file.getName() + "'");
+                    Uri uri = Uri.parse(file.toURI().toString());
+                    log.debug("log file uril = " + uri);
+                    intent.putExtra(Intent.EXTRA_STREAM, uri);
+                    if (intent.resolveActivity(getPackageManager()) != null) {
+                        startActivity(intent);
+                    }
+                } catch(Exception e) {
+                    log.debug(e.getMessage(), e);
+                }
                 break;
         }
        return super.onOptionsItemSelected(item);

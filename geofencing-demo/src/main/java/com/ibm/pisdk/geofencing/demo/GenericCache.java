@@ -25,7 +25,7 @@ import java.util.Set;
  * A generic in-memory caching utility.
  */
 public class GenericCache {
-    private final Map<String, Object> cache = new HashMap<String, Object>();
+    private final Map<String, Object> cache = new HashMap<>();
     private static final GenericCache instance = new GenericCache();
 
     private GenericCache() {
