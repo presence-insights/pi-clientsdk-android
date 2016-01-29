@@ -92,6 +92,10 @@ public class PIGeofencingService {
      * Provides uniquely identifying information for the device.
      */
     private final PIDeviceID deviceID;
+    /**
+     * Whether geofence events are posted to the PI geofence connector.
+     */
+    private boolean sendingGeofenceEvents = true;
 
     /**
      * Initialize this service.
@@ -120,24 +124,26 @@ public class PIGeofencingService {
      * @param type the type of geofence notification: either {@link GeofenceNotificationType#IN IN} or {@link GeofenceNotificationType#OUT OUT}.
      */
     void sendGeofenceNotification(final List<PIGeofence> fences, final GeofenceNotificationType type) {
-        PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
-            @Override
-            public void onSuccess(JSONObject result) {
-                log.debug("sucessfully notified connector for geofences " + fences);
-            }
+        if (sendingGeofenceEvents) {
+            PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
+                    log.debug("sucessfully notified connector for geofences " + fences);
+                }
 
-            @Override
-            public void onError(PIRequestError error) {
-                log.error("error notifyiing connector for geofences " + fences + " : " + error.toString());
-            }
-        };
-        JSONObject payload = GeofencingJSONUtils.toJSON(fences, type, deviceID.getHardwareId());
-        PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.POST, payload.toString());
-        String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s",
-            GEOFENCE_CONNECTOR_PATH, httpService.getTenant(), httpService.getOrg());
-        request.setPath(path);
-        request.setBasicAuthRequired(true);
-        httpService.executeRequest(request);
+                @Override
+                public void onError(PIRequestError error) {
+                    log.error("error notifyiing connector for geofences " + fences + " : " + error.toString());
+                }
+            };
+            JSONObject payload = GeofencingJSONUtils.toJSON(fences, type, deviceID.getHardwareId());
+            PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.POST, payload.toString());
+            String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s",
+                GEOFENCE_CONNECTOR_PATH, httpService.getTenant(), httpService.getOrg());
+            request.setPath(path);
+            request.setBasicAuthRequired(true);
+            httpService.executeRequest(request);
+        }
     }
 
     /**
@@ -191,6 +197,23 @@ public class PIGeofencingService {
             geofenceManager.removeFencesFromPrefs(geofences);
             geofenceCallback.onGeofencesUnmonitored(geofences);
         }
+    }
+
+    /**
+     * Determine whether geofence events are posted to the PI geofence connector.
+     * @return {@code true} if geofence events are posted, {@code false} otherwise.
+     */
+    public boolean isSendingGeofenceEvents() {
+        return sendingGeofenceEvents;
+    }
+
+    /**
+     * Specify whether geofence events should be posted to the PI geofence connector.
+     * By default, events are posted, i.e. {@link #isSendingGeofenceEvents()} will return {@code true}.
+     * @param sendingGeofenceEvents {@code true}  to enable geofence events posting, {@code false} otherwise.
+     */
+    public void setSendingGeofenceEvents(boolean sendingGeofenceEvents) {
+        this.sendingGeofenceEvents = sendingGeofenceEvents;
     }
 
     /**

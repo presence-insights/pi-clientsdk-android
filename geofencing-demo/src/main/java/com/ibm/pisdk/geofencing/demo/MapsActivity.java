@@ -50,8 +50,6 @@ import com.ibm.pisdk.geofencing.PIGeofencingService;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -217,6 +215,7 @@ public class MapsActivity extends FragmentActivity {
         }
         */
         service = new PIGeofencingService(new MyGeofenceCallback(this), this, "http://starterapp.mybluemix.net", "xf504jy", "bj6s0rw5", "a6su7f", "8xdr5vfh");
+        service.setSendingGeofenceEvents(false);
         try {
             startSimulation(geofenceManager.getFences());
         } catch(Exception e) {
