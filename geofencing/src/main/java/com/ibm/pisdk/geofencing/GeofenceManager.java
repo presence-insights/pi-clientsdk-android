@@ -20,10 +20,11 @@ import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationManager;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.model.LatLng;
+
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,9 +42,9 @@ import java.util.TreeMap;
  */
 class GeofenceManager implements LocationListener {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private static final String LOG_TAG = GeofenceManager.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(GeofenceManager.class);
     /**
      * Key for the shared preferences that stores the uuids of the registered fences.
      */
@@ -120,10 +121,10 @@ class GeofenceManager implements LocationListener {
     @Override
     public void onLocationChanged(Location location) {
         double d = distanceThreshold + 1d;
-        Log.v(LOG_TAG, "onLocationChanged(location=" + location + ") new location");
+        log.debug("onLocationChanged(location=" + location + ") new location");
         if (referenceLocation != null) d = referenceLocation.distanceTo(location);
         if (d > distanceThreshold) {
-            Log.v(LOG_TAG, "onLocationChanged(location=" + location + ")");
+            log.debug("onLocationChanged(location=" + location + ")");
             clearFences();
             // where clause to find all geofences whose center's distance to the new location is < distanceThreshold
             String where = createWhereClause(location.getLatitude(), location.getLongitude(), distanceThreshold);

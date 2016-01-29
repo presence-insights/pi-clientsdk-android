@@ -18,6 +18,7 @@ package com.ibm.pisdk.geofencing;
 
 import android.util.Log;
 
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -32,9 +33,9 @@ import java.util.List;
  */
 public class GeofencingJSONUtils {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private static final String LOG_TAG = GeofencingJSONUtils.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(PIGeofencingService.class);
     /**
      * Date format used to convert dates from/to UTC format such as "2015-08-24T09:00:00-05:00".
      */
@@ -125,7 +126,7 @@ public class GeofencingJSONUtils {
                 notifications.put(toJSON(fence, deviceID, date, type));
             }
         } catch(JSONException e) {
-            Log.e(LOG_TAG, "exception generating json for geofence list", e);
+            log.error("exception generating json for geofence list", e);
         }
         return json;
     }
@@ -140,7 +141,7 @@ public class GeofencingJSONUtils {
             data.put("fenceCode", fence.getUuid());
             data.put("crossingType", type.operation());
         } catch(JSONException e) {
-            Log.e(LOG_TAG, "exception generating json for geofence list", e);
+            log.error("exception generating json for geofence list", e);
         }
         return json;
     }

@@ -23,6 +23,8 @@ import android.util.Log;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingEvent;
 
+import org.apache.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,9 +33,9 @@ import java.util.List;
  */
 public class GeofenceTransitionsService extends IntentService {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private static final String LOG_TAG = GeofenceTransitionsService.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(PIGeofencingService.class);
 
     public GeofenceTransitionsService() {
         super("PIGeofencingService");
@@ -45,10 +47,10 @@ public class GeofenceTransitionsService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        Log.v(LOG_TAG, "in onHandleIntent()");
+        log.debug("in onHandleIntent()");
         GeofencingEvent event = GeofencingEvent.fromIntent(intent);
         if (event.hasError()) {
-            Log.e(LOG_TAG, String.format(
+            log.error(String.format(
                 "Error code %d, triggering fences = %s, trigering location = %s", event.getErrorCode(), event.getTriggeringGeofences(), event.getTriggeringLocation()));
             return;
         }
@@ -58,7 +60,7 @@ public class GeofenceTransitionsService extends IntentService {
         if (transition == Geofence.GEOFENCE_TRANSITION_ENTER || transition == Geofence.GEOFENCE_TRANSITION_EXIT) {
             // Get the geofences that were triggered. A single event can trigger multiple geofences.
             List<Geofence> triggeringGeofences = event.getTriggeringGeofences();
-            Log.v(LOG_TAG, "geofence transition: " + triggeringGeofences);
+            log.debug("geofence transition: " + triggeringGeofences);
             PIGeofenceCallback callback = PIGeofencingService.callbackMap.get(intent.getStringExtra(PIGeofencingService.INTENT_ID));
             List<PIGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
             for (Geofence g : triggeringGeofences) {
@@ -72,7 +74,7 @@ public class GeofenceTransitionsService extends IntentService {
                 callback.onGeofencesExit(geofences);
             }
         } else {
-            Log.e(LOG_TAG, "invalid transition type: " + transition);
+            log.error("invalid transition type: " + transition);
         }
     }
 }

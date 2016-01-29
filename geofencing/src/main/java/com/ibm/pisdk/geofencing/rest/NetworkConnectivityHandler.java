@@ -19,10 +19,10 @@ package com.ibm.pisdk.geofencing.rest;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.util.Log;
 
 import com.orm.SugarRecord;
 
+import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -51,9 +51,9 @@ import java.util.regex.Pattern;
  */
 class NetworkConnectivityHandler {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private final static String LOG_TAG = NetworkConnectivityHandler.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(NetworkConnectivityHandler.class);
     private static final Pattern AMP_PATTERN = Pattern.compile("&");
     private static final Pattern EQUAL_PATTERN = Pattern.compile("=");
     private final Context context;
@@ -118,7 +118,7 @@ class NetworkConnectivityHandler {
      */
     void onActiveNetwork() {
         if (networkActive.compareAndSet(false, true)) {
-            Log.v(LOG_TAG, "onActiveNetwork() network connectivity back on");
+            log.debug("onActiveNetwork() network connectivity back on");
             synchronized (this) {
                 httpService.executor = Executors.newSingleThreadExecutor();
                 Iterator<PersistentRequest> persisted = PersistentRequest.findAll(PersistentRequest.class);
@@ -129,7 +129,7 @@ class NetworkConnectivityHandler {
                     count++;
                 }
                 PersistentRequest.deleteAll(PersistentRequest.class);
-                Log.v(LOG_TAG, "onActiveNetwork() restored " + count + " requests");
+                log.debug("onActiveNetwork() restored " + count + " requests");
             }
         }
     }
@@ -140,10 +140,10 @@ class NetworkConnectivityHandler {
     void onInactiveNetwork() {
         if (networkActive.compareAndSet(true, false)) {
             synchronized (this) {
-                Log.v(LOG_TAG, "detected loss of network connectivity");
+                log.debug("detected loss of network connectivity");
                 List<Runnable> pendingTasks = httpService.executor.shutdownNow();
                 if (!pendingTasks.isEmpty()) {
-                    Log.v(LOG_TAG, "onInctiveNetwork() persisting " + pendingTasks.size() + " requests");
+                    log.debug("onInctiveNetwork() persisting " + pendingTasks.size() + " requests");
                     List<PersistentRequest> requests = new ArrayList<>();
                     for (Runnable task : pendingTasks) {
                         PIRequest<?> request = ((PIHttpService.RequestTask) task).request;
@@ -160,7 +160,7 @@ class NetworkConnectivityHandler {
      */
     void persistRequest(PIRequest<?> request) {
         synchronized (this) {
-            Log.v(LOG_TAG, "persistRequest() presisting " + request);
+            log.debug("persistRequest() presisting " + request);
             new PersistentRequest(request).save();
         }
     }
@@ -195,7 +195,7 @@ class NetworkConnectivityHandler {
                 // serialize query params to string format (URL-encoded)
                 this.parameters = request.addParams(new StringBuilder()).toString();
             } catch (Exception e) {
-                Log.e(LOG_TAG, "error converting query parameters", e);
+                log.error("error converting query parameters", e);
             }
         }
 
@@ -205,12 +205,12 @@ class NetworkConnectivityHandler {
         List<QueryParameter> parseQueryParameters() {
             List<QueryParameter> list = new ArrayList<>();
             if ((parameters != null) && !parameters.isEmpty()) {
-                Log.v(LOG_TAG, "parseQueryParameters() params = " + parameters);
+                log.debug("parseQueryParameters() params = " + parameters);
                 String s = parameters.startsWith("?") ? parameters.substring(1) : parameters;
                 String[] params = AMP_PATTERN.split(s);
                 for (String param : params) {
                     String[] comp = EQUAL_PATTERN.split(param);
-                    Log.v(LOG_TAG, "parseQueryParameters() parsing param = " + Arrays.asList(comp));
+                    log.debug("parseQueryParameters() parsing param = " + Arrays.asList(comp));
                     list.add(new QueryParameter(Utils.urlDeccode(comp[0]), Utils.urlDeccode(comp[1])));
                 }
             }

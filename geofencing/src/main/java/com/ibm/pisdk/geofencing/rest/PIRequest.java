@@ -23,7 +23,6 @@ import java.util.List;
  * Abstract super class common to all requests.
  */
 public abstract class PIRequest<C> {
-    private static final String LOG_TAG = PIRequest.class.getSimpleName();
     /**
      * The callback associated with the request.
      */

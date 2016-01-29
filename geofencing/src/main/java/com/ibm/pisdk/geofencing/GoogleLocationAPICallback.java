@@ -18,21 +18,22 @@ package com.ibm.pisdk.geofencing;
 
 import android.os.Bundle;
 import android.os.Looper;
-import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
+import org.apache.log4j.Logger;
+
 /**
  * Callback implementation for feedback on the Google API connection state.
  */
 class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private static final String LOG_TAG = GoogleLocationAPICallback.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(PIGeofencingService.class);
     private final PIGeofencingService service;
 
     public GoogleLocationAPICallback(PIGeofencingService service) {
@@ -41,7 +42,7 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
 
     @Override
     public void onConnected(Bundle bundle) {
-        Log.v(LOG_TAG, "connected to google API");
+        log.debug("connected to google API");
         // register a location change listener
         final LocationRequest locationRequest = LocationRequest.create()
             .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY)
@@ -61,11 +62,11 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
 
     @Override
     public void onConnectionSuspended(int i) {
-        Log.v(LOG_TAG, "connection to google API suspended");
+        log.debug("connection to google API suspended");
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
-        Log.e(LOG_TAG, "failed to connect to google API: " + connectionResult);
+        log.debug("failed to connect to google API: " + connectionResult);
     }
 }

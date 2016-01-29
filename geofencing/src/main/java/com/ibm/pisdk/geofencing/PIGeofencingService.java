@@ -20,7 +20,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
-import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -38,6 +37,7 @@ import com.ibm.pisdk.geofencing.rest.PIJSONPayloadRequest;
 import com.ibm.pisdk.geofencing.rest.PIRequestCallback;
 import com.ibm.pisdk.geofencing.rest.PIRequestError;
 
+import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -52,9 +52,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class PIGeofencingService {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private static final String LOG_TAG = PIGeofencingService.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(PIGeofencingService.class);
     static final String INTENT_ID = "com.ibm.pisdk.geofencing.PIGeofencingService";
     /**
      * Part of a request path pointing to the geofence connector.
@@ -99,17 +99,18 @@ public class PIGeofencingService {
      * @param context the Android application context.
      */
     public PIGeofencingService(PIGeofenceCallback geofenceCallback, Context context, String serverURL, String tenant, String org, String username, String password) {
+        LoggingConfiguration.configure(context);
         this.httpService = new PIHttpService(context, serverURL, tenant, org, username, password);
         this.geofenceCallback = new DelegatingGeofenceCallback(this, geofenceCallback);
         callbackMap.put(INTENT_ID, geofenceCallback);
         this.context = context;
         this.deviceID = PIDeviceIDFactory.newInstance(context);
         int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
-        Log.v(LOG_TAG, "google play service availability = " + getGoogleAvailabilityAsText(n));
+        log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
         geofenceManager = new GeofenceManager(this);
         GoogleLocationAPICallback serviceCallback = new GoogleLocationAPICallback(this);
         googleApiClient = new GoogleApiClient.Builder(context).addApi(LocationServices.API).addConnectionCallbacks(serviceCallback).addOnConnectionFailedListener(serviceCallback).build();
-        Log.v(LOG_TAG, "initGms() connecting to google play services ...");
+        log.debug("initGms() connecting to google play services ...");
         googleApiClient.connect();
     }
 
@@ -122,12 +123,12 @@ public class PIGeofencingService {
         PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
             @Override
             public void onSuccess(JSONObject result) {
-                Log.v(LOG_TAG, "sucessfully notified connector for geofences " + fences);
+                log.debug("sucessfully notified connector for geofences " + fences);
             }
 
             @Override
             public void onError(PIRequestError error) {
-                Log.e(LOG_TAG, "error notifyiing connector for geofences " + fences + " : " + error.toString());
+                log.error("error notifyiing connector for geofences " + fences + " : " + error.toString());
             }
         };
         JSONObject payload = GeofencingJSONUtils.toJSON(fences, type, deviceID.getHardwareId());
@@ -144,7 +145,7 @@ public class PIGeofencingService {
      * @param geofences the geofences to add.
      */
     public void addGeofences(List<PIGeofence> geofences) {
-        Log.v(LOG_TAG, "addGeofences(" + geofences + ")");
+        log.debug("addGeofences(" + geofences + ")");
         geofences = geofenceManager.filterFromPrefs(geofences);
         if (!geofences.isEmpty()) {
             List<Geofence> list = new ArrayList<>(geofences.size());
@@ -166,7 +167,7 @@ public class PIGeofencingService {
             LocationServices.GeofencingApi.addGeofences(googleApiClient, request, pi).setResultCallback(new ResultCallback<Status>() {
                 @Override
                 public void onResult(Status status) {
-                    Log.v(LOG_TAG, "add geofence request status " + status);
+                    log.debug("add geofence request status " + status);
                 }
             });
             geofenceManager.addFencesToPrefs(geofences);
@@ -179,7 +180,7 @@ public class PIGeofencingService {
      * @param geofences the geofences to remove.
      */
     public void removeGeofences(List<PIGeofence> geofences) {
-        Log.v(LOG_TAG, "removeGeofences(" + geofences + ")");
+        log.debug("removeGeofences(" + geofences + ")");
         geofences = geofenceManager.filterFromPrefs(geofences);
         if (!geofences.isEmpty()) {
             List<String> uuidsToRemove = new ArrayList<>(geofences.size());
@@ -220,10 +221,10 @@ public class PIGeofencingService {
     void loadGeofences() {
         Iterator<PIGeofence> it = PIGeofence.findAll(PIGeofence.class);
         if ((httpService.getServerURL() != null) && !it.hasNext()) {
-            Log.v(LOG_TAG, "loadGeofences() loading geofences from the server");
+            log.debug("loadGeofences() loading geofences from the server");
             loadGeofencesFromServer(true);
         } else {
-            Log.v(LOG_TAG, "loadGeofences() found geofences in local database");
+            log.debug("loadGeofences() found geofences in local database");
             setInitialLocation();
         }
     }
@@ -245,16 +246,16 @@ public class PIGeofencingService {
                     } else if (initialRequest) {
                         loadGeofencesFromServer(false);
                     }
-                    Log.v(LOG_TAG, "loadGeofences() got " + list.getGeofences().size() + " geofences");
+                    log.debug("loadGeofences() got " + list.getGeofences().size() + " geofences");
                 } catch (Exception e) {
                     PIRequestError error = new PIRequestError(-1, e, "error while parsing JSON");
-                    Log.v(LOG_TAG, error.toString());
+                    log.debug(error.toString());
                 }
             }
 
             @Override
             public void onError(PIRequestError error) {
-                Log.v(LOG_TAG, error.toString());
+                log.debug(error.toString());
             }
         };
         PIJSONPayloadRequest request = new PIJSONPayloadRequest(cb);
@@ -270,7 +271,7 @@ public class PIGeofencingService {
             @Override
             public void run() {
                 Location last = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
-                Log.d(LOG_TAG, "setInitialLocation() last location = " + last);
+                log.debug("setInitialLocation() last location = " + last);
                 if (last != null) {
                     geofenceManager.onLocationChanged(last);
                 }

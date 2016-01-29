@@ -19,7 +19,8 @@ package com.ibm.pisdk.geofencing.rest;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Base64;
-import android.util.Log;
+
+import org.apache.log4j.Logger;
 
 import java.net.CookieManager;
 import java.net.HttpURLConnection;
@@ -43,9 +44,9 @@ import javax.net.ssl.X509TrustManager;
  */
 public class PIHttpService {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private final static String LOG_TAG = PIHttpService.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(PIHttpService.class);
     private CookieManager manager = new CookieManager();
     /**
      * Used to queue the http requests.
@@ -183,7 +184,7 @@ public class PIHttpService {
      * @param request the request to execute.
      */
     public <T> void executeRequest(final PIRequest<T> request) {
-        Log.d(LOG_TAG, "executeRequest()");
+        log.debug("executeRequest()");
         if (!connectivityHandler.isEnabled() || connectivityHandler.isNetworkActive()) {
             executor.execute(new RequestTask<>(request));
         } else {
@@ -258,7 +259,7 @@ public class PIHttpService {
     void logErrorBody(HttpURLConnection connection) {
         try {
             String err = Utils.readErrorBody(connection);
-            Log.d(LOG_TAG, "error body = " + err);
+            log.debug("error body = " + err);
         } catch (Exception ignore) {
         }
     }

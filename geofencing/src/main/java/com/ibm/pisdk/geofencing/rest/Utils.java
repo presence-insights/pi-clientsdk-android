@@ -16,7 +16,7 @@
 
 package com.ibm.pisdk.geofencing.rest;
 
-import android.util.Log;
+import org.apache.log4j.Logger;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,9 +37,9 @@ import java.util.ResourceBundle;
  */
 final class Utils {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private final static String LOG_TAG = Utils.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(Utils.class);
     // Android system properties
     static final String PROPERTY_HTTP_AGENT = "http.agent";
     /**
@@ -140,7 +140,7 @@ final class Utils {
             types = new ArrayList<String>();
         }
         String type = types.isEmpty() ? null : types.get(0);
-        Log.d(LOG_TAG, "response content type = [" + type + "]");
+        log.debug("response content type = [" + type + "]");
         return !((type == null) || (!type.contains("application/json") && !type.contains("text/html")));
     }
 
@@ -165,7 +165,7 @@ final class Utils {
         for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
             sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append('\n');
         }
-        Log.d(LOG_TAG, "request header:\n" + sb.toString());
+        log.debug("request header:\n" + sb.toString());
     }
 
     /**
@@ -180,9 +180,9 @@ final class Utils {
             for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
                 sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append('\n');
             }
-            Log.d(LOG_TAG, "response header:\n" + sb.toString());
+            log.debug("response header:\n" + sb.toString());
         } catch (Exception e) {
-            Log.d(LOG_TAG, "error logging response headers: ", e);
+            log.debug("error logging response headers: ", e);
         }
     }
 
@@ -200,7 +200,7 @@ final class Utils {
         try {
             return URLEncoder.encode(source, UTF_8).replace("+", "%20");
         } catch (Exception e) {
-            Log.e(LOG_TAG, "error encoding string '" + source + "' : ", e);
+            log.error("error encoding string '" + source + "' : ", e);
         }
         return source;
     }
@@ -209,7 +209,7 @@ final class Utils {
         try {
             return URLDecoder.decode(source, UTF_8).replace("+", "%20");
         } catch (Exception e) {
-            Log.e(LOG_TAG, "error encoding string '" + source + "' : ", e);
+            log.error("error encoding string '" + source + "' : ", e);
         }
         return source;
     }

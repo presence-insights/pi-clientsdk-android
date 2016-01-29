@@ -17,7 +17,8 @@
 package com.ibm.pisdk.geofencing.rest;
 
 import android.os.AsyncTask;
-import android.util.Log;
+
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -35,9 +36,9 @@ import java.util.Locale;
  */
 class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
     /**
-     * Log tag for this class.
+     * Logger for this class.
      */
-    private static final String LOG_TAG = RequestAsyncTask.class.getSimpleName();
+    private static final Logger log = Logger.getLogger(RequestAsyncTask.class);
     /**
      * The request to execute.
      */
@@ -77,7 +78,7 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
                 HttpURLConnection connection = service.handleConnection((HttpURLConnection) url.openConnection());
                 connection.setRequestProperty(Utils.HTTP_HEADER_ACCEPT_LANGUAGE, Locale.getDefault().toString());
                 service.setUserAgentHeader(connection);
-                Log.d(LOG_TAG, "HTTP method = " + request.getMethod() + ", request url = " + connection.getURL() + ", payload = " + request.getPayload());
+                log.debug("HTTP method = " + request.getMethod() + ", request url = " + connection.getURL() + ", payload = " + request.getPayload());
                 connection.setInstanceFollowRedirects(true);
                 connection.setConnectTimeout(30_000);
                 if (request.isBasicAuthRequired()) service.setAuthHeader(connection);
@@ -86,7 +87,7 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
                 Utils.logRequestHeaders(connection);
                 if ("POST".equals(method) || "PUT".equals(method)) {
                     String payload = request.getPayload();
-                    Log.d(LOG_TAG, request.getMethod() + " method request url = " + connection.getURL() + ", payload = " + payload);
+                    log.debug(request.getMethod() + " method request url = " + connection.getURL() + ", payload = " + payload);
                     if (payload != null && (payload.length() > 0)) {
                         connection.setDoOutput(true);
                         connection.setRequestProperty("Content-Type", "application/json");
@@ -104,7 +105,7 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
                 } catch (IOException e) {
                     statusCode = connection.getResponseCode();
                     if (statusCode != 401) {
-                        Log.e(LOG_TAG, "code " + statusCode + ", exception: ", e);
+                        log.error("code " + statusCode + ", exception: ", e);
                     }
                 } finally {
                     Utils.logResponseHeaders(connection);
@@ -113,7 +114,7 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
                     service.logErrorBody(connection);
                     // if version is >= JellyBean and an authentication challenge is issued, then handle re-authentication and resend the request
                     if ((statusCode == 401) && !reauthenticationRequired) {
-                        Log.d(LOG_TAG, "re-authenticating due to auth challenge...");
+                        log.debug("re-authenticating due to auth challenge...");
                         reauthenticationRequired = true;
                         continue;
                     } else {
@@ -125,16 +126,16 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
                     byte[] body = Utils.readBytes(connection);
                     if (Utils.isTextResponseBody(connection)) {
                         String bodyStr = new String(body, Utils.UTF_8);
-                        Log.d(LOG_TAG, "doInBackground() response body = " + bodyStr);
+                        log.debug("doInBackground() response body = " + bodyStr);
                     }
                     result = request.resultFromResponse(body);
                 }
-                Log.d(LOG_TAG, String.format("status code for " + request.getMethod() + " request = %d, url = %s", statusCode, url));
+                log.debug(String.format("status code for " + request.getMethod() + " request = %d, url = %s", statusCode, url));
                 // signal that network and server are on
                 service.connectivityHandler.onActiveNetwork();
             }
         } catch (ConnectException | SocketTimeoutException e) {
-            Log.v(LOG_TAG, "detected loss of connectivity with the server", e);
+            log.debug("detected loss of connectivity with the server", e);
             if (service.connectivityHandler.isEnabled()) {
                 service.connectivityHandler.onInactiveNetwork();
                 service.connectivityHandler.persistRequest(request);
