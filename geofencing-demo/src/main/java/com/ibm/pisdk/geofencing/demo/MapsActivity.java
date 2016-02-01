@@ -472,7 +472,9 @@ public class MapsActivity extends FragmentActivity {
                     //intent.setData(Uri.parse("mailto:")); // only email apps should handle this
                     intent.putExtra(Intent.EXTRA_EMAIL, new String[] {"LAURENTC@fr.ibm.com"});
                     intent.putExtra(Intent.EXTRA_SUBJECT, "PI sdk log - " + new java.util.Date());
-                    File file = new File(LoggingConfiguration.getLogFile());
+                    // zip the log file and send the zip as attachment
+                    String path = DemoUtils.zipFile(LoggingConfiguration.getLogFile());
+                    File file = new File(path);
                     intent.putExtra(Intent.EXTRA_TEXT, "See attached log file '" + file.getName() + "'");
                     Uri uri = Uri.parse(file.toURI().toString());
                     log.debug("log file uril = " + uri);

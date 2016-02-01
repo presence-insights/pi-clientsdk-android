@@ -29,6 +29,7 @@ import com.orm.SugarDb;
 import org.apache.log4j.Logger;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -42,6 +43,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Utility methods used in the geofencing demo.
@@ -120,9 +123,6 @@ public class DemoUtils {
         log.debug("deleteGeofenceDB() db file = '" + dbFile + "', result of delete = " + result);
     }
 
-    static void loadLocallyStoredGeofences() {
-    }
-
     /**
      * Compute the center of the provided geofences, along with the bounds of a box their centers fit in.
      * @param geofences the list of geofences from which to perform the computations.
@@ -199,6 +199,45 @@ public class DemoUtils {
             return baos.toByteArray();
         } catch (Exception e) {
             log.debug(String.format("error while trying to read resource %s", name), e);
+        }
+        return null;
+    }
+
+    /**
+     * Zip the specified file to a new file suffixed with '.zip'.
+     * @param path the path of the file to zip.
+     * @return the path to the zipped file, or {@code null} if an I/O error occurred.
+     */
+    static String zipFile(String path) {
+        String zipPath = path + ".zip";
+        File inputFile = new File(path);
+        File zipFile = new File(zipPath);
+        ZipOutputStream zos = null;
+        InputStream is = null;
+        try {
+            is = new BufferedInputStream(new FileInputStream(inputFile));
+            zos = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipFile)));
+            ZipEntry entry = new ZipEntry(inputFile.getName());
+            zos.putNextEntry(entry);
+            byte[] buffer = new byte[2048];
+            int n;
+            while ((n = is.read(buffer)) > 0) {
+                zos.write(buffer, 0, n);
+            }
+            zos.finish();
+            return zipPath;
+        } catch(Exception e) {
+            log.debug(String.format("to zip '%s' to '%s'", path, zipPath), e);
+        } finally {
+            try {
+                if (zos != null) {
+                    zos.close();
+                }
+                if (is != null) {
+                    is.close();
+                }
+            } catch(IOException ignore) {
+            }
         }
         return null;
     }
