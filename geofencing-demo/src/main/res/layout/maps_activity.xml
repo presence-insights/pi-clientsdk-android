@@ -34,10 +34,12 @@
     android:layout_height="wrap_content"
     android:layout_alignParentTop="true"
     android:layout_alignParentEnd="true"
-    android:layout_marginTop="11dp"
-    android:layout_marginEnd="11dp"
+    android:alpha="0.75"
+    android:paddingStart="16dp"
+    android:paddingEnd="1dp"
+    android:textAlignment="gravity"
+    android:layout_margin="11dp"
     android:gravity="center_horizontal|center_vertical"
-    android:text=""
     android:drawableStart="@android:drawable/ic_input_add"/>
 
 </RelativeLayout>

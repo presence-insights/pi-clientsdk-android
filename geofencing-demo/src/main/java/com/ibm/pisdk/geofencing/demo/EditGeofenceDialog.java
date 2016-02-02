@@ -149,6 +149,7 @@ public class EditGeofenceDialog extends DialogFragment {
             });
         } else {
             locationButton.setEnabled(false);
+            locationButton.setVisibility(View.GONE);
         }
         return dlg;
     }

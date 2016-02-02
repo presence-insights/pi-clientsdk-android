@@ -505,9 +505,6 @@ public class MapsActivity extends FragmentActivity {
         }
     }
 
-    void switchToNormalMode() {
-    }
-
     /**
      * Basic data structure holding the objects displayed on the map for an active geofence.
      */
