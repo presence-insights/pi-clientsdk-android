@@ -46,6 +46,9 @@ public class PIBeacon {
     // optional
     private String description;
 
+    // raw JSON object
+    private JSONObject rawData;
+
     public PIBeacon(JSONObject beaconObj) {
         JSONObject geometry = (JSONObject)beaconObj.get("geometry");
         JSONObject properties = (JSONObject)beaconObj.get("properties");
@@ -62,6 +65,7 @@ public class PIBeacon {
         x = (Long) coordinates.get(0);
         y = (Long) coordinates.get(1);
 
+        rawData = beaconObj;
     }
 
     public String getCode() {
@@ -98,5 +102,9 @@ public class PIBeacon {
 
     public String getDescription() {
         return description;
+    }
+
+    public JSONObject getRawData() {
+        return rawData;
     }
 }

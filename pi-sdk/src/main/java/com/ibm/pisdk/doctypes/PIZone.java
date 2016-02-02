@@ -41,6 +41,9 @@ public class PIZone {
     // optional
     private ArrayList<String> tags;
 
+    // raw JSON object
+    private JSONObject rawData;
+
     public PIZone(JSONObject zoneObj) {
         JSONObject geometry = (JSONObject)zoneObj.get("geometry");
         JSONObject properties = (JSONObject)zoneObj.get("properties");
@@ -50,6 +53,8 @@ public class PIZone {
         polygons = getPolygonsFromJson((JSONArray) geometry.get("coordinates"));
 
         tags = getTagsFromJson(properties);
+
+        rawData = zoneObj;
     }
 
     private ArrayList<ArrayList<Point>> getPolygonsFromJson(JSONArray coordinates) {
@@ -93,5 +98,9 @@ public class PIZone {
 
     public ArrayList<String> getTags() {
         return tags;
+    }
+
+    public JSONObject getRawData() {
+        return rawData;
     }
 }

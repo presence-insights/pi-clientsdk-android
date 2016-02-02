@@ -24,6 +24,9 @@ public class PISensor {
     // optional
     private String description;
 
+    // raw JSON object
+    private JSONObject rawData;
+
     public PISensor(JSONObject sensorObj) {
         JSONObject geometry = (JSONObject)sensorObj.get("geometry");
         JSONObject properties = (JSONObject)sensorObj.get("properties");
@@ -36,6 +39,8 @@ public class PISensor {
         JSONArray coordinates = (JSONArray) geometry.get("coordinates");
         x = (Long) coordinates.get(0);
         y = (Long) coordinates.get(1);
+
+        rawData = sensorObj;
     }
 
     public String getCode() {
@@ -60,5 +65,9 @@ public class PISensor {
 
     public String getDescription() {
         return description;
+    }
+
+    public JSONObject getRawData() {
+        return rawData;
     }
 }

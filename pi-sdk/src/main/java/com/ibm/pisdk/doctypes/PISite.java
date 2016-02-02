@@ -45,6 +45,9 @@ public class PISite {
     private String zip;
     private String country;
 
+    // raw JSON object
+    private JSONObject rawData;
+
     public PISite(JSONObject siteObj) {
         code = (String) siteObj.get(JSON_CODE);
         name = (String) siteObj.get(JSON_NAME);
@@ -55,6 +58,8 @@ public class PISite {
         state = (String) siteObj.get(JSON_STATE);
         zip = (String) siteObj.get(JSON_ZIP);
         country = (String) siteObj.get(JSON_COUNTRY);
+
+        rawData = siteObj;
     }
 
     public String getCode() {
@@ -87,5 +92,9 @@ public class PISite {
 
     public String getCountry() {
         return country;
+    }
+
+    public JSONObject getRawData() {
+        return rawData;
     }
 }

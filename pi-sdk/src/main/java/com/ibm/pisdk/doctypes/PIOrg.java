@@ -40,6 +40,9 @@ public class PIOrg {
     private String description;
     private ArrayList<String> registrationTypes;
 
+    // raw JSON object
+    private JSONObject rawData;
+
     public PIOrg(JSONObject orgObj) {
         code = (String) orgObj.get(JSON_CODE);
         name = (String) orgObj.get(JSON_NAME);
@@ -51,6 +54,8 @@ public class PIOrg {
         for (int i = 0; i < tempTypes.size(); i++) {
             registrationTypes.add((String) tempTypes.get(i));
         }
+
+        rawData = orgObj;
     }
 
     public String getCode() {
@@ -67,5 +72,9 @@ public class PIOrg {
 
     public ArrayList<String> getRegistrationTypes() {
         return registrationTypes;
+    }
+
+    public JSONObject getRawData() {
+        return rawData;
     }
 }

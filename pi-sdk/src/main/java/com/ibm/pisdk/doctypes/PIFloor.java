@@ -37,6 +37,10 @@ public class PIFloor {
     private long z;
     private Point barriers;
 
+    // raw JSON object
+    private JSONObject rawData;
+
+
     public PIFloor(JSONObject floorObj) {
         JSONObject geometry = (JSONObject)floorObj.get("geometry");
         JSONObject properties = (JSONObject)floorObj.get("properties");
@@ -48,6 +52,8 @@ public class PIFloor {
         JSONArray coordinates = (JSONArray) geometry.get("coordinates");
         barriers = new Point(((Long) coordinates.get(0)).intValue(),
                              ((Long) coordinates.get(1)).intValue());
+
+        rawData = floorObj;
     }
 
     public String getCode() {
@@ -65,5 +71,9 @@ public class PIFloor {
     // Currently not implemented. This is a place holder for future work.
     public Point getBarriers() {
         return barriers;
+    }
+
+    public JSONObject getRawData() {
+        return rawData;
     }
 }

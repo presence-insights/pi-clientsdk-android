@@ -46,6 +46,9 @@ public class PIDevice {
     private boolean registered = false;
     private boolean blacklisted = false;
 
+    // raw JSON object
+    private JSONObject rawData;
+
     public PIDevice(JSONObject deviceObj) {
         code = (String) deviceObj.get(JSON_CODE);
         descriptor = (String) deviceObj.get(JSON_DESCRIPTOR);
@@ -59,6 +62,8 @@ public class PIDevice {
             unencryptedData = (JSONObject) deviceObj.get(JSON_UNENCRYPTED_DATA);
             blacklisted = (Boolean) deviceObj.get(JSON_BLACKLIST);
         }
+
+        rawData = deviceObj;
     }
 
     public String getCode() {
@@ -95,5 +100,9 @@ public class PIDevice {
 
     public boolean isBlacklisted() {
         return blacklisted;
+    }
+
+    public JSONObject getRawData() {
+        return rawData;
     }
 }
