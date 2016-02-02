@@ -24,6 +24,7 @@ import com.orm.SugarRecord;
 public class PIGeofence extends SugarRecord<PIGeofence> {
     private String uuid;
     private String name;
+
     private double latitude;
     private double longitude;
     private double radius;
@@ -67,8 +68,16 @@ public class PIGeofence extends SugarRecord<PIGeofence> {
         return latitude;
     }
 
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
     public double getLongitude() {
         return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
     }
 
     public double getRadius() {

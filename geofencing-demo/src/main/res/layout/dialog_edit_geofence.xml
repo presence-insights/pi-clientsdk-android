@@ -23,12 +23,20 @@
         android:hint="@string/geofence_name_hint"
         android:inputType="text"/>
 
+    <Button
+        android:id="@+id/change_location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal|center_vertical"
+        android:text="Change location"
+        android:drawableStart="@android:drawable/ic_menu_mapmode"/>
+
     <TextView
         android:id="@+id/radius_value"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:text="100">
+        android:text="100 m">
     </TextView>
 
     <SeekBar

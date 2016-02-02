@@ -90,6 +90,7 @@ public class MapsActivity extends FragmentActivity {
     private Marker currentMarker = null;
     Location currentLocation = null;
     float currentZoom = -1f;
+    GeofenceInfo editedInfo = null;
     /**
      *
      */
@@ -106,6 +107,7 @@ public class MapsActivity extends FragmentActivity {
      * Whether the db has already been deleted once.
      */
     private static boolean dbDeleted = false;
+    Button addFenceButton = null;
     /**
      *
      */
@@ -167,24 +169,11 @@ public class MapsActivity extends FragmentActivity {
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         trackingEnabled = prefs.getBoolean("tracking.enabled", true);
         log.debug("in onCreate() tracking is " + (trackingEnabled ? "enabled" : "disabled"));
-        final Button btn = (Button) findViewById(R.id.addFenceButton);
-        btn.setOnClickListener(new View.OnClickListener() {
+        addFenceButton = (Button) findViewById(R.id.addFenceButton);
+        addFenceButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mapMode == MODE_NORMAL) {
-                    mapMode = MODE_EDIT;
-                    btn.setCompoundDrawablesRelativeWithIntrinsicBounds(android.R.drawable.ic_menu_edit, 0, 0, 0);
-                    LatLng pos = googleMap.getCameraPosition().target;
-                    refreshCurrentLocation(pos.latitude, pos.longitude);
-                    googleMap.setOnCameraChangeListener(cameraListener);
-                } else if (mapMode == MODE_EDIT) {
-                    mapMode = MODE_NORMAL;
-                    btn.setCompoundDrawablesRelativeWithIntrinsicBounds(android.R.drawable.ic_input_add, 0, 0, 0);
-                    googleMap.setOnCameraChangeListener(null);
-                    EditGeofenceDialog dialog = new EditGeofenceDialog();
-                    dialog.customInit(MapsActivity.this, EditGeofenceDialog.MODE_NEW, null);
-                    dialog.show(getFragmentManager(), "geofences");
-                }
+                switchMode();
             }
         });
         if (savedInstanceState != null) {
@@ -299,14 +288,13 @@ public class MapsActivity extends FragmentActivity {
                 googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                     @Override
                     public boolean onMarkerClick(Marker marker) {
-                        if (mapMode == MODE_EDIT) {
-                            return true;
+                        if (mapMode != MODE_EDIT) {
+                            GeofenceInfo info = getGeofenceInfoForMarker(marker);
+                            log.debug(String.format("onMarkerClick(marker=%s) info=%s", marker, info));
+                            EditGeofenceDialog dialog = new EditGeofenceDialog();
+                            dialog.customInit(MapsActivity.this, EditGeofenceDialog.MODE_UPDATE_DELETE, info);
+                            dialog.show(getFragmentManager(), "geofences");
                         }
-                        GeofenceInfo info = getGeofenceInfoForMarker(marker);
-                        log.debug(String.format("onMarkerClick(marker=%s) info=%s", marker, info));
-                        EditGeofenceDialog dialog = new EditGeofenceDialog();
-                        dialog.customInit(MapsActivity.this, EditGeofenceDialog.MODE_UPDATE_DELETE, info);
-                        dialog.show(getFragmentManager(), "geofences");
                         return true;
                     }
                 });
@@ -350,8 +338,7 @@ public class MapsActivity extends FragmentActivity {
     }
 
     /**
-     * Update the circle and label or a geofence depending on its active state.
-     *
+     * Update the circle and label of a geofence depending on its active state.
      * @param fence  the fence to update.
      * @param active whether the fence is active (current location is within the fence).
      */
@@ -436,18 +423,22 @@ public class MapsActivity extends FragmentActivity {
     }
 
     void initGeofences() {
-        List<PIGeofence> fences = PIGeofence.listAll(PIGeofence.class);
-        geofenceManager.addFences(fences);
-        for (PIGeofence g: fences) {
-            boolean active = false;
-            if (currentLocation != null) {
-                Location loc = new Location(LocationManager.NETWORK_PROVIDER);
-                loc.setLatitude(g.getLatitude());
-                loc.setLongitude(g.getLongitude());
-                loc.setTime(System.currentTimeMillis());
-                active = loc.distanceTo(currentLocation) <= g.getRadius();
+        try {
+            List<PIGeofence> fences = PIGeofence.listAll(PIGeofence.class);
+            geofenceManager.addFences(fences);
+            for (PIGeofence g: fences) {
+                boolean active = false;
+                if (currentLocation != null) {
+                    Location loc = new Location(LocationManager.NETWORK_PROVIDER);
+                    loc.setLatitude(g.getLatitude());
+                    loc.setLongitude(g.getLongitude());
+                    loc.setTime(System.currentTimeMillis());
+                    active = loc.distanceTo(currentLocation) <= g.getRadius();
+                }
+                refreshGeofenceInfo(g, active);
             }
-            refreshGeofenceInfo(g, active);
+        } catch(Exception e) {
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -468,7 +459,6 @@ public class MapsActivity extends FragmentActivity {
                 try {
                     Intent intent = new Intent(Intent.ACTION_SEND);
                     intent.setType("message/rfc822");
-                    //intent.setType("text/plain");
                     //intent.setData(Uri.parse("mailto:")); // only email apps should handle this
                     intent.putExtra(Intent.EXTRA_EMAIL, new String[] {"LAURENTC@fr.ibm.com"});
                     intent.putExtra(Intent.EXTRA_SUBJECT, "PI sdk log - " + new java.util.Date());
@@ -496,6 +486,26 @@ public class MapsActivity extends FragmentActivity {
         MenuItem item = menu.findItem(R.id.action_tracking);
         item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
         return true;
+    }
+
+    void switchMode() {
+        if (mapMode == MODE_NORMAL) {
+            mapMode = MODE_EDIT;
+            addFenceButton.setCompoundDrawablesRelativeWithIntrinsicBounds(android.R.drawable.ic_menu_edit, 0, 0, 0);
+            LatLng pos = googleMap.getCameraPosition().target;
+            refreshCurrentLocation(pos.latitude, pos.longitude);
+            googleMap.setOnCameraChangeListener(cameraListener);
+        } else if (mapMode == MODE_EDIT) {
+            mapMode = MODE_NORMAL;
+            addFenceButton.setCompoundDrawablesRelativeWithIntrinsicBounds(android.R.drawable.ic_input_add, 0, 0, 0);
+            googleMap.setOnCameraChangeListener(null);
+            EditGeofenceDialog dialog = new EditGeofenceDialog();
+            dialog.customInit(MapsActivity.this, editedInfo == null ? EditGeofenceDialog.MODE_NEW : EditGeofenceDialog.MODE_UPDATE_DELETE, editedInfo);
+            dialog.show(getFragmentManager(), "geofences");
+        }
+    }
+
+    void switchToNormalMode() {
     }
 
     /**

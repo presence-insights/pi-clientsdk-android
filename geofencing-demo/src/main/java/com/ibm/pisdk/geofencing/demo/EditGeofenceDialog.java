@@ -22,6 +22,7 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -79,26 +80,19 @@ public class EditGeofenceDialog extends DialogFragment {
             public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
-        if (fence != null) {
-            radius = (int) fence.getRadius();
-            seekBar.setProgress(progressFromRadius(radius));
-            radiusValueView.setText(String.format("%,d m", (int) fence.getRadius()));
-            nameView.setText(fence.getName());
-        }
         builder.setView(view);
         if (dialogMode == MODE_NEW) {
             builder.setPositiveButton(R.string.add_button, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int id) {
                     String name = nameView.getText().toString();
-                    dialog.cancel();
                     PIGeofence fence = new PIGeofence(UUID.randomUUID().toString(), name, position.latitude, position.longitude, radius, null, null, null);
                     fence.save();
                     List<PIGeofence> list = new ArrayList<>();
                     list.add(fence);
                     mapsActivity.service.addGeofences(list);
                     mapsActivity.refreshGeofenceInfo(fence, false);
-                    mapsActivity.refreshCurrentLocation();
+                    performCommonActions(dialog, null);
                 }
             });
         } else if (dialogMode == MODE_UPDATE_DELETE) {
@@ -107,42 +101,62 @@ public class EditGeofenceDialog extends DialogFragment {
                 public void onClick(DialogInterface dialog, int id) {
                     String name = nameView.getText().toString();
                     fence.setName(name);
-                    if (radius != (int) fence.getRadius()) {
-                        fence.setRadius(radius);
-                        List<PIGeofence> list = new ArrayList<>();
-                        list.add(fence);
-                        mapsActivity.service.removeGeofences(list);
-                        mapsActivity.service.addGeofences(list);
-                        mapsActivity.removeGeofence(fence);
-                        mapsActivity.refreshGeofenceInfo(fence, (fenceInfo != null) && fenceInfo.active);
-                        mapsActivity.refreshCurrentLocation();
-                    }
-                    fence.save();
-                    dialog.cancel();
+                    fence.setRadius(radius);
+                    fence.setLatitude(position.latitude);
+                    fence.setLongitude(position.longitude);
+                    List<PIGeofence> list = new ArrayList<>();
+                    list.add(fence);
+                    mapsActivity.service.removeGeofences(list);
+                    mapsActivity.service.addGeofences(list);
+                    mapsActivity.removeGeofence(fence);
                     mapsActivity.refreshGeofenceInfo(fence, (fenceInfo != null) && fenceInfo.active);
-                    mapsActivity.refreshCurrentLocation();
+                    fence.save();
+                    mapsActivity.refreshGeofenceInfo(fence, (fenceInfo != null) && fenceInfo.active);
+                    performCommonActions(dialog, null);
                 }
             });
             builder.setNeutralButton(R.string.delete_button, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int id) {
-                    dialog.cancel();
                     fence.delete();
                     List<PIGeofence> list = new ArrayList<>();
                     list.add(fence);
                     mapsActivity.service.removeGeofences(list);
                     mapsActivity.removeGeofence(fence);
-                    mapsActivity.refreshCurrentLocation();
+                    performCommonActions(dialog, null);
                 }
             });
         }
         builder.setNegativeButton(R.string.cancel_button, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                dialog.cancel();
-                mapsActivity.refreshCurrentLocation();
+                performCommonActions(dialog, null);
             }
         });
-        return builder.create();
+        final Button locationButton = (Button) view.findViewById(R.id.change_location);
+        final Dialog dlg = builder.create();
+        if (fence != null) {
+            radius = (int) fence.getRadius();
+            seekBar.setProgress(progressFromRadius(radius));
+            radiusValueView.setText(String.format("%,d m", (int) fence.getRadius()));
+            nameView.setText(fence.getName());
+            locationButton.setEnabled(true);
+            locationButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    performCommonActions(dlg, fenceInfo);
+                    mapsActivity.switchMode();
+                }
+            });
+        } else {
+            locationButton.setEnabled(false);
+        }
+        return dlg;
+    }
+
+    private void performCommonActions(DialogInterface dialog, MapsActivity.GeofenceInfo editedInfo) {
+        mapsActivity.editedInfo = editedInfo;
+        mapsActivity.refreshCurrentLocation();
+        dialog.cancel();
     }
 
     public void customInit(MapsActivity mapsActivity, int dialogMode, MapsActivity.GeofenceInfo fenceInfo) {
@@ -153,7 +167,11 @@ public class EditGeofenceDialog extends DialogFragment {
             this.position = mapsActivity.googleMap.getCameraPosition().target;
         } else {
             fence = mapsActivity.getGeofenceManager().getGeofence(fenceInfo.uuid);
-            this.position = new LatLng(fence.getLatitude(), fence.getLongitude());
+            if ((dialogMode == MODE_UPDATE_DELETE)  && (mapsActivity.editedInfo != null)) {
+                this.position = mapsActivity.googleMap.getCameraPosition().target;
+            } else {
+                this.position = new LatLng(fence.getLatitude(), fence.getLongitude());
+            }
         }
     }
 
