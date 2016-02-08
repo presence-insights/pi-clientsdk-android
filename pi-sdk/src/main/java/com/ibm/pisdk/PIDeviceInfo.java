@@ -17,33 +17,151 @@
 package com.ibm.pisdk;
 
 import android.content.Context;
+import android.provider.Settings;
+
+import com.ibm.json.java.JSONObject;
 
 /**
- * This class provides the Presence Insights' implementation for device descriptor.
+ * This class encapsulates what is required by the PI management server for device registration.
  *
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
-public class PIDeviceInfo extends DeviceInfo {
+public class PIDeviceInfo {
+    static final String JSON_REGISTRATION_TYPE = "registrationType";
+    static final String JSON_DEVICE_DESCRIPTOR = "descriptor";
+    static final String JSON_NAME = "name";
+    static final String JSON_DATA = "data";
+    static final String JSON_UNENCRYPTED_DATA = "unencryptedData";
+    static final String JSON_REGISTERED = "registered";
+    static final String JSON_BLACKLIST = "blacklist";
+
+    private String mName;
+    private String mDeviceDescriptor;
+    private String mRegistrationType;
+    private JSONObject mData;
+    private JSONObject mUnencryptedData;
+    private boolean mRegistered = false;
+    private boolean mBlacklisted = false;
 
     /**
-     * Activity context
+     * Constructor for anonymous devices. This constructor will use ANDROID_ID as the
+     * descriptor for the device.
+     *
+     * @param context needed to generate the descriptor for the device
      */
-    private Context mContext;
+    public PIDeviceInfo(Context context) {
+        mDeviceDescriptor = Settings.Secure.getString(context.getContentResolver(),
+                Settings.Secure.ANDROID_ID);
+    }
+
+    /**
+     * Constructor for anonymous devices with custom descriptors.
+     *
+     * @param deviceDescriptor device descriptor used to uniquely identify the device
+     */
+    public PIDeviceInfo(String deviceDescriptor) {
+        mDeviceDescriptor = deviceDescriptor;
+    }
+
+    /**
+     * Constructor for devices you plan on registering. This constructor will use ANDROID_ID as the
+     * descriptor for the device.
+     *
+     * @param context needed to generate the descriptor for the device
+     * @param name name of device
+     * @param registrationType device registration type
+     */
+    public PIDeviceInfo(Context context, String name, String registrationType) {
+        mName = name;
+        mRegistrationType = registrationType;
+        mRegistered = true;
+        mDeviceDescriptor = Settings.Secure.getString(context.getContentResolver(),
+                Settings.Secure.ANDROID_ID);
+    }
+
+    /**
+     * Constructor, for devices you plan on registering, which allows you to specify your own
+     * unique descriptor for this device.
+     *
+     * @param name name of device
+     * @param registrationType device registration type
+     * @param deviceDescriptor device descriptor used to uniquely identify the device
+     */
+    public PIDeviceInfo(String name, String registrationType, String deviceDescriptor) {
+        mName = name;
+        mRegistrationType = registrationType;
+        mRegistered = true;
+        mDeviceDescriptor = deviceDescriptor;
+    }
 
     /**
      *
-     * @param context Activity Context
+     * @param data metadata pertaining to the device where encryption is required
      */
-    public PIDeviceInfo(Context context) {
-        super();
-        mContext = context;
-        setDescriptor();
+    public void setData(JSONObject data) {
+        this.mData = data;
     }
 
-    @Override
-    protected void setDescriptor() {
-        PIDeviceID device = new PIDeviceID(mContext);
-        setDescriptor(device.getMacAddress());
+    /**
+     *
+     * @param unencryptedData metadata pertaining to the device where encryption is not required
+     */
+    public void setUnencryptedData(JSONObject unencryptedData) {
+        this.mUnencryptedData = unencryptedData;
     }
 
+    /**
+     *
+     * @param blacklisted if the device is blacklisted. if true, analytics will ignore this device.
+     */
+    public void setBlacklisted(boolean blacklisted) {
+        this.mBlacklisted = blacklisted;
+    }
+
+    /**
+     * Helper method to provide the class as a JSON Object
+     *
+     * @return DeviceInfo class members as a JSON Object
+     */
+    protected JSONObject toJSON() {
+        return addToJson(new JSONObject());
+    }
+
+    /**
+     * Helper method to add the device info to an existing JSON Object
+     *
+     * @param payload an existing JSON Object
+     * @return JSON Object with the device information added
+     */
+    protected JSONObject addToJson(JSONObject payload) {
+        // this is to ensure we do not overwrite the device descriptor when we are updating a document
+        if (payload.get(JSON_DEVICE_DESCRIPTOR) == null) {
+            payload.put(JSON_DEVICE_DESCRIPTOR, mDeviceDescriptor);
+        }
+        if (mName != null) {
+            payload.put(JSON_NAME, mName);
+        }
+        if (mRegistrationType != null) {
+            payload.put(JSON_REGISTRATION_TYPE, mRegistrationType);
+        }
+        if (mData != null) {
+            payload.put(JSON_DATA, mData);
+        }
+        if (mUnencryptedData != null) {
+            payload.put(JSON_UNENCRYPTED_DATA, mUnencryptedData);
+        }
+        payload.put(JSON_REGISTERED, mRegistered);
+        payload.put(JSON_BLACKLIST, mBlacklisted);
+
+        return payload;
+    }
+
+    // remove once we handle Task 97443
+    protected String getDescriptor() {
+        return mDeviceDescriptor;
+    }
+
+    protected void setRegistered(boolean registered) {
+        mRegistered = registered;
+    }
 }
