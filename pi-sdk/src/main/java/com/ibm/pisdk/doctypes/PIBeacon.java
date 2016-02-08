@@ -39,9 +39,9 @@ public class PIBeacon {
     private String proximityUUID;
     private String major;
     private String minor;
-    private long threshold;
-    private long x;
-    private long y;
+    private double threshold;
+    private double x;
+    private double y;
 
     // optional
     private String description;
@@ -56,12 +56,22 @@ public class PIBeacon {
         proximityUUID = (String) properties.get(JSON_PROXIMITY_UUID);
         major = (String) properties.get(JSON_MAJOR);
         minor = (String) properties.get(JSON_MINOR);
-        threshold = (Long) properties.get(JSON_THRESHOLD);
+        threshold = objToDouble(properties.get(JSON_THRESHOLD));
 
         JSONArray coordinates = (JSONArray) geometry.get("coordinates");
-        x = (Long) coordinates.get(0);
-        y = (Long) coordinates.get(1);
+        x = objToDouble(coordinates.get(0));
+        y = objToDouble(coordinates.get(1));
 
+    }
+
+    private double objToDouble(Object obj) {
+        double returnVal = 0.0;
+        if(obj instanceof Double) {
+            returnVal = (Double) obj;
+        } else if(obj instanceof Long) {
+            returnVal = ((Long) obj).doubleValue();
+        }
+        return returnVal;
     }
 
     public String getCode() {
@@ -84,15 +94,15 @@ public class PIBeacon {
         return minor;
     }
 
-    public long getThreshold() {
+    public double getThreshold() {
         return threshold;
     }
 
-    public long getX() {
+    public double getX() {
         return x;
     }
 
-    public long getY() {
+    public double getY() {
         return y;
     }
 
