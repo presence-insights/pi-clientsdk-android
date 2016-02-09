@@ -17,9 +17,9 @@ public class PISensor {
     // required
     private String code;
     private String name;
-    private long threshold;
-    private long x;
-    private long y;
+    private double threshold;
+    private double x;
+    private double y;
 
     // optional
     private String description;
@@ -31,11 +31,21 @@ public class PISensor {
         code = (String) properties.get(JSON_CODE);
         name = (String) properties.get(JSON_NAME);
         description = properties.get(JSON_DESCRIPTION) != null ? (String)properties.get(JSON_DESCRIPTION) : "";
-        threshold = (Long) properties.get(JSON_THRESHOLD);
+        threshold = objToDouble(properties.get(JSON_THRESHOLD));
 
         JSONArray coordinates = (JSONArray) geometry.get("coordinates");
-        x = (Long) coordinates.get(0);
-        y = (Long) coordinates.get(1);
+        x = objToDouble(coordinates.get(0));
+        y = objToDouble(coordinates.get(1));
+    }
+
+    private double objToDouble(Object obj) {
+        double returnVal = 0.0;
+        if(obj instanceof Double) {
+            returnVal = (Double) obj;
+        } else if(obj instanceof Long) {
+            returnVal = ((Long) obj).doubleValue();
+        }
+        return returnVal;
     }
 
     public String getCode() {
@@ -46,15 +56,15 @@ public class PISensor {
         return name;
     }
 
-    public long getThreshold() {
+    public double getThreshold() {
         return threshold;
     }
 
-    public long getX() {
+    public double getX() {
         return x;
     }
 
-    public long getY() {
+    public double getY() {
         return y;
     }
 

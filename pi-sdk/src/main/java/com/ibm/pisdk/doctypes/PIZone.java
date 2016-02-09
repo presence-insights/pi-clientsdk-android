@@ -60,12 +60,22 @@ public class PIZone {
             ArrayList<Point> points = new ArrayList<Point>();
             for (int j = 0; j < polygon.size(); j++) {
                 JSONArray point = (JSONArray)polygon.get(j);
-                points.add(new Point(((Long)point.get(0)).intValue(), ((Long)point.get(1)).intValue()));
+                points.add(new Point(objToInt(point.get(0)), objToInt(point.get(0))));
             }
             polygons.add(points);
         }
 
         return polygons;
+    }
+
+    private int objToInt(Object obj) {
+        int returnVal = 0;
+        if(obj instanceof Double) {
+            returnVal = ((Double) obj).intValue();
+        } else if(obj instanceof Long) {
+            returnVal = ((Long) obj).intValue();
+        }
+        return returnVal;
     }
 
     private ArrayList<String> getTagsFromJson(JSONObject properties) {

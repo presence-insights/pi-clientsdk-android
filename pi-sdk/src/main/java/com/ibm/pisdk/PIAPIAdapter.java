@@ -556,7 +556,7 @@ public class PIAPIAdapter implements Serializable {
      * @param device object with all the necessary information to register the device.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void registerDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
+    public void registerDevice(final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
         final String registerDevice = String.format("%s/tenants/%s/orgs/%s/devices", mServerURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(registerDevice);
@@ -571,7 +571,7 @@ public class PIAPIAdapter implements Serializable {
                                 @Override
                                 public void onComplete(PIAPIResult getResult) {
                                     if (getResult.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                                        // build f payload
+                                        // build payload
                                         JSONObject payload = null;
                                         try {
                                             payload = JSONObject.parse((String) getResult.getResult());
@@ -606,7 +606,7 @@ public class PIAPIAdapter implements Serializable {
      * @param device object with all the necessary information to update the device.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void updateDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
+    public void updateDevice(final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
         String getDeviceObj = String.format("%s/tenants/%s/orgs/%s/devices?rawDescriptor=%s", mServerURL, mTenantCode, mOrgCode, device.getDescriptor());
         try {
             URL url = new URL(getDeviceObj);
@@ -641,7 +641,7 @@ public class PIAPIAdapter implements Serializable {
                             PUT(putUrl, devicePayload, completionHandler);
                         } else {
                             getResult.setResponseCode(404);
-                            getResult.setResult("Device \"" + device.getName() + "\" does not exist");
+                            getResult.setResult("Device does not exist");
                             completionHandler.onComplete(getResult);
                         }
                     } else {
@@ -660,9 +660,48 @@ public class PIAPIAdapter implements Serializable {
      * @param device object with all the necessary information to unregister the device.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void unregisterDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
-        device.setRegistered(false);
-        updateDevice(device, completionHandler);
+    public void unregisterDevice(final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
+        final String registerDevice = String.format("%s/tenants/%s/orgs/%s/devices", mServerURL, mTenantCode, mOrgCode);
+        try {
+            URL url = new URL(registerDevice);
+            POST(url, device.toJSON(), new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult postResult) {
+                    if (postResult.getResponseCode() == HttpURLConnection.HTTP_CONFLICT) {
+                        // call GET
+                        try {
+                            final URL deviceLocation = new URL(postResult.getHeader().get("Location").get(0));
+                            GET(deviceLocation, new PIAPICompletionHandler() {
+                                @Override
+                                public void onComplete(PIAPIResult getResult) {
+                                    if (getResult.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                                        // set registered to false in returned payload
+                                        JSONObject payload = null;
+                                        try {
+                                            payload = JSONObject.parse((String) getResult.getResult());
+                                            payload.put("registered", false);
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                        // call PUT
+                                        PUT(deviceLocation, payload, completionHandler);
+
+                                    } else {
+                                        completionHandler.onComplete(getResult);
+                                    }
+                                }
+                            });
+                        } catch (MalformedURLException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        completionHandler.onComplete(postResult);
+                    }
+                }
+            });
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -671,7 +710,7 @@ public class PIAPIAdapter implements Serializable {
      * @param payload a combination of PIBeaconData and the device descriptor
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void sendBeaconNotificationMessage(JSONObject payload, PIAPICompletionHandler completionHandler) {
+    protected void sendBeaconNotificationMessage(JSONObject payload, PIAPICompletionHandler completionHandler) {
         String bnm = String.format("%s/tenants/%s/orgs/%s", mConnectorURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(bnm);

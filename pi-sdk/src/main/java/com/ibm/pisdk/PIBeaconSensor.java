@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 
 import org.altbeacon.beacon.Beacon;
@@ -135,8 +136,8 @@ public class PIBeaconSensor {
         mRegionEventListener = null;
 
         // get Device ID
-        PIDeviceID deviceID = new PIDeviceID(context);
-        mDeviceId = deviceID.getMacAddress();
+        mDeviceId = Settings.Secure.getString(context.getContentResolver(),
+                Settings.Secure.ANDROID_ID);
 
         try {
 
