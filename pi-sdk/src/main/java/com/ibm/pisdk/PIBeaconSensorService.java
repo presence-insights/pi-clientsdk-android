@@ -19,8 +19,10 @@ package com.ibm.pisdk;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.ibm.json.java.JSONArray;
@@ -47,13 +49,13 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private PIAPIAdapter mPiApiAdapter;
     private BeaconManager mBeaconManager;
     private RegionManager mRegionManager;
-    private String mDeviceId;
 
     private volatile long mSendInterval = 5000l;
     private volatile long mBackgroundScanPeriod = 1100l;
     private volatile long mBackgroundBetweenScanPeriod = 60000l;
     private long mLastSendTime = 0;
     private long mCurrentTime = 0;
+    private String mDeviceDescriptor;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -88,9 +90,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
         if (extras != null) {
             if (extras.get(PIBeaconSensor.INTENT_PARAMETER_ADAPTER) != null) {
                 mPiApiAdapter = (PIAPIAdapter) extras.get(PIBeaconSensor.INTENT_PARAMETER_ADAPTER);
-            }
-            if (!extras.getString(PIBeaconSensor.INTENT_PARAMETER_DEVICE_ID, "").equals("")) {
-                mDeviceId = extras.getString(PIBeaconSensor.INTENT_PARAMETER_DEVICE_ID);
             }
             if (extras.getLong(PIBeaconSensor.INTENT_PARAMETER_SEND_INTERVAL, -1) > 0) {
                 mSendInterval = extras.getLong(PIBeaconSensor.INTENT_PARAMETER_SEND_INTERVAL);
@@ -131,7 +130,38 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     public void onCreate() {
         super.onCreate();
         mContext = this;
+        setupDescriptor();
     }
+
+    private void setupDescriptor() {
+        SharedPreferences sharedPrefs = mContext.getSharedPreferences(PIDeviceInfo.PI_SHARED_PREF, Context.MODE_PRIVATE);
+
+        mDeviceDescriptor = sharedPrefs.getString(PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY, "");
+        if ("".equals(mDeviceDescriptor)) {
+            PILogger.d(TAG, "Descriptor does not exist is SharedPrefs, adding ANDROID_ID");
+
+            String android_id = Settings.Secure.getString(mContext.getContentResolver(),
+                    Settings.Secure.ANDROID_ID);
+            mDeviceDescriptor = android_id;
+
+            SharedPreferences.Editor editor = sharedPrefs.edit();
+            editor.putString(PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY, android_id);
+            editor.apply();
+        }
+
+        sharedPrefs.registerOnSharedPreferenceChangeListener(sharedPreferenceChangeListener);
+    }
+
+    private SharedPreferences.OnSharedPreferenceChangeListener sharedPreferenceChangeListener = new
+            SharedPreferences.OnSharedPreferenceChangeListener() {
+                @Override
+                public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                    if (key.equals(PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY)) {
+                        PILogger.d(TAG, "descriptor changed listener hit!");
+                        mDeviceDescriptor = sharedPreferences.getString(key, "");
+                    }
+                }
+            };
 
     @Override
     public void onBeaconServiceConnect() {
@@ -239,7 +269,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
         PIBeaconData data = new PIBeaconData(nearestBeacon);
         data.setDetectedTime(detectedTime);
-        data.setDeviceDescriptor(mDeviceId);
+        data.setDeviceDescriptor(mDeviceDescriptor);
         beaconArray.add(data.getBeaconAsJson());
 
         payload.put("bnm", beaconArray);

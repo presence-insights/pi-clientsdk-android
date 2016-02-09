@@ -17,6 +17,7 @@
 package com.ibm.pisdk;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.provider.Settings;
 
 import com.ibm.json.java.JSONObject;
@@ -27,6 +28,7 @@ import com.ibm.json.java.JSONObject;
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIDeviceInfo {
+    static final String TAG = PIDeviceInfo.class.getSimpleName();
     static final String JSON_REGISTRATION_TYPE = "registrationType";
     static final String JSON_DEVICE_DESCRIPTOR = "descriptor";
     static final String JSON_NAME = "name";
@@ -34,6 +36,10 @@ public class PIDeviceInfo {
     static final String JSON_UNENCRYPTED_DATA = "unencryptedData";
     static final String JSON_REGISTERED = "registered";
     static final String JSON_BLACKLIST = "blacklist";
+
+    // shared prefs
+    protected static final String PI_SHARED_PREF = "com.ibm.pisdk.shared_prefs";
+    protected static final String PI_SHARED_PREF_DESCRIPTOR_KEY = "device_descriptor";
 
     private String mName;
     private String mDeviceDescriptor;
@@ -47,27 +53,30 @@ public class PIDeviceInfo {
      * Constructor for anonymous devices. This constructor will use ANDROID_ID as the
      * descriptor for the device.
      *
-     * @param context needed to generate the descriptor for the device
+     * @param context
      */
     public PIDeviceInfo(Context context) {
         mDeviceDescriptor = Settings.Secure.getString(context.getContentResolver(),
                 Settings.Secure.ANDROID_ID);
+        updateDeviceDescriptor(context);
     }
 
     /**
      * Constructor for anonymous devices with custom descriptors.
      *
+     * @param context
      * @param deviceDescriptor device descriptor used to uniquely identify the device
      */
-    public PIDeviceInfo(String deviceDescriptor) {
+    public PIDeviceInfo(Context context, String deviceDescriptor) {
         mDeviceDescriptor = deviceDescriptor;
+        updateDeviceDescriptor(context);
     }
 
     /**
      * Constructor for devices you plan on registering. This constructor will use ANDROID_ID as the
      * descriptor for the device.
      *
-     * @param context needed to generate the descriptor for the device
+     * @param context
      * @param name name of device
      * @param registrationType device registration type
      */
@@ -77,21 +86,34 @@ public class PIDeviceInfo {
         mRegistered = true;
         mDeviceDescriptor = Settings.Secure.getString(context.getContentResolver(),
                 Settings.Secure.ANDROID_ID);
+        updateDeviceDescriptor(context);
     }
 
     /**
      * Constructor, for devices you plan on registering, which allows you to specify your own
      * unique descriptor for this device.
      *
+     * @param context
      * @param name name of device
      * @param registrationType device registration type
      * @param deviceDescriptor device descriptor used to uniquely identify the device
      */
-    public PIDeviceInfo(String name, String registrationType, String deviceDescriptor) {
+    public PIDeviceInfo(Context context, String name, String registrationType, String deviceDescriptor) {
         mName = name;
         mRegistrationType = registrationType;
         mRegistered = true;
         mDeviceDescriptor = deviceDescriptor;
+
+        updateDeviceDescriptor(context);
+    }
+
+    private void updateDeviceDescriptor(Context context) {
+        PILogger.d(TAG, "the user registered the device with a new descriptor: " + mDeviceDescriptor);
+
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PI_SHARED_PREF, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(PI_SHARED_PREF_DESCRIPTOR_KEY, mDeviceDescriptor);
+        editor.apply();
     }
 
     /**
