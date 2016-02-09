@@ -112,7 +112,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
                 mBeaconManager.setBackgroundBetweenScanPeriod(mBackgroundBetweenScanPeriod);
             }
             if (!extras.getString(PIBeaconSensor.INTENT_PARAMETER_COMMAND, "").equals("")) {
-                command = extras.getString(PIBeaconSensor.INTENT_PARAMETER_COMMAND);
+                command = extras.getString(PIBeaconSensor.INTENT_PARAMETER_COMMAND, "");
                 if (command.equals("START_SCANNING")){
                     PILogger.d(TAG, "Service has started scanning for beacons");
                     mBeaconManager.bind(this);
@@ -138,8 +138,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
         mDeviceDescriptor = sharedPrefs.getString(PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY, "");
         if ("".equals(mDeviceDescriptor)) {
-            PILogger.d(TAG, "Descriptor does not exist is SharedPrefs, adding ANDROID_ID");
-
             String android_id = Settings.Secure.getString(mContext.getContentResolver(),
                     Settings.Secure.ANDROID_ID);
             mDeviceDescriptor = android_id;
@@ -157,7 +155,6 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
                 @Override
                 public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
                     if (key.equals(PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY)) {
-                        PILogger.d(TAG, "descriptor changed listener hit!");
                         mDeviceDescriptor = sharedPreferences.getString(key, "");
                     }
                 }

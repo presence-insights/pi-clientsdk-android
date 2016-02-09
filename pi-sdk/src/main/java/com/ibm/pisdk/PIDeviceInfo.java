@@ -108,8 +108,6 @@ public class PIDeviceInfo {
     }
 
     private void updateDeviceDescriptor(Context context) {
-        PILogger.d(TAG, "the user registered the device with a new descriptor: " + mDeviceDescriptor);
-
         SharedPreferences sharedPreferences = context.getSharedPreferences(PI_SHARED_PREF, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString(PI_SHARED_PREF_DESCRIPTOR_KEY, mDeviceDescriptor);
