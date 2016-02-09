@@ -17,10 +17,8 @@
 package com.ibm.pisdk;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
-import android.provider.Settings;
 import android.util.Base64;
 
 import com.ibm.json.java.JSONArray;
@@ -33,14 +31,15 @@ import com.ibm.pisdk.doctypes.PISensor;
 import com.ibm.pisdk.doctypes.PISite;
 import com.ibm.pisdk.doctypes.PIZone;
 
-import org.altbeacon.beacon.Beacon;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 
 /**
  * This class provides an interface with the Presence Insights APIs.

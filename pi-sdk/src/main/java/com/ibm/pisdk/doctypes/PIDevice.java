@@ -17,7 +17,6 @@
 package com.ibm.pisdk.doctypes;
 
 import com.ibm.json.java.JSONObject;
-import com.ibm.pisdk.PILogger;
 
 /**
  * Simple class to encapsulate the Device documents important attributes.
