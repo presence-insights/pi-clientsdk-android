@@ -31,7 +31,11 @@ import com.ibm.pisdk.doctypes.PISensor;
 import com.ibm.pisdk.doctypes.PISite;
 import com.ibm.pisdk.doctypes.PIZone;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -58,9 +62,6 @@ public class PIAPIAdapter implements Serializable {
     static final private int READ_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
     static final private int CONNECTION_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
 
-    // mContext will be nice to have if we want to do any kind of UI actions for them.  For example,
-    // we could provide them the option to throw up a progress indicator while the async tasks are running.
-    private final transient Context mContext;
     private final String mServerURL;
     private final String mServerURL_v2;
     private final String mConnectorURL;
@@ -79,8 +80,7 @@ public class PIAPIAdapter implements Serializable {
      * @param tenantCode unique identifier for the tenant
      * @param orgCode unique identifier for the organization
      */
-    public PIAPIAdapter(Context context, String username, String password, String hostname, String tenantCode, String orgCode){
-        mContext = context;
+    public PIAPIAdapter(Context context, String username, String password, String hostname, String tenantCode, String orgCode) {
         mBasicAuth = generateBasicAuth(username, password);
         mServerURL = hostname + MANAGEMENT_SERVER_PATH;
         mServerURL_v2 = hostname + MANAGEMENT_SERVER_PATH_v2;

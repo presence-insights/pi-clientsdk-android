@@ -23,7 +23,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 
 import org.altbeacon.beacon.Beacon;
@@ -42,7 +41,6 @@ public class PIBeaconSensor {
 
     protected static final String INTENT_PARAMETER_ADAPTER = "com.ibm.pisdk.adapter";
     protected static final String INTENT_PARAMETER_COMMAND = "com.ibm.pisdk.command";
-    protected static final String INTENT_PARAMETER_DEVICE_ID = "com.ibm.pisdk.device_id";
     protected static final String INTENT_PARAMETER_BEACON_LAYOUT = "com.ibm.pisdk.beacon_layout";
     protected static final String INTENT_PARAMETER_SEND_INTERVAL = "com.ibm.pisdk.send_interval";
     protected static final String INTENT_PARAMETER_BACKGROUND_SCAN_PERIOD = "com.ibm.pisdk.send_interval";
@@ -59,7 +57,6 @@ public class PIBeaconSensor {
     private BluetoothAdapter mBluetoothAdapter;
     private final Context mContext;
     private final PIAPIAdapter mAdapter;
-    private final String mDeviceId;
 
     private String mState;
     private static final String STARTED = "started";
@@ -135,10 +132,6 @@ public class PIBeaconSensor {
         mBeaconsInRangeListener = null;
         mRegionEventListener = null;
 
-        // get Device ID
-        mDeviceId = Settings.Secure.getString(context.getContentResolver(),
-                Settings.Secure.ANDROID_ID);
-
         try {
 
             // If BLE isn't supported on the device we cannot proceed.
@@ -178,7 +171,6 @@ public class PIBeaconSensor {
 
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(INTENT_PARAMETER_ADAPTER, mAdapter);
-        intent.putExtra(INTENT_PARAMETER_DEVICE_ID, mDeviceId);
         intent.putExtra(INTENT_PARAMETER_COMMAND, "START_SCANNING");
         mContext.startService(intent);
     }
