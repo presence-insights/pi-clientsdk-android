@@ -5,6 +5,7 @@
   <!-- Geofence definition dialog -->
     <string name="geofence_radius">Radius 100m - 10km</string>
     <string name="geofence_name_hint">Geofence name</string>
+    <string name="geofence_desc_hint">Geofence description</string>
     <string name="add_button">Add</string>
     <string name="update_button">Update</string>
     <string name="delete_button">Delete</string>

@@ -59,42 +59,17 @@ class GeofenceManager implements LocationListener {
     private final Map<String, PIGeofence> fenceMap = new LinkedHashMap<>();
     private final PIGeofencingService service;
     private Location referenceLocation = null;
-    private double distanceThreshold;
+    private double maxDistance;
 
-    GeofenceManager(PIGeofencingService service) {
+    GeofenceManager(PIGeofencingService service, int maxDistance) {
         this.service = service;
-        distanceThreshold = 10_000d;
-    }
-
-    /**
-     * Update a geofence with the latest update from the server.
-     * @param fence the geofence to update.
-     */
-    public void updateGeofence(PIGeofence fence) {
-        PIGeofence g = null;
-        synchronized (fenceMap) {
-            g = fenceMap.get(fence.getUuid());
-            if (g == null) {
-                g = fence;
-                fenceMap.put(g.getUuid(), g);
-            }
-        }
-        // update the last entry date if it was updated
-        String time = fence.getLastEnterDateAndTime();
-        if (time != null) {
-            g.setLastEnterDateAndTime(time);
-        }
-        // update the last exit date if it was updated
-        time = fence.getLastExitDateAndTime();
-        if (time != null) {
-            g.setLastExitDateAndTime(time);
-        }
+        this.maxDistance = maxDistance;
     }
 
     public void addFences(Collection<PIGeofence> fences) {
         synchronized (fenceMap) {
             for (PIGeofence fence : fences) {
-                fenceMap.put(fence.getUuid(), fence);
+                fenceMap.put(fence.getCode(), fence);
             }
         }
     }
@@ -103,7 +78,7 @@ class GeofenceManager implements LocationListener {
         synchronized (fenceMap) {
             List<PIGeofence> list = getFences();
             if ((list != null) && !list.isEmpty()) {
-                service.removeGeofences(list);
+                service.unmonitorGeofences(list);
                 fenceMap.clear();
             }
         }
@@ -120,14 +95,14 @@ class GeofenceManager implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
-        double d = distanceThreshold + 1d;
+        double d = maxDistance + 1d;
         log.debug("onLocationChanged(location=" + location + ") new location");
         if (referenceLocation != null) d = referenceLocation.distanceTo(location);
-        if (d > distanceThreshold) {
+        if (d > maxDistance) {
             log.debug("onLocationChanged(location=" + location + ")");
             clearFences();
-            // where clause to find all geofences whose center's distance to the new location is < distanceThreshold
-            String where = createWhereClause(location.getLatitude(), location.getLongitude(), distanceThreshold);
+            // where clause to find all geofences whose center's distance to the new location is < maxDistance
+            String where = createWhereClause(location.getLatitude(), location.getLongitude(), maxDistance /2);
             List<PIGeofence> list = PIGeofence.find(PIGeofence.class, where);
             if ((list != null) && !list.isEmpty()) {
                 TreeMap<Float, PIGeofence> map = new TreeMap<>();
@@ -139,11 +114,11 @@ class GeofenceManager implements LocationListener {
                 }
                 int count = 0;
                 for (PIGeofence g : map.values()) {
-                    fenceMap.put(g.getUuid(), g);
+                    fenceMap.put(g.getCode(), g);
                     count++;
                     if (count >= 100) break;
                 }
-                service.addGeofences(getFences());
+                service.monitorGeofences(getFences());
             }
             referenceLocation = location;
         }
@@ -187,7 +162,7 @@ class GeofenceManager implements LocationListener {
             uuids = GEOFENCES_PREF_DEFAULT;
         }
         for (PIGeofence fence: fences) {
-            if (!uuids.contains(fence.getUuid())) {
+            if (!uuids.contains(fence.getCode())) {
                 filtered.add(fence);
             }
         }
@@ -206,9 +181,9 @@ class GeofenceManager implements LocationListener {
         Set<String> uuids = getUuidsFromPrefs();
         for (PIGeofence fence: fences) {
             if (remove) {
-                uuids.remove(fence.getUuid());
+                uuids.remove(fence.getCode());
             } else {
-                uuids.add(fence.getUuid());
+                uuids.add(fence.getCode());
             }
         }
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(service.context);
@@ -223,5 +198,9 @@ class GeofenceManager implements LocationListener {
             uuids = new HashSet<>();
         }
         return uuids;
+    }
+
+    public void setMaxDistance(double maxDistance) {
+        this.maxDistance = maxDistance;
     }
 }

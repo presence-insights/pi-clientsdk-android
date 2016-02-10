@@ -85,7 +85,7 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
             activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    PIGeofence g = activity.getGeofenceManager().getGeofence(geofence.getUuid());
+                    PIGeofence g = activity.getGeofenceManager().getGeofence(geofence.getCode());
                     log.debug("Geofence " + (isEntry ? "entry" : "exit") + " for " + g + " (uuid=" + geofence + ")");
                     if (g != null) {
                         activity.refreshGeofenceInfo(g, isEntry);

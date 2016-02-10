@@ -19,22 +19,38 @@ package com.ibm.pisdk.geofencing;
 import java.util.List;
 
 /**
- *
+ * {"type":"FeatureCollection","features":[],"properties":{"pageNumber":1,"pageSize":10,"totalFeatures":0}}
  */
 public class PIGeofenceList {
     private final List<PIGeofence> geofences;
-    private final int anchor;
+    private int pageNumber;
+    private int pageSize;
+    private int totalGeofences;
 
-    public PIGeofenceList(final List<PIGeofence> geofences, final int anchor) {
+    public PIGeofenceList(final List<PIGeofence> geofences) {
         this.geofences = geofences;
-        this.anchor = anchor;
+    }
+
+    public PIGeofenceList(final List<PIGeofence> geofences, int pageNumber, int pageSize, int totalGeofences) {
+        this.geofences = geofences;
+        this.pageNumber = pageNumber;
+        this.pageSize = pageSize;
+        this.totalGeofences = totalGeofences;
     }
 
     public List<PIGeofence> getGeofences() {
         return geofences;
     }
 
-    public int getAnchor() {
-        return anchor;
+    public int getPageNumber() {
+        return pageNumber;
+    }
+
+    public int getPageSize() {
+        return pageSize;
+    }
+
+    public int getTotalGeofences() {
+        return totalGeofences;
     }
 }

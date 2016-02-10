@@ -23,6 +23,17 @@
         android:hint="@string/geofence_name_hint"
         android:inputType="text"/>
 
+    <EditText
+        android:id="@+id/geofence_desc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="4dp"
+        android:layout_marginTop="16dp"
+        android:hint="@string/geofence_desc_hint"
+        android:inputType="text"/>
+
     <Button
         android:id="@+id/change_location"
         android:layout_width="match_parent"

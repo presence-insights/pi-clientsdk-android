@@ -64,8 +64,8 @@ public class GeofenceTransitionsService extends IntentService {
             PIGeofenceCallback callback = PIGeofencingService.callbackMap.get(intent.getStringExtra(PIGeofencingService.INTENT_ID));
             List<PIGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
             for (Geofence g : triggeringGeofences) {
-                String uuid = g.getRequestId();
-                List<PIGeofence> list = PIGeofence.find(PIGeofence.class, "uuid = ?", uuid);
+                String code = g.getRequestId();
+                List<PIGeofence> list = PIGeofence.find(PIGeofence.class, "code = ?", code);
                 if (!list.isEmpty()) geofences.add(list.get(0));
             }
             if (transition == Geofence.GEOFENCE_TRANSITION_ENTER) {

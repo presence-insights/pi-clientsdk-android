@@ -1,1 +1,1 @@
-include ':app', ':pi-sdk', ':geofencing', ':geofencing-demo'
+include ':pi-sdk', ':geofencing', ':geofencing-demo'

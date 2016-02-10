@@ -20,27 +20,27 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 public class Settings {
-    public static String server;
-    public static boolean ssl;
-    public static String applicationId;
-    public static String tenant;
+    private final SharedPreferences prefs;
 
-    public static void load(Context c) {
-        SharedPreferences settings = c.getSharedPreferences("login_data", Context.MODE_PRIVATE);
-        server = settings.getString("server", null);
-        ssl = settings.getBoolean("ssl", false);
-        applicationId = settings.getString("applicationId", null);
-        tenant = settings.getString("tenant", null);
+    public Settings(Context context) {
+        prefs = context.getSharedPreferences("pi-sdk-demo", Context.MODE_PRIVATE);
     }
 
-    public static void store(Context c) {
-        SharedPreferences settings = c.getSharedPreferences("login_data", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = settings.edit();
-        editor.putString("server", server);
-        editor.putBoolean("ssl", ssl);
-        editor.putString("applicationId", applicationId);
-        editor.putString("tenant", tenant);
-        // Commit the edits!
-        editor.commit();
+    public String getString(String key, String defValue) {
+        return prefs.getString(key, defValue);
+    }
+
+    public Settings putString(String key, String value) {
+        prefs.edit().putString(key, value).apply();
+        return this;
+    }
+
+    public boolean getBoolean(String key, boolean defValue) {
+        return prefs.getBoolean(key, defValue);
+    }
+
+    public Settings putBoolean(String key, boolean value) {
+        prefs.edit().putBoolean(key, value).apply();
+        return this;
     }
 }

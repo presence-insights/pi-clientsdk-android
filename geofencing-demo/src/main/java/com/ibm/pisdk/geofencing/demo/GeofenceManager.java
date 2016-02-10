@@ -44,22 +44,12 @@ public class GeofenceManager {
      * @param fence the geofence to update.
      */
     public void updateGeofence(PIGeofence fence) {
-        PIGeofence g = getGeofence(fence.getUuid());
+        PIGeofence g = getGeofence(fence.getCode());
         if (g == null) {
             g = fence;
             synchronized (fenceMap) {
-                fenceMap.put(g.getUuid(), g);
+                fenceMap.put(g.getCode(), g);
             }
-        }
-        // update the last entry date if it was updated
-        String time = fence.getLastEnterDateAndTime();
-        if (time != null) {
-            g.setLastEnterDateAndTime(time);
-        }
-        // update the last exit date if it was updated
-        time = fence.getLastExitDateAndTime();
-        if (time != null) {
-            g.setLastExitDateAndTime(time);
         }
     }
 
@@ -70,7 +60,7 @@ public class GeofenceManager {
     public void removeGeofence(PIGeofence fence) {
         PIGeofence g = null;
         synchronized (fenceMap) {
-            g = fenceMap.remove(fence.getUuid());
+            g = fenceMap.remove(fence.getCode());
         }
         if (g != null) {
             activeSet.remove(g);
@@ -90,7 +80,7 @@ public class GeofenceManager {
     public void addFences(Collection<PIGeofence> fences) {
         synchronized (fenceMap) {
             for (PIGeofence fence : fences) {
-                fenceMap.put(fence.getUuid(), fence);
+                fenceMap.put(fence.getCode(), fence);
             }
         }
     }

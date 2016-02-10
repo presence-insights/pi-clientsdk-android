@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package com.ibm.pisdk;
+package com.ibm.pisdk.geofencing;
 
 import android.content.Context;
 
+import com.ibm.pisdk.PIDeviceInfo;
+
 /**
- * Factory class for creating instances of {@link PIDeviceID}.
+ *
  */
-public class PIDeviceIDFactory {
-    /**
-     * Instantiation is not permitted.
-     */
-    private PIDeviceIDFactory() {
+public class GeofencingDeviceInfo extends PIDeviceInfo {
+    GeofencingDeviceInfo(Context context) {
+        super(context);
     }
 
-    /**
-     * Create a new {@link PIDeviceID}.
-     * @param context teh Android context used to retrieve device information.
-     * @return a newly created {@link PIDeviceID}.
-     */
-    public static PIDeviceID newInstance(Context context) {
-        return new PIDeviceID(context);
+    @Override
+    protected String getDescriptor() {
+        return super.getDescriptor();
     }
 }

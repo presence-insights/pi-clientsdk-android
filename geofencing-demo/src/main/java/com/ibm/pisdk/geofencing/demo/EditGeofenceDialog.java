@@ -29,6 +29,8 @@ import android.widget.TextView;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.ibm.pisdk.geofencing.PIGeofence;
+import com.ibm.pisdk.geofencing.rest.PIRequestCallback;
+import com.ibm.pisdk.geofencing.rest.PIRequestError;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +63,7 @@ public class EditGeofenceDialog extends DialogFragment {
         SeekBar seekBar = (SeekBar) view.findViewById(R.id.radius_seekbar_id);
         final TextView radiusValueView = (TextView) view.findViewById(R.id.radius_value);
         final EditText nameView = (EditText) view.findViewById(R.id.geofence_name);
+        final EditText descView = (EditText) view.findViewById(R.id.geofence_desc);
         TextView positionView = (TextView) view.findViewById(R.id.fence_location);
         String text = String.format("Latitude: %.6f - Longitude: %.6f", position.latitude, position.longitude);
         positionView.setText(text);
@@ -86,12 +89,21 @@ public class EditGeofenceDialog extends DialogFragment {
                 @Override
                 public void onClick(DialogInterface dialog, int id) {
                     String name = nameView.getText().toString();
-                    PIGeofence fence = new PIGeofence(UUID.randomUUID().toString(), name, position.latitude, position.longitude, radius, null, null, null);
-                    fence.save();
-                    List<PIGeofence> list = new ArrayList<>();
-                    list.add(fence);
-                    mapsActivity.service.addGeofences(list);
-                    mapsActivity.refreshGeofenceInfo(fence, false);
+                    String desc = descView.getText().toString();
+                    PIGeofence fence = new PIGeofence(UUID.randomUUID().toString(), name, desc, position.latitude, position.longitude, radius);
+                    mapsActivity.service.registerGeofence(fence, new PIRequestCallback<PIGeofence>() {
+                        @Override
+                        public void onSuccess(PIGeofence fence) {
+                            fence.save();
+                            List<PIGeofence> list = new ArrayList<>();
+                            mapsActivity.service.monitorGeofences(list);
+                            mapsActivity.refreshGeofenceInfo(fence, false);
+                        }
+
+                        @Override
+                        public void onError(PIRequestError error) {
+                        }
+                    });
                     performCommonActions(dialog, null);
                 }
             });
@@ -99,15 +111,15 @@ public class EditGeofenceDialog extends DialogFragment {
             builder.setPositiveButton(R.string.update_button, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int id) {
-                    String name = nameView.getText().toString();
-                    fence.setName(name);
+                    fence.setName(nameView.getText().toString());
+                    fence.setDescription(descView.getText().toString());
                     fence.setRadius(radius);
                     fence.setLatitude(position.latitude);
                     fence.setLongitude(position.longitude);
                     List<PIGeofence> list = new ArrayList<>();
                     list.add(fence);
-                    mapsActivity.service.removeGeofences(list);
-                    mapsActivity.service.addGeofences(list);
+                    mapsActivity.service.unmonitorGeofences(list);
+                    mapsActivity.service.monitorGeofences(list);
                     mapsActivity.removeGeofence(fence);
                     mapsActivity.refreshGeofenceInfo(fence, (fenceInfo != null) && fenceInfo.active);
                     fence.save();
@@ -121,7 +133,8 @@ public class EditGeofenceDialog extends DialogFragment {
                     fence.delete();
                     List<PIGeofence> list = new ArrayList<>();
                     list.add(fence);
-                    mapsActivity.service.removeGeofences(list);
+                    mapsActivity.service.deleteGeofences(list);
+                    mapsActivity.service.unmonitorGeofences(list);
                     mapsActivity.removeGeofence(fence);
                     performCommonActions(dialog, null);
                 }
@@ -139,6 +152,7 @@ public class EditGeofenceDialog extends DialogFragment {
             seekBar.setProgress(progressFromRadius(radius));
             radiusValueView.setText(String.format("%,d m", (int) fence.getRadius()));
             nameView.setText(fence.getName());
+            descView.setText(fence.getDescription());
             locationButton.setEnabled(true);
             locationButton.setOnClickListener(new View.OnClickListener() {
                 @Override

@@ -83,9 +83,11 @@ public class LoginActivity extends Activity {
     public void attemptLogin() {
         // Reset errors.
         // Store values at the time of the login attempt.
+        /*
         Settings.server = serverView.getText().toString();
         Settings.tenant = tenantView.getText().toString();
         Settings.applicationId = applicationIdView.getText().toString();
+        */
         startActivity(new Intent(getApplicationContext(), MapsActivity.class));
     }
 

@@ -162,7 +162,7 @@ Set up a listener, and you are good to go.
 *   I started the beacon sensor, but it is not picking up any beacons. There are several reasons why this may be happening.
     1.  The beacons are not configured correctly in the PI UI. Ensure that the Proximity UUID is set correctly. We retrieve that to create a region to range for beacons.
     2.  The beacon layout has not been set on the PIBeaconSensor. Please see the section on [beacon advertisement layout](#beacon_layout).
-    3.  The codes (username, password, tenant, org) used in creating the PIAPIAdapter may have been entered incorrectly.
+    3.  The codes (username, password, tenantCode, org) used in creating the PIAPIAdapter may have been entered incorrectly.
 
 *   I set up the callback for `beaconsInRange(ArrayList<Beacon>)`, but it is not being called. Make sure you set the listener for the callback you want.
 

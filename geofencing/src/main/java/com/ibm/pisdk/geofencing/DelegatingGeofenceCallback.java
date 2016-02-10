@@ -17,46 +17,55 @@
 package com.ibm.pisdk.geofencing;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
  */
 class DelegatingGeofenceCallback implements PIGeofenceCallback {
-    private final PIGeofenceCallback delegate;
+    private final AtomicReference<PIGeofenceCallback> delegate = new AtomicReference<>(null);
     private final PIGeofencingService service;
 
     DelegatingGeofenceCallback(final PIGeofencingService service, final PIGeofenceCallback delegate) {
         this.service = service;
-        this.delegate = delegate;
+        this.delegate.set(delegate);
     }
 
     @Override
     public void onGeofencesEnter(List<PIGeofence> geofences) {
-        service.sendGeofenceNotification(geofences, GeofenceNotificationType.IN);
-        if (delegate != null) {
-            delegate.onGeofencesEnter(geofences);
+        service.postGeofenceEvent(geofences, GeofenceNotificationType.IN);
+        PIGeofenceCallback cb = delegate.get();
+        if (cb != null) {
+            cb.onGeofencesEnter(geofences);
         }
     }
 
     @Override
     public void onGeofencesExit(List<PIGeofence> geofences) {
-        service.sendGeofenceNotification(geofences, GeofenceNotificationType.OUT);
-        if (delegate != null) {
-            delegate.onGeofencesExit(geofences);
+        service.postGeofenceEvent(geofences, GeofenceNotificationType.OUT);
+        PIGeofenceCallback cb = delegate.get();
+        if (cb != null) {
+            cb.onGeofencesExit(geofences);
         }
     }
 
     @Override
     public void onGeofencesMonitored(List<PIGeofence> geofences) {
-        if (delegate != null) {
-            delegate.onGeofencesMonitored(geofences);
+        PIGeofenceCallback cb = delegate.get();
+        if (cb != null) {
+            cb.onGeofencesMonitored(geofences);
         }
     }
 
     @Override
     public void onGeofencesUnmonitored(List<PIGeofence> geofences) {
-        if (delegate != null) {
-            delegate.onGeofencesUnmonitored(geofences);
+        PIGeofenceCallback cb = delegate.get();
+        if (cb != null) {
+            cb.onGeofencesUnmonitored(geofences);
         }
+    }
+
+    void setDelegate(final PIGeofenceCallback delegate) {
+        this.delegate.set(delegate);
     }
 }

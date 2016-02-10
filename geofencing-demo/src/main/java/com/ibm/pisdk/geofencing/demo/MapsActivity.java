@@ -43,9 +43,12 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.ui.IconGenerator;
+import com.ibm.pisdk.doctypes.PIOrg;
 import com.ibm.pisdk.geofencing.LoggingConfiguration;
 import com.ibm.pisdk.geofencing.PIGeofence;
 import com.ibm.pisdk.geofencing.PIGeofencingService;
+import com.ibm.pisdk.geofencing.rest.PIRequestCallback;
+import com.ibm.pisdk.geofencing.rest.PIRequestError;
 
 import org.apache.log4j.Logger;
 
@@ -63,7 +66,7 @@ public class MapsActivity extends FragmentActivity {
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(MapsActivity.class);
+    private static final Logger log = Logger.getLogger(MapsActivity.class.getSimpleName());
     /**
      * Color for fences active on the map.
      */
@@ -91,6 +94,7 @@ public class MapsActivity extends FragmentActivity {
     Location currentLocation = null;
     float currentZoom = -1f;
     GeofenceInfo editedInfo = null;
+    Settings settings;
     /**
      *
      */
@@ -165,9 +169,10 @@ public class MapsActivity extends FragmentActivity {
         LoggingConfiguration.configure(this);
         log.debug("***************************************************************************************");
         super.onCreate(savedInstanceState);
+        settings = new Settings(this);
         setContentView(R.layout.maps_activity);
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-        trackingEnabled = prefs.getBoolean("tracking.enabled", true);
+        trackingEnabled = settings.getBoolean("tracking.enabled", true);
         log.debug("in onCreate() tracking is " + (trackingEnabled ? "enabled" : "disabled"));
         addFenceButton = (Button) findViewById(R.id.addFenceButton);
         addFenceButton.setOnClickListener(new View.OnClickListener() {
@@ -192,19 +197,24 @@ public class MapsActivity extends FragmentActivity {
         if (!dbDeleted) {
             dbDeleted = true;
             DemoUtils.deleteGeofenceDB(this);
-            String json = null;
-            try {
-                json = new String(DemoUtils.loadResourceBytes("com/ibm/pisdk/geofencing/small_sample_fences.geojson"));
-                PIGeofenceList geofenceList = GeofencingJSONParser.parseGeofences(new JSONObject(json));
-                Log.d(LOG_TAG, "loaded " + geofenceList.getGeofences().size() + " geofences");
-                PIGeofence.saveInTx(geofenceList.getGeofences());
-            } catch (Exception e) {
-                Log.d(LOG_TAG, String.format("error while parsing JSON: %s", json), e);
-            }
         }
         */
-        service = new PIGeofencingService(new MyGeofenceCallback(this), this, "http://starterapp.mybluemix.net", "xf504jy", "bj6s0rw5", "a6su7f", "8xdr5vfh");
-        service.setSendingGeofenceEvents(false);
+        String orgCode = settings.getString("orgCode", null);
+        service = new PIGeofencingService(new MyGeofenceCallback(this), this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        if (orgCode == null) {
+            service.createOrg("lolo4", "org description", null, true, new PIRequestCallback<PIOrg>() {
+                @Override
+                public void onSuccess(PIOrg result) {
+                    settings.putString("orgCode", result.getCode());
+                }
+
+                @Override
+                public void onError(PIRequestError error) {
+                    log.error("error creating org: " + error);
+                }
+            });
+        }
+        service.setSendingGeofenceEvents(true);
         try {
             startSimulation(geofenceManager.getFences());
         } catch(Exception e) {
@@ -343,7 +353,7 @@ public class MapsActivity extends FragmentActivity {
      * @param active whether the fence is active (current location is within the fence).
      */
     void refreshGeofenceInfo(PIGeofence fence, boolean active) {
-        String uuid = fence.getUuid();
+        String uuid = fence.getCode();
         if (geofenceManager.getGeofence(uuid) == null) {
             geofenceManager.updateGeofence(fence);
         }
@@ -379,7 +389,7 @@ public class MapsActivity extends FragmentActivity {
     }
 
     void removeGeofence(PIGeofence fence) {
-        String uuid = fence.getUuid();
+        String uuid = fence.getCode();
         GeofenceInfo info = geofenceInfoMap.get(uuid);
         if (info != null) {
             info.marker.remove();
@@ -396,7 +406,7 @@ public class MapsActivity extends FragmentActivity {
      * @return the generated bitmap with the geofence name inside.
      */
     Bitmap getOrCreateBitmap(PIGeofence fence, GeofenceInfo info) {
-        String key = "geofence.icon." + fence.getUuid();
+        String key = "geofence.icon." + fence.getCode();
         Bitmap bitmap = GenericCache.getInstance().get(key);
         if ((bitmap == null) || !fence.getName().equals(info.name)) {
             IconGenerator gen = new IconGenerator(this);
@@ -448,10 +458,7 @@ public class MapsActivity extends FragmentActivity {
             case R.id.action_tracking:
                 trackingEnabled = !trackingEnabled;
                 log.debug("tracking is now " + (trackingEnabled ? "enabled" : "disabled"));
-                SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.putBoolean("tracking.enabled", trackingEnabled);
-                editor.apply();
+                settings.putBoolean("tracking.enabled", trackingEnabled);
                 item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
                 log.debug(String.format("onOptionsItemSelected() tracking is now %s", trackingEnabled ? "enabled" : "disabled"));
                 break;

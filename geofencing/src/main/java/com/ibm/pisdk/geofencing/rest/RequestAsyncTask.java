@@ -110,7 +110,7 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
                 } finally {
                     Utils.logResponseHeaders(connection);
                 }
-                if (statusCode != 200) {
+                if (statusCode >= 400) {
                     service.logErrorBody(connection);
                     // if version is >= JellyBean and an authentication challenge is issued, then handle re-authentication and resend the request
                     if ((statusCode == 401) && !reauthenticationRequired) {

@@ -169,13 +169,13 @@ class NetworkConnectivityHandler {
      * This class is a persistable wrapper for the HTTP requests of type {@link PIRequest}.
      * Instances of this class are intented for potentially permanent storage in an Sqlite database.
      */
-    public static class PersistentRequest extends SugarRecord<PersistentRequest> {
+    public static class PersistentRequest extends SugarRecord {
         /**
          * Additional arbitrary parameters added to the query, in URL-encoded format.
          */
         String parameters;
         /**
-         * Path portion of the URL, added to the tenant and application parts.
+         * Path portion of the URL, added to the tenantCode and application parts.
          */
         String path = null;
         /**

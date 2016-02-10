@@ -62,13 +62,13 @@ public class PIHttpService {
      */
     String serverURL;
     /**
-     * The tenant id.
+     * The tenantCode id.
      */
-    String tenant;
+    String tenantCode;
     /**
      * The app id.
      */
-    String org;
+    String orgCode;
     /**
      * User name.
      */
@@ -126,18 +126,18 @@ public class PIHttpService {
     }
 
     /**
-     * Initialize this service with the specified server URL, context root, tenant name and credentials.
+     * Initialize this service with the specified server URL, context root, tenantCode name and credentials.
      * @param serverURL the base server URL in the form <code>http[s]://hostname[:port]</code>.
      * @param username the user name for HTTP authentication.
      * @param password the password for HTTP authentication.
      */
-    public PIHttpService(Context context, String serverURL, String tenant, String org, String username, String password) {
+    public PIHttpService(Context context, String serverURL, String tenantCode, String orgCode, String username, String password) {
         this.username = username;
         this.password = password;
         this.connectivityHandler = new NetworkConnectivityHandler(context, this, false);
         this.serverURL = serverURL;
-        this.tenant = tenant;
-        this.org = org;
+        this.tenantCode = tenantCode;
+        this.orgCode = orgCode;
     }
 
 
@@ -157,18 +157,23 @@ public class PIHttpService {
     }
 
     /**
-     * Get the tenant id.
+     * Get the tenantCode id.
      */
-    public String getTenant() {
-        return tenant;
+    public String getTenantCode() {
+        return tenantCode;
     }
 
     /**
      * Get the app id.
      */
-    public String getOrg() {
-        return org;
+    public String getOrgCode() {
+        return orgCode;
     }
+
+    public void setOrgCode(String orgCode) {
+        this.orgCode = orgCode;
+    }
+
 
     public String getUsername() {
         return username;

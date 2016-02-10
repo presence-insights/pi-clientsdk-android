@@ -21,39 +21,32 @@ import com.orm.SugarRecord;
 /**
  * Instances of this class represent geofences.
  */
-public class PIGeofence extends SugarRecord<PIGeofence> {
-    private String uuid;
+public class PIGeofence extends SugarRecord {
+    private String code;
     private String name;
-
+    private String description;
     private double latitude;
     private double longitude;
     private double radius;
-    private String messageIn;
-    private String messageOut;
-    private String entryDate;
-    private String lastEnterDateAndTime;
-    private String lastExitDateAndTime;
 
     public PIGeofence() {
     }
 
-    public PIGeofence(String uuid, String name, double latitude, double longitude, double radius, String messageIn, String messageOut, String entryDate) {
-        this.uuid = uuid;
+    public PIGeofence(String code, String name, String description, double latitude, double longitude, double radius) {
+        this.code = code;
         this.name = name;
+        this.description = description;
         this.latitude = latitude;
         this.longitude = longitude;
         this.radius = radius;
-        this.messageIn = messageIn;
-        this.messageOut = messageOut;
-        this.entryDate = entryDate;
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getCode() {
+        return code;
     }
 
-    void setUuid(String uuid) {
-        this.uuid = uuid;
+    void setCode(String code) {
+        this.code = code;
     }
 
     public String getName() {
@@ -62,6 +55,14 @@ public class PIGeofence extends SugarRecord<PIGeofence> {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public double getLatitude() {
@@ -86,34 +87,6 @@ public class PIGeofence extends SugarRecord<PIGeofence> {
 
     public void setRadius(double radius) {
         this.radius = radius;
-    }
-
-    public String getMessageIn() {
-        return messageIn;
-    }
-
-    public String getMessageOut() {
-        return messageOut;
-    }
-
-    public String getEntryDate() {
-        return entryDate;
-    }
-
-    public String getLastEnterDateAndTime() {
-        return lastEnterDateAndTime;
-    }
-
-    public void setLastEnterDateAndTime(String lastEnterDateAndTime) {
-        this.lastEnterDateAndTime = lastEnterDateAndTime;
-    }
-
-    public String getLastExitDateAndTime() {
-        return lastExitDateAndTime;
-    }
-
-    public void setLastExitDateAndTime(String lastExitDateAndTime) {
-        this.lastExitDateAndTime = lastExitDateAndTime;
     }
 
     @Override
