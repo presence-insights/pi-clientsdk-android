@@ -17,29 +17,38 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical">
 
-  <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:id="@+id/map"
-    android:icon="@mipmap/aeicon"
-    tools:context=".MapsActivity"
-    android:name="com.google.android.gms.maps.SupportMapFragment"/>
+    <fragment android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:icon="@mipmap/aeicon"
+        tools:context=".MapsActivity"/>
 
-  <Button
-    android:id="@+id/addFenceButton"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_alignParentTop="true"
-    android:layout_alignParentEnd="true"
-    android:alpha="0.75"
-    android:paddingStart="16dp"
-    android:paddingEnd="1dp"
-    android:textAlignment="gravity"
-    android:layout_margin="11dp"
-    android:gravity="center_horizontal|center_vertical"
-    android:drawableStart="@android:drawable/ic_input_add"/>
+    <Button
+        android:id="@+id/addFenceButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:layout_margin="11dp"
+        android:alpha="0.75"
+        android:drawableStart="@android:drawable/ic_input_add"
+        android:gravity="center_horizontal|center_vertical"
+        android:paddingEnd="1dp"
+        android:paddingStart="16dp"
+        android:textAlignment="gravity"/>
+
+    <ImageView
+        android:id="@+id/map_cross_hair"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:alpha="0.0"
+        android:src="@mipmap/move"/>
 
 </RelativeLayout>

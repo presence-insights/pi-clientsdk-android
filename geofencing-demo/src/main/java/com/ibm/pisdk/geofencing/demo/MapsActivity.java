@@ -29,13 +29,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
@@ -116,25 +116,11 @@ public class MapsActivity extends FragmentActivity {
      *
      */
     int mapMode = MODE_NORMAL;
+    private ImageView mapCrossHair;
     /**
      * Whether to send Slack and local notifications upon geofence events.
      */
     boolean trackingEnabled = true;
-    /**
-     * Positions a marker always at the center of the map while following zoom and pan actions.
-     * This isn't great, because events are only sent after the transition/movement has ended, never during the transition,
-     * thus the marker appears to stutter.
-     */
-    final GoogleMap.OnCameraChangeListener cameraListener = new GoogleMap.OnCameraChangeListener() {
-        @Override
-        public void onCameraChange(CameraPosition cameraPosition) {
-            MarkerOptions options = new MarkerOptions().position(cameraPosition.target);
-            if (currentMarker != null) {
-                currentMarker.remove();
-            }
-            currentMarker = googleMap.addMarker(options);
-        }
-    };
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -171,6 +157,7 @@ public class MapsActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         settings = new Settings(this);
         setContentView(R.layout.maps_activity);
+        mapCrossHair = (ImageView) findViewById(R.id.map_cross_hair);
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         trackingEnabled = settings.getBoolean("tracking.enabled", true);
         log.debug("in onCreate() tracking is " + (trackingEnabled ? "enabled" : "disabled"));
@@ -498,12 +485,15 @@ public class MapsActivity extends FragmentActivity {
     void switchMode() {
         if (mapMode == MODE_NORMAL) {
             mapMode = MODE_EDIT;
+            mapCrossHair.setAlpha(1.0f);
             addFenceButton.setCompoundDrawablesRelativeWithIntrinsicBounds(android.R.drawable.ic_menu_edit, 0, 0, 0);
-            LatLng pos = googleMap.getCameraPosition().target;
-            refreshCurrentLocation(pos.latitude, pos.longitude);
-            googleMap.setOnCameraChangeListener(cameraListener);
+            if (currentMarker != null) {
+                currentMarker.remove();
+                currentMarker = null;
+            }
         } else if (mapMode == MODE_EDIT) {
             mapMode = MODE_NORMAL;
+            mapCrossHair.setAlpha(0.0f);
             addFenceButton.setCompoundDrawablesRelativeWithIntrinsicBounds(android.R.drawable.ic_input_add, 0, 0, 0);
             googleMap.setOnCameraChangeListener(null);
             EditGeofenceDialog dialog = new EditGeofenceDialog();
