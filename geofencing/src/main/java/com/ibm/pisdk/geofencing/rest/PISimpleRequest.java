@@ -10,7 +10,7 @@ public class PISimpleRequest extends PIRequest<Void> {
      * @param method the HTTP request method to use.
      */
     public PISimpleRequest(PIRequestCallback<Void> callback, HttpMethod method, String payload) {
-        super(callback, method, null);
+        super(callback, method, payload);
     }
 
     @Override
