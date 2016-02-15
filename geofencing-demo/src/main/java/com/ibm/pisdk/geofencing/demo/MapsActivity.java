@@ -18,7 +18,6 @@ package com.ibm.pisdk.geofencing.demo;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationManager;
@@ -158,7 +157,6 @@ public class MapsActivity extends FragmentActivity {
         settings = new Settings(this);
         setContentView(R.layout.maps_activity);
         mapCrossHair = (ImageView) findViewById(R.id.map_cross_hair);
-        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         trackingEnabled = settings.getBoolean("tracking.enabled", true);
         log.debug("in onCreate() tracking is " + (trackingEnabled ? "enabled" : "disabled"));
         addFenceButton = (Button) findViewById(R.id.addFenceButton);
