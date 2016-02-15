@@ -84,6 +84,23 @@ class GeofenceManager implements LocationListener {
         }
     }
 
+    public void clearFencesExcluding(Collection<String> excludedCodes) {
+        synchronized (fenceMap) {
+            List<PIGeofence> list = new ArrayList<>();
+            for (Map.Entry<String, PIGeofence> entry: fenceMap.entrySet()) {
+                if (!excludedCodes.contains(entry.getKey())) {
+                    list.add(entry.getValue());
+                }
+            }
+            if ((list != null) && !list.isEmpty()) {
+                service.unmonitorGeofences(list);
+                for (PIGeofence fence: list) {
+                    fenceMap.remove(fence.getCode());
+                }
+            }
+        }
+    }
+
     /**
      * Get all fences in the cache.
      */
@@ -95,31 +112,42 @@ class GeofenceManager implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
+        onLocationChanged(location, false);
+    }
+
+    void onLocationChanged(Location location, boolean initial) {
         double d = maxDistance + 1d;
         log.debug("onLocationChanged(location=" + location + ") new location");
         if (referenceLocation != null) d = referenceLocation.distanceTo(location);
         if (d > maxDistance) {
             log.debug("onLocationChanged(location=" + location + ")");
-            clearFences();
+            Set<String> alreadyInSet = new HashSet<>();
             // where clause to find all geofences whose center's distance to the new location is < maxDistance
             String where = createWhereClause(location.getLatitude(), location.getLongitude(), maxDistance /2);
             List<PIGeofence> list = PIGeofence.find(PIGeofence.class, where);
+            TreeMap<Float, PIGeofence> map = new TreeMap<>();
             if ((list != null) && !list.isEmpty()) {
-                TreeMap<Float, PIGeofence> map = new TreeMap<>();
                 for (PIGeofence g : list) {
                     Location l = new Location(LocationManager.NETWORK_PROVIDER);
                     l.setLatitude(g.getLatitude());
                     l.setLongitude(g.getLongitude());
-                    map.put(l.distanceTo(location), g);
+                    float distance = l.distanceTo(location);
+                    if (initial && (distance < g.getRadius())) {
+                        alreadyInSet.add(g.getCode());
+                    }
+                    map.put(distance, g);
                 }
-                int count = 0;
-                for (PIGeofence g : map.values()) {
-                    fenceMap.put(g.getCode(), g);
-                    count++;
-                    if (count >= 100) break;
-                }
-                service.monitorGeofences(getFences());
             }
+            clearFencesExcluding(alreadyInSet);
+            int count = 0;
+            List<PIGeofence> newFences = new ArrayList<>(map.size());
+            for (PIGeofence g : newFences) {
+                fenceMap.put(g.getCode(), g);
+                newFences.add(g);
+                count++;
+                if (count >= 100) break;
+            }
+            service.monitorGeofences(newFences);
             referenceLocation = location;
         }
     }

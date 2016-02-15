@@ -475,7 +475,7 @@ public class PIGeofencingService {
                 Location last = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
                 log.debug("setInitialLocation() last location = " + last);
                 if (last != null) {
-                    geofenceManager.onLocationChanged(last);
+                    geofenceManager.onLocationChanged(last, true);
                 }
             }
         };

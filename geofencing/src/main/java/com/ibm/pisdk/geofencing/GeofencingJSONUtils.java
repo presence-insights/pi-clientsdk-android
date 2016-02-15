@@ -212,6 +212,7 @@ public class GeofencingJSONUtils {
             JSONObject data = new JSONObject();
             json.put("data", data);
             data.put("geofenceCode", fence.getCode());
+            data.put("geofenceName", fence.getName());
             data.put("crossingType", type.operation());
         } catch(JSONException e) {
             log.error("exception generating json for geofence list", e);
