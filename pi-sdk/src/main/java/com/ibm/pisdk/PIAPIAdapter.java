@@ -59,8 +59,8 @@ public class PIAPIAdapter implements Serializable {
     private static final String JSON_ROWS = "rows";
     private static final String JSON_FEATURES = "features";
 
-    static final private int READ_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
-    static final private int CONNECTION_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
+    private static final int READ_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
+    private static final int CONNECTION_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
 
     private final String mServerURL;
     private final String mServerURL_v2;
