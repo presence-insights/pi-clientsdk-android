@@ -139,7 +139,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             }
             if (extras.containsKey(PIBeaconSensor.BEACON_LAYOUT_KEY)) {
                 String beaconLayout = intent.getStringExtra(PIBeaconSensor.BEACON_LAYOUT_KEY);
-                PILogger.d(TAG, "new beacon layout: " + beaconLayout);
+                PILogger.d(TAG, "adding beacon layout: " + beaconLayout);
                 mBeaconManager.getBeaconParsers().add(new BeaconParser()
                         .setBeaconLayout(beaconLayout));
             }
