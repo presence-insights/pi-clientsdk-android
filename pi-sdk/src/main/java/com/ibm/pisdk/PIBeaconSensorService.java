@@ -40,7 +40,6 @@ import org.altbeacon.beacon.powersave.BackgroundPowerSaver;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private static final String TAG = PIBeaconSensorService.class.getSimpleName();
@@ -141,13 +140,8 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             if (extras.containsKey(PIBeaconSensor.BEACON_LAYOUT_KEY)) {
                 String beaconLayout = intent.getStringExtra(PIBeaconSensor.BEACON_LAYOUT_KEY);
                 PILogger.d(TAG, "new beacon layout: " + beaconLayout);
-                PILogger.d(TAG, "stored layout: " + mPrefs.getString(PIBeaconSensor.BEACON_LAYOUT_KEY, ""));
-                List<BeaconParser> parsers =  mBeaconManager.getBeaconParsers();
-                if (!mBeaconManager.isBound(this)) {
-                    PILogger.d(TAG, "adding new beacon layout: " + beaconLayout);
-                    mBeaconManager.getBeaconParsers().add(new BeaconParser()
-                            .setBeaconLayout(beaconLayout));
-                }
+                mBeaconManager.getBeaconParsers().add(new BeaconParser()
+                        .setBeaconLayout(beaconLayout));
             }
             if (extras.containsKey(PIBeaconSensor.BACKGROUND_SCAN_PERIOD_KEY)) {
                 PILogger.d(TAG, "updating background scan period to: " + mBackgroundScanPeriod);
