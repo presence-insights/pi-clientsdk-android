@@ -211,7 +211,7 @@ public class PIBeaconSensor {
             extras.putString(BEACON_LAYOUT_KEY, mPrefs.getString(BEACON_LAYOUT_KEY, ""));
         }
         if (startSensorInBackgroundMode) {
-            extras.putBoolean(START_IN_BACKGROUND_KEY, startSensorInBackgroundMode);
+            extras.putBoolean(START_IN_BACKGROUND_KEY, true);
             startSensorInBackgroundMode = false;
         }
 
@@ -239,9 +239,7 @@ public class PIBeaconSensor {
      * @param sendInterval send interval in ms
      */
     public void setSendInterval(long sendInterval) {
-        SharedPreferences.Editor editor = mPrefs.edit();
-        editor.putLong(PIBeaconSensor.SEND_INTERVAL_KEY, sendInterval);
-        editor.apply();
+        mPrefs.edit().putLong(PIBeaconSensor.SEND_INTERVAL_KEY, sendInterval).apply();
 
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(SEND_INTERVAL_KEY, sendInterval);
@@ -254,9 +252,7 @@ public class PIBeaconSensor {
      * @param scanPeriod time in ms
      */
     public void setBackgroundScanPeriod(long scanPeriod) {
-        SharedPreferences.Editor editor = mPrefs.edit();
-        editor.putLong(PIBeaconSensor.SEND_INTERVAL_KEY, scanPeriod);
-        editor.apply();
+        mPrefs.edit().putLong(PIBeaconSensor.SEND_INTERVAL_KEY, scanPeriod).apply();
 
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(BACKGROUND_SCAN_PERIOD_KEY, scanPeriod);
@@ -269,9 +265,7 @@ public class PIBeaconSensor {
      * @param betweenScanPeriod time in ms
      */
     public void setBackgroundBetweenScanPeriod(long betweenScanPeriod) {
-        SharedPreferences.Editor editor = mPrefs.edit();
-        editor.putLong(PIBeaconSensor.SEND_INTERVAL_KEY, betweenScanPeriod);
-        editor.apply();
+        mPrefs.edit().putLong(PIBeaconSensor.SEND_INTERVAL_KEY, betweenScanPeriod).apply();
 
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
         intent.putExtra(BACKGROUND_BETWEEN_SCAN_PERIOD_KEY, betweenScanPeriod);
@@ -290,18 +284,11 @@ public class PIBeaconSensor {
      * @param beaconLayout the layout of the BLE advertisement
      */
     public void addBeaconLayout(String beaconLayout) {
-        // TODO test against latest altbeacon library. might be able to remove this restraint.
-        if (mState.equals(STOPPED)) {
-            SharedPreferences.Editor editor = mPrefs.edit();
-            editor.putString(BEACON_LAYOUT_KEY, beaconLayout);
-            editor.apply();
+        mPrefs.edit().putString(BEACON_LAYOUT_KEY, beaconLayout).apply();
 
-            Intent intent = new Intent(mContext, PIBeaconSensorService.class);
-            intent.putExtra(BEACON_LAYOUT_KEY, beaconLayout);
-            mContext.startService(intent);
-        } else {
-            PILogger.e(TAG, "Cannot set beacon layout while service is running.");
-        }
+        Intent intent = new Intent(mContext, PIBeaconSensorService.class);
+        intent.putExtra(BEACON_LAYOUT_KEY, beaconLayout);
+        mContext.startService(intent);
     }
 
     public String getState() {
@@ -383,7 +370,6 @@ public class PIBeaconSensor {
     // state related methods
 
     private static void savePIAPIAdapter(Context context, PIAPIAdapter adapter) {
-        PILogger.d(TAG, "saving api adapter");
         ObjectOutputStream adapterStream = null;
         try {
             adapterStream = new ObjectOutputStream(
@@ -395,7 +381,6 @@ public class PIBeaconSensor {
         } finally {
             if (adapterStream != null) {
                 try {
-                    PILogger.d(TAG, "all went well, flushing and closing file");
                     adapterStream.flush();
                     adapterStream.close();
                 } catch (IOException e) {
@@ -406,7 +391,6 @@ public class PIBeaconSensor {
     }
 
     private static PIAPIAdapter retrievePIAPIAdapter(Context context) {
-        PILogger.d(TAG, "retrieving api adapter");
         PIAPIAdapter adapter = null;
         ObjectInputStream adapterStream = null;
         try {
@@ -426,6 +410,4 @@ public class PIBeaconSensor {
         }
         return adapter;
     }
-
-
 }
