@@ -184,10 +184,14 @@ public class MapsActivity extends FragmentActivity {
             DemoUtils.deleteGeofenceDB(this);
         }
         */
+        //settings.putString("orgCode", "xy1hyz9");
         String orgCode = settings.getString("orgCode", null);
         service = new PIGeofencingService(new MyGeofenceCallback(this), this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        //service = new PIGeofencingService(new MyGeofenceCallback(this), this, "http://unknown.server.com", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
         if (orgCode == null) {
-            service.createOrg("lolo4", "org description", null, true, new PIRequestCallback<PIOrg>() {
+            String androidId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+            log.debug("andoidId = " + androidId);
+            service.createOrg("android-" + androidId, "org for device id " + androidId, null, true, new PIRequestCallback<PIOrg>() {
                 @Override
                 public void onSuccess(PIOrg result) {
                     settings.putString("orgCode", result.getCode());

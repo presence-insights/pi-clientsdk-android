@@ -40,6 +40,10 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
      */
     private static final Logger log = Logger.getLogger(RequestAsyncTask.class);
     /**
+     * Maximum number of connection attemps.
+     */
+    private static final int MAX_TRIES = 3;
+    /**
      * The request to execute.
      */
     private final PIRequest<T> request;
@@ -56,6 +60,9 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
      * The error to return if the query fails.
      */
     private PIRequestError error = null;
+    int statusCode = -1;
+    int nbTries = 0;
+    boolean reauthenticationRequired = false;
 
     RequestAsyncTask(PIHttpService service, PIRequest<T> request) {
         this.request = request;
@@ -64,8 +71,6 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
 
     @Override
     protected Void doInBackground(Void... params) {
-        int statusCode = -1;
-        boolean reauthenticationRequired = false;
         boolean done = false;
         CookieHandler tmpManager = CookieHandler.getDefault();
         try {
@@ -74,65 +79,10 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
             String query = request.buildQuery(service);
             sb.append(query);
             URL url = new URL(sb.toString());
-            while (!done) {
-                HttpURLConnection connection = service.handleConnection((HttpURLConnection) url.openConnection());
-                connection.setRequestProperty(Utils.HTTP_HEADER_ACCEPT_LANGUAGE, Locale.getDefault().toString());
-                service.setUserAgentHeader(connection);
-                log.debug("HTTP method = " + request.getMethod() + ", request url = " + connection.getURL() + ", payload = " + request.getPayload());
-                connection.setInstanceFollowRedirects(true);
-                connection.setConnectTimeout(30_000);
-                if (request.isBasicAuthRequired()) service.setAuthHeader(connection);
-                String method = request.getMethod().name();
-                connection.setRequestMethod(method);
-                Utils.logRequestHeaders(connection);
-                if ("POST".equals(method) || "PUT".equals(method)) {
-                    String payload = request.getPayload();
-                    log.debug(request.getMethod() + " method request url = " + connection.getURL() + ", payload = " + payload);
-                    if (payload != null && (payload.length() > 0)) {
-                        connection.setDoOutput(true);
-                        connection.setRequestProperty("Content-Type", "application/json");
-                        Writer writer = new OutputStreamWriter(connection.getOutputStream());
-                        writer.write(payload);
-                        writer.close();
-                    }
-                }
-                // workaround for issue described at http://stackoverflow.com/q/17121213
-                try {
-                    statusCode = connection.getResponseCode();
-                } catch (ConnectException | SocketTimeoutException e) {
-                    // handle loss of connectivity at higher level
-                    throw e;
-                } catch (IOException e) {
-                    statusCode = connection.getResponseCode();
-                    if (statusCode != 401) {
-                        log.error("code " + statusCode + ", exception: ", e);
-                    }
-                } finally {
-                    Utils.logResponseHeaders(connection);
-                }
-                if (statusCode >= 400) {
-                    service.logErrorBody(connection);
-                    // if version is >= JellyBean and an authentication challenge is issued, then handle re-authentication and resend the request
-                    if ((statusCode == 401) && !reauthenticationRequired) {
-                        log.debug("re-authenticating due to auth challenge...");
-                        reauthenticationRequired = true;
-                        continue;
-                    } else {
-                        error = new PIRequestError(statusCode, null, "query failure");
-                    }
-                }
-                done = true;
-                if (error == null) {
-                    byte[] body = Utils.readBytes(connection);
-                    if (Utils.isTextResponseBody(connection)) {
-                        String bodyStr = new String(body, Utils.UTF_8);
-                        log.debug("doInBackground() response body = " + bodyStr);
-                    }
-                    result = request.resultFromResponse(body);
-                }
-                log.debug(String.format("status code for " + request.getMethod() + " request = %d, url = %s", statusCode, url));
-                // signal that network and server are on
-                service.connectivityHandler.onActiveNetwork();
+            while (!done && (nbTries < MAX_TRIES)) {
+                nbTries++;
+                log.debug("request attempt #" + nbTries);
+                done = sendRequest(url);
             }
         } catch (ConnectException | SocketTimeoutException e) {
             log.debug("detected loss of connectivity with the server", e);
@@ -146,6 +96,70 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
             CookieHandler.setDefault(tmpManager);
         }
         return null;
+    }
+
+    private boolean sendRequest(URL url) throws Exception {
+        HttpURLConnection connection = service.handleConnection((HttpURLConnection) url.openConnection());
+        connection.setRequestProperty(Utils.HTTP_HEADER_ACCEPT_LANGUAGE, Locale.getDefault().toString());
+        service.setUserAgentHeader(connection);
+        log.debug("HTTP method = " + request.getMethod() + ", request url = " + connection.getURL() + ", payload = " + request.getPayload());
+        connection.setInstanceFollowRedirects(true);
+        connection.setConnectTimeout(30_000);
+        if (request.isBasicAuthRequired()) service.setAuthHeader(connection);
+        HttpMethod method = request.getMethod();
+        connection.setRequestMethod(method.name());
+        Utils.logRequestHeaders(connection);
+        try {
+            if ((method == HttpMethod.POST) || (method == HttpMethod.PUT)) {
+                String payload = request.getPayload();
+                log.debug(request.getMethod() + " method request url = " + connection.getURL() + ", payload = " + payload);
+                if (payload != null && (payload.length() > 0)) {
+                    connection.setDoOutput(true);
+                    connection.setRequestProperty("Content-Type", "application/json");
+                    Writer writer = new OutputStreamWriter(connection.getOutputStream());
+                    writer.write(payload);
+                    writer.close();
+                }
+            }
+        } catch (ConnectException | SocketTimeoutException e) {
+            return false;
+        }
+        // workaround for issue described at http://stackoverflow.com/q/17121213
+        try {
+            statusCode = connection.getResponseCode();
+        } catch (ConnectException | SocketTimeoutException e) {
+            return false;
+        } catch (IOException e) {
+            statusCode = connection.getResponseCode();
+            if (statusCode != 401) {
+                log.error("code " + statusCode + ", exception: ", e);
+            }
+        } finally {
+            Utils.logResponseHeaders(connection);
+        }
+        if (statusCode >= 400) {
+            service.logErrorBody(connection);
+            // if version is >= JellyBean and an authentication challenge is issued, then handle re-authentication and resend the request
+            if ((statusCode == 401) && !reauthenticationRequired) {
+                log.debug("re-authenticating due to auth challenge...");
+                reauthenticationRequired = true;
+                return false;
+            } else {
+                error = new PIRequestError(statusCode, null, "query failure");
+            }
+        }
+        if (error == null) {
+            byte[] body = Utils.readBytes(connection);
+            if (Utils.isTextResponseBody(connection)) {
+                String bodyStr = new String(body, Utils.UTF_8);
+                log.debug("doInBackground() response body = " + bodyStr);
+            }
+            result = request.resultFromResponse(body);
+        }
+        log.debug(String.format("status code for " + request.getMethod() + " request = %d, url = %s", statusCode, url));
+        // signal that network and server are on
+        service.connectivityHandler.onActiveNetwork();
+        return true;
     }
 
     @Override

@@ -175,7 +175,7 @@ public class PIGeofencingService {
                     log.error("error notifying connector for geofences " + fences + " : " + error.toString());
                 }
             };
-            JSONObject payload = GeofencingJSONUtils.toJSONGeofenceEvent(fences, type, deviceInfo.getDescriptor());
+            JSONObject payload = GeofencingJSONUtils.toJSONGeofenceEvent(fences, type, deviceInfo.getDescriptor(), BuildConfig.VERSION_NAME);
             PIRequest request = new PISimpleRequest(callback, HttpMethod.POST, payload.toString());
             String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s", GEOFENCE_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode());
             request.setPath(path);
@@ -444,8 +444,10 @@ public class PIGeofencingService {
                             PIGeofence.saveInTx(geofences);
                             geofenceManager.addFences(geofences);
                             setInitialLocation();
+                        /*
                         } else if (initialRequest) {
                             loadGeofencesFromServer(false);
+                        */
                         }
                         log.debug("loadGeofences() got " + list.getGeofences().size() + " geofences");
                     } catch (Exception e) {

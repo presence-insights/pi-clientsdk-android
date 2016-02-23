@@ -47,8 +47,8 @@ public class GeofencingJSONUtils {
      */
     public static PIGeofenceList parseGeofences(JSONObject json) throws Exception {
         List<PIGeofence> result = new ArrayList<>();
-        JSONObject geojson = json.getJSONObject("geojson");
-        JSONArray features = geojson.getJSONArray("features");
+        //JSONObject geojson = json.getJSONObject("geojson");
+        JSONArray features = json.getJSONArray("features");
         for (int i = 0; i < features.length(); i++) {
             JSONObject feature = features.getJSONObject(i);
             result.add(parseGeofence(feature));
@@ -76,7 +76,7 @@ public class GeofencingJSONUtils {
         double lng = coord.getDouble(0);
         double lat = coord.getDouble(1);
         JSONObject props = feature.getJSONObject("properties");
-        String code = props.has("code") ? props.getString("code") : null;
+        String code = props.has("code") ? props.getString("code") : (props.has("@code") ? props.getString("@code") : null);
         String name = props.has("name") ? props.getString("name") : null;
         String description = props.has("description") ? props.getString("description") : null;
         double radius = props.has("radius") ? props.getDouble("radius") : -1d;
@@ -189,9 +189,25 @@ public class GeofencingJSONUtils {
         return null;
     }
 
-    static JSONObject toJSONGeofenceEvent(List<PIGeofence> fences, GeofenceNotificationType type, String deviceID) {
+    /*
+    {
+      "notifications": [
+        {
+          "data": {
+            "crossingType": "enter",
+            "fenceCode": "34c824e9-b5ba-4032-b41e-a81e17fedc89"
+          },
+          "detectedTime": "2016-02-10T08:54:08+01:00",
+          "descriptor": "343487045bbab8e9"
+        }
+      ],
+      "sdkVersion": "1.0.1"
+    }
+    */
+    static JSONObject toJSONGeofenceEvent(List<PIGeofence> fences, GeofenceNotificationType type, String deviceID, String sdkVersion) {
         JSONObject json = new JSONObject();
         try {
+            json.put("sdkVersion", sdkVersion == null ? "" : sdkVersion);
             JSONArray notifications = new JSONArray();
             json.put("notifications", notifications);
             String date = new SimpleDateFormat(DATE_FORMAT).format(new Date());

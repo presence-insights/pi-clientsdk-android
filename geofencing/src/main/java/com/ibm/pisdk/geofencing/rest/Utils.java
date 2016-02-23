@@ -175,12 +175,16 @@ final class Utils {
      */
     static void logResponseHeaders(HttpURLConnection connection) throws Exception {
         try {
-            StringBuilder sb = new StringBuilder();
             Map<String, List<String>> headers = connection.getHeaderFields();
-            for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
-                sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append('\n');
+            if (headers != null) {
+                StringBuilder sb = new StringBuilder();
+                for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+                    sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append('\n');
+                }
+                log.debug("response header:\n" + sb.toString());
+            } else {
+                log.debug("no response headers");
             }
-            log.debug("response header:\n" + sb.toString());
         } catch (Exception e) {
             log.debug("error logging response headers: ", e);
         }

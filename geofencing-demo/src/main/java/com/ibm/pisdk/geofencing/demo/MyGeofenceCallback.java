@@ -53,11 +53,13 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
     @Override
     public void onGeofencesMonitored(final List<PIGeofence> geofences) {
         log.debug("onGeofencesMonitored() geofences = " + geofences);
+        updateUI(geofences, false);
     }
 
     @Override
     public void onGeofencesUnmonitored(List<PIGeofence> geofences) {
         log.debug("onGeofencesUnmonitored() geofences = " + geofences);
+        updateUI(geofences, false);
     }
 
     @Override
