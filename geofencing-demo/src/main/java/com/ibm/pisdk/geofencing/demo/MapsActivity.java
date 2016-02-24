@@ -424,6 +424,8 @@ public class MapsActivity extends FragmentActivity {
     void initGeofences() {
         try {
             List<PIGeofence> fences = PIGeofence.listAll(PIGeofence.class);
+            log.debug("initGeofences() " + (fences == null ? 0 : fences.size()) + " fences in local DB");
+            geofenceManager.clearFences();
             geofenceManager.addFences(fences);
             for (PIGeofence g: fences) {
                 boolean active = false;
