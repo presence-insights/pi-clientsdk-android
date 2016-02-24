@@ -31,7 +31,11 @@ import com.ibm.pisdk.doctypes.PISensor;
 import com.ibm.pisdk.doctypes.PISite;
 import com.ibm.pisdk.doctypes.PIZone;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -55,12 +59,9 @@ public class PIAPIAdapter implements Serializable {
     private static final String JSON_ROWS = "rows";
     private static final String JSON_FEATURES = "features";
 
-    static final private int READ_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
-    static final private int CONNECTION_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
+    private static final int READ_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
+    private static final int CONNECTION_TIMEOUT_IN_MILLISECONDS = 7000; /* milliseconds */
 
-    // mContext will be nice to have if we want to do any kind of UI actions for them.  For example,
-    // we could provide them the option to throw up a progress indicator while the async tasks are running.
-    private final transient Context mContext;
     private final String mServerURL;
     private final String mServerURL_v2;
     private final String mConnectorURL;
@@ -79,8 +80,7 @@ public class PIAPIAdapter implements Serializable {
      * @param tenantCode unique identifier for the tenant
      * @param orgCode unique identifier for the organization
      */
-    public PIAPIAdapter(Context context, String username, String password, String hostname, String tenantCode, String orgCode){
-        mContext = context;
+    public PIAPIAdapter(Context context, String username, String password, String hostname, String tenantCode, String orgCode) {
         mBasicAuth = generateBasicAuth(username, password);
         mServerURL = hostname + MANAGEMENT_SERVER_PATH;
         mServerURL_v2 = hostname + MANAGEMENT_SERVER_PATH_v2;
@@ -306,7 +306,11 @@ public class PIAPIAdapter implements Serializable {
      *
      * @param deviceDescriptor unique identifier for the device.
      * @param completionHandler callback for APIs asynchronous calls. Result returns as {@link PIDevice PIDevice}.
+     *
+     * @deprecated use {@link #getDevice(String, PIAPICompletionHandler)}. When you register a device,
+     * the method will return a PIDevice object that contains the device documents code.
      */
+    @Deprecated
     public void getDeviceByDescriptor(String deviceDescriptor, final PIAPICompletionHandler completionHandler) {
         String device = String.format("%s/tenants/%s/orgs/%s/devices?rawDescriptor=%s", mServerURL, mTenantCode, mOrgCode, deviceDescriptor);
         try {
@@ -556,10 +560,35 @@ public class PIAPIAdapter implements Serializable {
      * @param device object with all the necessary information to register the device.
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void registerDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
-        final String registerDevice = String.format("%s/tenants/%s/orgs/%s/devices", mServerURL, mTenantCode, mOrgCode);
+    public void registerDevice(final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
+        handleDevice(device, completionHandler);
+    }
+
+    /**
+     * Updates a device within an organization.
+     *
+     * @param device object with all the necessary information to update the device.
+     * @param completionHandler callback for APIs asynchronous calls.
+     */
+    public void updateDevice(final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
+        handleDevice(device, completionHandler);
+    }
+
+    /**
+     * Unregisters a device within an organization.
+     *
+     * @param device object with all the necessary information to unregister the device.
+     * @param completionHandler callback for APIs asynchronous calls.
+     */
+    public void unregisterDevice(final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
+        device.setRegistered(false);
+        handleDevice(device, completionHandler);
+    }
+
+    private void handleDevice(final PIDeviceInfo device, final PIAPICompletionHandler completionHandler) {
+        final String postDevice = String.format("%s/tenants/%s/orgs/%s/devices", mServerURL, mTenantCode, mOrgCode);
         try {
-            URL url = new URL(registerDevice);
+            URL url = new URL(postDevice);
             POST(url, device.toJSON(), new PIAPICompletionHandler() {
                 @Override
                 public void onComplete(PIAPIResult postResult) {
@@ -571,7 +600,7 @@ public class PIAPIAdapter implements Serializable {
                                 @Override
                                 public void onComplete(PIAPIResult getResult) {
                                     if (getResult.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                                        // build f payload
+                                        // build payload
                                         JSONObject payload = null;
                                         try {
                                             payload = JSONObject.parse((String) getResult.getResult());
@@ -580,8 +609,15 @@ public class PIAPIAdapter implements Serializable {
                                             e.printStackTrace();
                                         }
                                         // call PUT
-                                        PUT(deviceLocation, payload, completionHandler);
-
+                                        PUT(deviceLocation, payload, new PIAPICompletionHandler() {
+                                            @Override
+                                            public void onComplete(PIAPIResult putResult) {
+                                                if (isSuccessfulResponse(putResult.getResponseCode())) {
+                                                    putResult.setResult(new PIDevice(putResult.getResultAsJson()));
+                                                }
+                                                completionHandler.onComplete(putResult);
+                                            }
+                                        });
                                     } else {
                                         completionHandler.onComplete(getResult);
                                     }
@@ -591,6 +627,9 @@ public class PIAPIAdapter implements Serializable {
                             e.printStackTrace();
                         }
                     } else {
+                        if (isSuccessfulResponse(postResult.getResponseCode())) {
+                            postResult.setResult(new PIDevice(postResult.getResultAsJson()));
+                        }
                         completionHandler.onComplete(postResult);
                     }
                 }
@@ -601,77 +640,12 @@ public class PIAPIAdapter implements Serializable {
     }
 
     /**
-     * Updates a device within an organization.
-     *
-     * @param device object with all the necessary information to update the device.
-     * @param completionHandler callback for APIs asynchronous calls.
-     */
-    public void updateDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
-        String getDeviceObj = String.format("%s/tenants/%s/orgs/%s/devices?rawDescriptor=%s", mServerURL, mTenantCode, mOrgCode, device.getDescriptor());
-        try {
-            URL url = new URL(getDeviceObj);
-            GET(url, new PIAPICompletionHandler() {
-                @Override
-                public void onComplete(PIAPIResult getResult) {
-                    if (getResult.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                        // build put payload
-                        JSONObject payload;
-                        JSONArray devices;
-                        JSONObject devicePayload;
-                        URL putUrl = null;
-                        String deviceCode = "";
-
-                        payload = getResult.getResultAsJson();
-                        devices = (JSONArray) payload.get("rows");
-
-                        if (devices.size() > 0) {
-                            devicePayload = (JSONObject) devices.get(0);
-                            device.addToJson(devicePayload);
-
-                            // call PUT
-                            if (devicePayload.get("@code") != null) {
-                                deviceCode = (String) devicePayload.get("@code");
-                            }
-                            String unregisterDevice = String.format("%s/tenants/%s/orgs/%s/devices/%s", mServerURL, mTenantCode, mOrgCode, deviceCode);
-                            try {
-                                putUrl = new URL(unregisterDevice);
-                            } catch (MalformedURLException e) {
-                                e.printStackTrace();
-                            }
-                            PUT(putUrl, devicePayload, completionHandler);
-                        } else {
-                            getResult.setResponseCode(404);
-                            getResult.setResult("Device \"" + device.getName() + "\" does not exist");
-                            completionHandler.onComplete(getResult);
-                        }
-                    } else {
-                        completionHandler.onComplete(getResult);
-                    }
-                }
-            });
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Unregisters a device within an organization.
-     *
-     * @param device object with all the necessary information to unregister the device.
-     * @param completionHandler callback for APIs asynchronous calls.
-     */
-    public void unregisterDevice(final DeviceInfo device, final PIAPICompletionHandler completionHandler) {
-        device.setRegistered(false);
-        updateDevice(device, completionHandler);
-    }
-
-    /**
      * Sends a beacon notification message to the beacon connector to report the device's location.
      *
      * @param payload a combination of PIBeaconData and the device descriptor
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    public void sendBeaconNotificationMessage(JSONObject payload, PIAPICompletionHandler completionHandler) {
+    protected void sendBeaconNotificationMessage(JSONObject payload, PIAPICompletionHandler completionHandler) {
         String bnm = String.format("%s/tenants/%s/orgs/%s", mConnectorURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(bnm);
@@ -696,36 +670,83 @@ public class PIAPIAdapter implements Serializable {
     }
 
     private void GET(URL url, PIAPICompletionHandler completionHandler) {
-        new AsyncTask<Object, Void, PIAPIResult>(){
-            private Exception exceptionToBeThrown;
-            private PIAPICompletionHandler completionHandler;
-            private URL url;
-            private int responseCode = 0;
-            private HttpURLConnection connection = null;
-            private PIAPIResult result = new PIAPIResult();
-            @Override
-            protected PIAPIResult doInBackground(Object... params) {
-                url = (URL) params[0];
-                completionHandler = (PIAPICompletionHandler) params[1];
-                // attempt GET from url
-                PILogger.d(TAG, "GET " + url.toString());
-                try {
-                    connection = (HttpURLConnection) url.openConnection();
-                    connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
-                    connection.setConnectTimeout(CONNECTION_TIMEOUT_IN_MILLISECONDS);
-                    connection.setRequestProperty("Accept", "application/json");
-                    connection.setRequestProperty("Authorization", mBasicAuth);
-                    connection.setRequestMethod("GET");
+        new ApiTask().execute(url, completionHandler, "GET");
+    }
+    private void GET_IMAGE(URL url, PIAPICompletionHandler completionHandler) {
+        ApiTask getImageTask = new ApiTask();
+        getImageTask.isImageApiCall = true;
+        getImageTask.execute(url, completionHandler, "GET");
+    }
+    private void POST(URL url, JSONObject payload, PIAPICompletionHandler completionHandler) {
+        new ApiTask().execute(url, completionHandler, "POST", payload);
+    }
+    private void PUT(URL url, JSONObject payload, PIAPICompletionHandler completionHandler) {
+        new ApiTask().execute(url, completionHandler, "PUT", payload);
+    }
+
+    private boolean isSuccessfulResponse (int responseCode) {
+        return responseCode >= HttpURLConnection.HTTP_OK && responseCode < HttpURLConnection.HTTP_BAD_REQUEST;
+    }
+
+    private class ApiTask extends AsyncTask<Object, Void, PIAPIResult> {
+        protected boolean isImageApiCall = false;
+        private URL url;
+        private PIAPICompletionHandler completionHandler;
+        private JSONObject payload = null;
+        private String requestMethod;
+        private int responseCode = 0;
+        private HttpURLConnection connection = null;
+        private PIAPIResult result = new PIAPIResult();
+
+        @Override
+        protected PIAPIResult doInBackground(Object... params) {
+            url = (URL) params[0];
+            completionHandler = (PIAPICompletionHandler) params[1];
+            requestMethod = (String) params[2];
+            if (params.length > 3) {
+                payload = (JSONObject) params[3];
+            }
+
+            PILogger.d(TAG, requestMethod + " " + url.toString());
+            try {
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
+                connection.setConnectTimeout(CONNECTION_TIMEOUT_IN_MILLISECONDS);
+                connection.setRequestProperty("Content-Type", "application/json");
+                connection.setRequestProperty("Accept", "application/json");
+                connection.setRequestProperty("Authorization", mBasicAuth);
+                connection.setRequestMethod(requestMethod);
+
+                if ("GET".equals(requestMethod)) {
                     connection.setDoInput(true);
-                    connection.connect();
-                    responseCode = connection.getResponseCode();
-                } catch (IOException e) {
-                    result.setException(e);
-                    e.printStackTrace();
+                } else {
+                    connection.setDoOutput(true);
+                }
+                connection.connect();
+
+                // send payload
+                if (payload != null) {
+                    OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
+                    out.write(payload.toString());
+                    out.close();
                 }
 
-                // build result object
-                if (responseCode != 0) {
+                responseCode = connection.getResponseCode();
+            } catch (IOException e) {
+                result.setException(e);
+                e.printStackTrace();
+            }
+
+            // build result object
+            if (responseCode != 0) {
+                if (isImageApiCall && isSuccessfulResponse(responseCode)) {
+                    try {
+                        result.setResult(BitmapFactory.decodeStream(connection.getInputStream()));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        result.setException(e);
+                    }
+                } else {
                     StringBuilder sb = new StringBuilder();
                     BufferedReader br;
                     String line;
@@ -744,265 +765,23 @@ public class PIAPIAdapter implements Serializable {
                         result.setException(e);
                         e.printStackTrace();
                     }
-                    result.setHeader(connection.getHeaderFields());
                     result.setResult(sb.toString());
-                    result.setResponseCode(responseCode);
-
-                    PILogger.d(TAG, result.toString());
-                    return result;
-                } else {
-                    cannotReachServer(result);
                 }
-                PILogger.e(TAG, result.toString());
-                return result;
-            }
-
-            protected void onPostExecute(PIAPIResult result) {
-                completionHandler.onComplete(result);
-            }
-
-        }.execute(url, completionHandler);
-    }
-    private void GET_IMAGE(URL url, PIAPICompletionHandler completionHandler) {
-        new AsyncTask<Object, Void, PIAPIResult>(){
-            Exception exceptionToBeThrown;
-            PIAPICompletionHandler completionHandler;
-            URL url;
-            int responseCode = 0;
-            HttpURLConnection connection = null;
-            private PIAPIResult result = new PIAPIResult();
-
-            @Override
-            protected PIAPIResult doInBackground(Object... params) {
-                url = (URL) params[0];
-                completionHandler = (PIAPICompletionHandler) params[1];
-
-                // attempt GET from url
-                PILogger.d(TAG, "GET " + url.toString());
-                try {
-                    connection = (HttpURLConnection) url.openConnection();
-                    connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
-                    connection.setConnectTimeout(CONNECTION_TIMEOUT_IN_MILLISECONDS);
-                    connection.setRequestProperty("Accept", "application/json");
-                    connection.setRequestProperty("Authorization", mBasicAuth);
-                    connection.setRequestMethod("GET");
-                    connection.setDoInput(true);
-                    connection.connect();
-                    responseCode = connection.getResponseCode();
-                } catch (IOException e) {
-                    result.setException(e);
-                    e.printStackTrace();
-                }
-
-                // if all goes well, return payload
-                if(responseCode == HttpURLConnection.HTTP_OK) {
-                    try {
-                        result.setHeader(connection.getHeaderFields());
-                        result.setResult(BitmapFactory.decodeStream(connection.getInputStream()));
-                        result.setResponseCode(responseCode);
-
-                        PILogger.d(TAG, result.toString());
-                        return result;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else if (responseCode != 0) {
-                    try {
-                        StringBuilder sb = new StringBuilder();
-                        try {
-                            BufferedReader br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-                            String line;
-                            while ((line = br.readLine()) != null) {
-                                sb.append(line);
-                                sb.append("\n");
-                            }
-                            br.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        Exception exception = new Exception("Response code error: " + responseCode);
-                        result.setException(exception);
-                        result.setResult(sb.toString());
-                        result.setResponseCode(responseCode);
-                        throw exception;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    cannotReachServer(result);
-                }
+                result.setHeader(connection.getHeaderFields());
+                result.setResponseCode(responseCode);
 
                 PILogger.d(TAG, result.toString());
                 return result;
+            } else {
+                cannotReachServer(result);
             }
 
-            protected void onPostExecute(PIAPIResult result) {
-                completionHandler.onComplete(result);
-            }
+            PILogger.e(TAG, result.toString());
+            return result;
+        }
 
-        }.execute(url, completionHandler);
-    }
-    private void POST(URL url, JSONObject payload, PIAPICompletionHandler completionHandler) {
-        new AsyncTask<Object, Void, PIAPIResult>(){
-            private Exception exceptionToBeThrown;
-            private PIAPICompletionHandler completionHandler;
-            private URL url;
-            private JSONObject payload;
-            private int responseCode = 0;
-            private HttpURLConnection connection = null;
-            private PIAPIResult result = new PIAPIResult();
-
-            @Override
-            protected PIAPIResult doInBackground(Object... params) {
-                url = (URL) params[0];
-                payload = (JSONObject) params[1];
-                completionHandler = (PIAPICompletionHandler) params[2];
-
-                // attempt POST to url
-                PILogger.d(TAG, "POST " + url.toString());
-                try {
-                    connection = (HttpURLConnection) url.openConnection();
-                    connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
-                    connection.setConnectTimeout(CONNECTION_TIMEOUT_IN_MILLISECONDS);
-                    connection.setRequestProperty("Content-Type", "application/json");
-                    connection.setRequestProperty("Accept", "application/json");
-                    connection.setRequestProperty("Authorization", mBasicAuth);
-                    connection.setRequestMethod("POST");
-                    connection.setDoOutput(true);
-                    connection.connect();
-
-                    // send payload
-                    OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
-                    out.write(payload.toString());
-                    out.close();
-
-                    responseCode = connection.getResponseCode();
-                } catch (IOException e) {
-                    result.setException(e);
-                    e.printStackTrace();
-                }
-
-                // build result object
-                if (responseCode != 0) {
-                    StringBuilder sb = new StringBuilder();
-                    BufferedReader br;
-                    String line;
-                    try {
-                        if (isSuccessfulResponse(responseCode)) {
-                            br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                        } else {
-                            br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-                        }
-                        while ((line = br.readLine()) != null) {
-                            sb.append(line);
-                            sb.append("\n");
-                        }
-                        br.close();
-                    } catch (IOException e) {
-                        result.setException(e);
-                        e.printStackTrace();
-                    }
-                    result.setHeader(connection.getHeaderFields());
-                    result.setResult(sb.toString());
-                    result.setResponseCode(responseCode);
-
-                    PILogger.d(TAG, result.toString());
-                    return result;
-                } else {
-                    cannotReachServer(result);
-                }
-
-                PILogger.e(TAG, result.toString());
-                return result;
-            }
-
-            protected void onPostExecute(PIAPIResult result) {
-                completionHandler.onComplete(result);
-            }
-
-        }.execute(url, payload, completionHandler);
-    }
-    private void PUT(URL url, JSONObject payload, PIAPICompletionHandler completionHandler) {
-        new AsyncTask<Object, Void, PIAPIResult>(){
-            private Exception exceptionToBeThrown;
-            private PIAPICompletionHandler completionHandler;
-            private URL url;
-            private JSONObject payload;
-            private int responseCode = 0;
-            private HttpURLConnection connection = null;
-            private PIAPIResult result = new PIAPIResult();
-
-            @Override
-            protected PIAPIResult doInBackground(Object... params) {
-                url = (URL) params[0];
-                payload = (JSONObject) params[1];
-                completionHandler = (PIAPICompletionHandler) params[2];
-
-                // attempt POST to url
-                PILogger.d(TAG, "PUT " + url.toString());
-                try {
-                    connection = (HttpURLConnection) url.openConnection();
-                    connection.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
-                    connection.setConnectTimeout(CONNECTION_TIMEOUT_IN_MILLISECONDS);
-                    connection.setRequestProperty("Content-Type", "application/json");
-                    connection.setRequestProperty("Accept", "application/json");
-                    connection.setRequestProperty("Authorization", mBasicAuth);
-                    connection.setRequestMethod("PUT");
-                    connection.setDoOutput(true);
-                    connection.connect();
-
-                    // send payload
-                    OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
-                    out.write(payload.toString());
-                    out.close();
-
-                    responseCode = connection.getResponseCode();
-                } catch (IOException e) {
-                    result.setException(e);
-                    e.printStackTrace();
-                }
-
-                // build result object
-                if (responseCode != 0) {
-                    StringBuilder sb = new StringBuilder();
-                    BufferedReader br;
-                    String line;
-                    try {
-                        if (isSuccessfulResponse(responseCode)) {
-                            br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                        } else {
-                            br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-                        }
-                        while ((line = br.readLine()) != null) {
-                            sb.append(line);
-                            sb.append("\n");
-                        }
-                        br.close();
-                    } catch (IOException e) {
-                        result.setException(e);
-                        e.printStackTrace();
-                    }
-                    result.setHeader(connection.getHeaderFields());
-                    result.setResult(sb.toString());
-                    result.setResponseCode(responseCode);
-
-                    PILogger.d(TAG, result.toString());
-                    return result;
-                } else {
-                    cannotReachServer(result);
-                }
-
-                PILogger.e(TAG, result.toString());
-                return result;
-            }
-
-            protected void onPostExecute(PIAPIResult result) {
-                completionHandler.onComplete(result);
-            }
-
-        }.execute(url, payload, completionHandler);
-    }
-    private boolean isSuccessfulResponse (int responseCode) {
-        return responseCode >= HttpURLConnection.HTTP_OK && responseCode < HttpURLConnection.HTTP_BAD_REQUEST;
+        protected void onPostExecute(PIAPIResult result) {
+            completionHandler.onComplete(result);
+        }
     }
 }

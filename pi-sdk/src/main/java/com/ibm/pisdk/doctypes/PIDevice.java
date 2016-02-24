@@ -17,7 +17,6 @@
 package com.ibm.pisdk.doctypes;
 
 import com.ibm.json.java.JSONObject;
-import com.ibm.pisdk.PILogger;
 
 /**
  * Simple class to encapsulate the Device documents important attributes.
@@ -35,6 +34,7 @@ public class PIDevice {
     private static final String JSON_DATA = "data";
     private static final String JSON_UNENCRYPTED_DATA = "unencryptedData";
     private static final String JSON_BLACKLIST = "blacklist";
+    private static final String JSON_AUTOBLACKLIST = "autoblacklist";
 
     private String code = "";
     private String name = "";
@@ -45,6 +45,7 @@ public class PIDevice {
     private JSONObject unencryptedData = new JSONObject();
     private boolean registered = false;
     private boolean blacklisted = false;
+    private boolean autoblacklisted = false;
 
     public PIDevice(JSONObject deviceObj) {
         code = (String) deviceObj.get(JSON_CODE);
@@ -58,6 +59,7 @@ public class PIDevice {
             data = (JSONObject) deviceObj.get(JSON_DATA);
             unencryptedData = (JSONObject) deviceObj.get(JSON_UNENCRYPTED_DATA);
             blacklisted = (Boolean) deviceObj.get(JSON_BLACKLIST);
+            autoblacklisted = (Boolean) deviceObj.get(JSON_AUTOBLACKLIST);
         }
     }
 
@@ -95,5 +97,9 @@ public class PIDevice {
 
     public boolean isBlacklisted() {
         return blacklisted;
+    }
+
+    public boolean isAutoblacklisted() {
+        return autoblacklisted;
     }
 }

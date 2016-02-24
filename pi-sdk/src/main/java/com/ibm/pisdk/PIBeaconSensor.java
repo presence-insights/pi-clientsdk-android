@@ -22,12 +22,17 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.Region;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 /**
@@ -37,32 +42,36 @@ import java.util.ArrayList;
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
 public class PIBeaconSensor {
-    private final String TAG = PIBeaconSensor.class.getSimpleName();
+    private static final String TAG = PIBeaconSensor.class.getSimpleName();
 
-    protected static final String INTENT_PARAMETER_ADAPTER = "com.ibm.pisdk.adapter";
-    protected static final String INTENT_PARAMETER_COMMAND = "com.ibm.pisdk.command";
-    protected static final String INTENT_PARAMETER_DEVICE_ID = "com.ibm.pisdk.device_id";
-    protected static final String INTENT_PARAMETER_BEACON_LAYOUT = "com.ibm.pisdk.beacon_layout";
-    protected static final String INTENT_PARAMETER_SEND_INTERVAL = "com.ibm.pisdk.send_interval";
-    protected static final String INTENT_PARAMETER_BACKGROUND_SCAN_PERIOD = "com.ibm.pisdk.send_interval";
-    protected static final String INTENT_PARAMETER_BACKGROUND_BETWEEN_SCAN_PERIOD = "com.ibm.pisdk.send_interval";
+    protected static final String ADAPTER_KEY = "com.ibm.pisdk.adapter";
+    protected static final String BEACON_LAYOUT_KEY = "com.ibm.pisdk.beacon_layout";
+    protected static final String SEND_INTERVAL_KEY = "com.ibm.pisdk.send_interval";
+    protected static final String BACKGROUND_SCAN_PERIOD_KEY = "com.ibm.pisdk.background_scan_period";
+    protected static final String BACKGROUND_BETWEEN_SCAN_PERIOD_KEY = "com.ibm.pisdk.background_between_scan_interval";
+    protected static final String SENSOR_STATE_KEY = "com.ibm.pisdk.sensor_state";
+    protected static final String UUID_KEY = "com.ibm.pisdk.uuid_key";
+    protected static final String START_IN_BACKGROUND_KEY = "com.ibm.pisdk.start_in_background";
 
     public static final String INTENT_RECEIVER_BEACON_COLLECTION = "intent_receiver_beacon_collection";
     public static final String INTENT_RECEIVER_REGION_ENTER = "intent_receiver_region_enter";
     public static final String INTENT_RECEIVER_REGION_EXIT = "intent_receiver_region_exit";
 
-    public static final String INTENT_EXTRA_BEACONS_IN_RANGE = "com.ibm.pi.android.beacons_in_range";
-    public static final String INTENT_EXTRA_ENTER_REGION = "com.ibm.pi.android.enter_region";
-    public static final String INTENT_EXTRA_EXIT_REGION = "com.ibm.pi.android.exit_region";
+    public static final String INTENT_ACTION_START = "com.ibm.pisdk.START";
+    public static final String INTENT_ACTION_STOP = "com.ibm.pisdk.STOP";
+    public static final String INTENT_EXTRA_BEACONS_IN_RANGE = "com.ibm.pisdk.beacons_in_range";
+    public static final String INTENT_EXTRA_ENTER_REGION = "com.ibm.pisdk.enter_region";
+    public static final String INTENT_EXTRA_EXIT_REGION = "com.ibm.pisdk.exit_region";
 
     private BluetoothAdapter mBluetoothAdapter;
     private final Context mContext;
     private final PIAPIAdapter mAdapter;
-    private final String mDeviceId;
+    private SharedPreferences mPrefs;
+    private boolean startSensorInBackgroundMode = false;
 
     private String mState;
-    private static final String STARTED = "started";
-    private static final String STOPPED = "stopped";
+    protected static final String STARTED = "started";
+    protected static final String STOPPED = "stopped";
 
     /**
      * This interface provides a callback for beacons within range of the device.
@@ -126,17 +135,23 @@ public class PIBeaconSensor {
     }
 
     private PIBeaconSensor(Context context, PIAPIAdapter adapter) {
-        this.mContext = context;
-        this.mAdapter = adapter;
-        mState = STOPPED;
+        mContext = context;
+        mPrefs = context.getSharedPreferences(context.getResources().getString(R.string.pi_shared_pref), Context.MODE_PRIVATE);
+        mState = mPrefs.getString(SENSOR_STATE_KEY, STOPPED);
+
+        // If the adapter is being passed in as null, this is a request from the BOOT_COMPLETED broadcast receiver.
+        // We will restore previous sensor state
+        if (adapter == null) {
+            startSensorInBackgroundMode = true;
+            mAdapter = retrievePIAPIAdapter(context);
+        } else {
+            mAdapter = adapter;
+            savePIAPIAdapter(context, adapter);
+        }
 
         // set listeners to null
         mBeaconsInRangeListener = null;
         mRegionEventListener = null;
-
-        // get Device ID
-        PIDeviceID deviceID = new PIDeviceID(context);
-        mDeviceId = deviceID.getMacAddress();
 
         try {
 
@@ -159,6 +174,10 @@ public class PIBeaconSensor {
         } catch (Exception e){
             PILogger.e(TAG, "Failed to create PIBeaconSensorService: " + e.getMessage());
         }
+
+        if (STARTED.equals(mState)) {
+            start();
+        }
     }
 
     /**
@@ -166,6 +185,7 @@ public class PIBeaconSensor {
      */
     public void start() {
         mState = STARTED;
+        mPrefs.edit().putString(SENSOR_STATE_KEY, mState).apply();
 
         // Register to receive messages.
         LocalBroadcastManager.getInstance(mContext).registerReceiver(mMessageReceiver,
@@ -176,10 +196,26 @@ public class PIBeaconSensor {
                 new IntentFilter(INTENT_RECEIVER_REGION_EXIT));
 
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
-        intent.putExtra(INTENT_PARAMETER_ADAPTER, mAdapter);
-        intent.putExtra(INTENT_PARAMETER_DEVICE_ID, mDeviceId);
-        intent.putExtra(INTENT_PARAMETER_COMMAND, "START_SCANNING");
+        intent.setAction(INTENT_ACTION_START);
+        intent.putExtras(getBundle());
         mContext.startService(intent);
+    }
+
+    private Bundle getBundle() {
+        Bundle extras = new Bundle();
+        extras.putSerializable(ADAPTER_KEY, mAdapter);
+        extras.putLong(SEND_INTERVAL_KEY, mPrefs.getLong(SEND_INTERVAL_KEY, 5000l));
+        extras.putLong(BACKGROUND_BETWEEN_SCAN_PERIOD_KEY, mPrefs.getLong(BACKGROUND_BETWEEN_SCAN_PERIOD_KEY, 60000l));
+        extras.putLong(BACKGROUND_SCAN_PERIOD_KEY, mPrefs.getLong(BACKGROUND_SCAN_PERIOD_KEY, 1100l));
+        if (mPrefs.contains(BEACON_LAYOUT_KEY)) {
+            extras.putString(BEACON_LAYOUT_KEY, mPrefs.getString(BEACON_LAYOUT_KEY, ""));
+        }
+        if (startSensorInBackgroundMode) {
+            extras.putBoolean(START_IN_BACKGROUND_KEY, true);
+            startSensorInBackgroundMode = false;
+        }
+
+        return extras;
     }
 
     /**
@@ -187,13 +223,13 @@ public class PIBeaconSensor {
      */
     public void stop() {
         mState = STOPPED;
+        mPrefs.edit().putString(SENSOR_STATE_KEY, mState).apply();
 
         // Unregister receiver.
         LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mMessageReceiver);
 
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
-        intent.putExtra(INTENT_PARAMETER_ADAPTER, mAdapter);
-        intent.putExtra(INTENT_PARAMETER_COMMAND, "STOP_SCANNING");
+        intent.setAction(INTENT_ACTION_STOP);
         mContext.startService(intent);
     }
 
@@ -203,8 +239,10 @@ public class PIBeaconSensor {
      * @param sendInterval send interval in ms
      */
     public void setSendInterval(long sendInterval) {
+        mPrefs.edit().putLong(PIBeaconSensor.SEND_INTERVAL_KEY, sendInterval).apply();
+
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
-        intent.putExtra(INTENT_PARAMETER_SEND_INTERVAL, sendInterval);
+        intent.putExtra(SEND_INTERVAL_KEY, sendInterval);
         mContext.startService(intent);
     }
 
@@ -214,8 +252,10 @@ public class PIBeaconSensor {
      * @param scanPeriod time in ms
      */
     public void setBackgroundScanPeriod(long scanPeriod) {
+        mPrefs.edit().putLong(PIBeaconSensor.SEND_INTERVAL_KEY, scanPeriod).apply();
+
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
-        intent.putExtra(INTENT_PARAMETER_BACKGROUND_SCAN_PERIOD, scanPeriod);
+        intent.putExtra(BACKGROUND_SCAN_PERIOD_KEY, scanPeriod);
         mContext.startService(intent);
     }
 
@@ -225,8 +265,10 @@ public class PIBeaconSensor {
      * @param betweenScanPeriod time in ms
      */
     public void setBackgroundBetweenScanPeriod(long betweenScanPeriod) {
+        mPrefs.edit().putLong(PIBeaconSensor.SEND_INTERVAL_KEY, betweenScanPeriod).apply();
+
         Intent intent = new Intent(mContext, PIBeaconSensorService.class);
-        intent.putExtra(INTENT_PARAMETER_BACKGROUND_BETWEEN_SCAN_PERIOD, betweenScanPeriod);
+        intent.putExtra(BACKGROUND_BETWEEN_SCAN_PERIOD_KEY, betweenScanPeriod);
         mContext.startService(intent);
     }
 
@@ -242,13 +284,15 @@ public class PIBeaconSensor {
      * @param beaconLayout the layout of the BLE advertisement
      */
     public void addBeaconLayout(String beaconLayout) {
-        if (mState.equals(STOPPED)) {
-            Intent intent = new Intent(mContext, PIBeaconSensorService.class);
-            intent.putExtra(INTENT_PARAMETER_BEACON_LAYOUT, beaconLayout);
-            mContext.startService(intent);
-        } else {
-            PILogger.e(TAG, "Cannot set beacon layout while service is running.");
-        }
+        mPrefs.edit().putString(BEACON_LAYOUT_KEY, beaconLayout).apply();
+
+        Intent intent = new Intent(mContext, PIBeaconSensorService.class);
+        intent.putExtra(BEACON_LAYOUT_KEY, beaconLayout);
+        mContext.startService(intent);
+    }
+
+    public String getState() {
+        return mState;
     }
 
     // Local broadcast receiver to handle callback
@@ -312,7 +356,6 @@ public class PIBeaconSensor {
         return mBluetoothAdapter.isEnabled();
     }
 
-
     // enable bluetooth in case it's off (admin permission)
     private boolean enableBLE(){
         boolean response = true;
@@ -324,4 +367,47 @@ public class PIBeaconSensor {
     }
 
 
+    // state related methods
+
+    private static void savePIAPIAdapter(Context context, PIAPIAdapter adapter) {
+        ObjectOutputStream adapterStream = null;
+        try {
+            adapterStream = new ObjectOutputStream(
+                    context.openFileOutput("piapiadapter.data", Context.MODE_PRIVATE));
+            adapterStream.writeObject(adapter);
+            adapterStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (adapterStream != null) {
+                try {
+                    adapterStream.flush();
+                    adapterStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private static PIAPIAdapter retrievePIAPIAdapter(Context context) {
+        PIAPIAdapter adapter = null;
+        ObjectInputStream adapterStream = null;
+        try {
+            adapterStream = new ObjectInputStream(
+                    context.openFileInput("piapiadapter.data"));
+            adapter = (PIAPIAdapter) adapterStream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            if (adapterStream != null) {
+                try {
+                    adapterStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return adapter;
+    }
 }

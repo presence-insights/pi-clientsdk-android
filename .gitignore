@@ -3,6 +3,7 @@
 .DS_Store
 /build
 app/build
+pi-sdk/build
 **/.idea/
 *.iml
 

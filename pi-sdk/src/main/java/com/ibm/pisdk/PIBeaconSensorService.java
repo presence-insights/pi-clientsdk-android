@@ -19,8 +19,10 @@ package com.ibm.pisdk;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.ibm.json.java.JSONArray;
@@ -43,17 +45,18 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     private static final String TAG = PIBeaconSensorService.class.getSimpleName();
 
     private Context mContext;
+    private SharedPreferences mPrefs;
     private BackgroundPowerSaver mBackgroundPowerSaver;
     private PIAPIAdapter mPiApiAdapter;
     private BeaconManager mBeaconManager;
     private RegionManager mRegionManager;
-    private String mDeviceId;
 
     private volatile long mSendInterval = 5000l;
     private volatile long mBackgroundScanPeriod = 1100l;
     private volatile long mBackgroundBetweenScanPeriod = 60000l;
     private long mLastSendTime = 0;
     private long mCurrentTime = 0;
+    private String mDeviceDescriptor;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -62,66 +65,28 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String command;
-        Bundle extras = null;
-        if (intent != null) {
-            extras = intent.getExtras();
-        }
+        PILogger.d(TAG, "intent: " + intent);
+        PILogger.d(TAG, "flags: " + flags);
+        PILogger.d(TAG, "startId: " + startId);
 
-        // lazily instantiate beacon manager
-        if (mBeaconManager == null) {
-            mBeaconManager = BeaconManager.getInstanceForApplication(this);
-
+        if (mBackgroundPowerSaver == null) {
             // set up for background ranging and monitoring
             mBackgroundPowerSaver = new BackgroundPowerSaver(this.getApplicationContext());
+        }
+        if (mBeaconManager == null) {
+            mBeaconManager = BeaconManager.getInstanceForApplication(this);
 
             // set some default values
             mBeaconManager.setBackgroundScanPeriod(mBackgroundScanPeriod);
             mBeaconManager.setBackgroundBetweenScanPeriod(mBackgroundBetweenScanPeriod);
-        }
-        // and region manager
-        if (mRegionManager == null) {
+
             mRegionManager = new RegionManager(mBeaconManager);
         }
 
-        // check passed in intent for commands sent from Beacon Sensor wrapper class
-        if (extras != null) {
-            if (extras.get(PIBeaconSensor.INTENT_PARAMETER_ADAPTER) != null) {
-                mPiApiAdapter = (PIAPIAdapter) extras.get(PIBeaconSensor.INTENT_PARAMETER_ADAPTER);
-            }
-            if (!extras.getString(PIBeaconSensor.INTENT_PARAMETER_DEVICE_ID, "").equals("")) {
-                mDeviceId = extras.getString(PIBeaconSensor.INTENT_PARAMETER_DEVICE_ID);
-            }
-            if (extras.getLong(PIBeaconSensor.INTENT_PARAMETER_SEND_INTERVAL, -1) > 0) {
-                mSendInterval = extras.getLong(PIBeaconSensor.INTENT_PARAMETER_SEND_INTERVAL);
-                PILogger.d(TAG, "updating send interval to: " + mSendInterval);
-            }
-            if (!extras.getString(PIBeaconSensor.INTENT_PARAMETER_BEACON_LAYOUT, "").equals("")) {
-                String beaconLayout = intent.getStringExtra(PIBeaconSensor.INTENT_PARAMETER_BEACON_LAYOUT);
-                PILogger.d(TAG, "adding new beacon layout: " + beaconLayout);
-                mBeaconManager.getBeaconParsers().add(new BeaconParser()
-                        .setBeaconLayout(beaconLayout));
-            }
-            if (extras.getLong(PIBeaconSensor.INTENT_PARAMETER_BACKGROUND_SCAN_PERIOD, -1) > 0) {
-                mBackgroundScanPeriod = extras.getLong(PIBeaconSensor.INTENT_PARAMETER_BACKGROUND_SCAN_PERIOD);
-                PILogger.d(TAG, "updating background scan period to: " + mBackgroundScanPeriod);
-                mBeaconManager.setBackgroundScanPeriod(mBackgroundScanPeriod);
-            }
-            if (extras.getLong(PIBeaconSensor.INTENT_PARAMETER_BACKGROUND_BETWEEN_SCAN_PERIOD, -1) > 0) {
-                mBackgroundBetweenScanPeriod = extras.getLong(PIBeaconSensor.INTENT_PARAMETER_BACKGROUND_BETWEEN_SCAN_PERIOD);
-                PILogger.d(TAG, "updating background between scan period to: " + mBackgroundBetweenScanPeriod);
-                mBeaconManager.setBackgroundBetweenScanPeriod(mBackgroundBetweenScanPeriod);
-            }
-            if (!extras.getString(PIBeaconSensor.INTENT_PARAMETER_COMMAND, "").equals("")) {
-                command = extras.getString(PIBeaconSensor.INTENT_PARAMETER_COMMAND);
-                if (command.equals("START_SCANNING")){
-                    PILogger.d(TAG, "Service has started scanning for beacons");
-                    mBeaconManager.bind(this);
-                } else if (command.equals("STOP_SCANNING")){
-                    PILogger.d(TAG, "Service has stopped scanning for beacons");
-                    mBeaconManager.unbind(this);
-                }
-            }
+        if (intent != null) {
+            handleCommands(intent);
+        } else {
+            stopSelf();
         }
 
         return START_STICKY;
@@ -131,6 +96,80 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     public void onCreate() {
         super.onCreate();
         mContext = this;
+        mPrefs = this.getSharedPreferences(getResources().getString(R.string.pi_shared_pref), Context.MODE_PRIVATE);
+
+        setupDescriptor();
+        PILogger.enableDebugMode(true);
+    }
+
+    private SharedPreferences.OnSharedPreferenceChangeListener sharedPreferenceChangeListener = new
+            SharedPreferences.OnSharedPreferenceChangeListener() {
+                @Override
+                public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                    if (key.equals(PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY)) {
+                        mDeviceDescriptor = sharedPreferences.getString(key, "");
+                    }
+                }
+            };
+
+    private void setupDescriptor() {
+        mDeviceDescriptor = mPrefs.getString(PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY, "");
+        if ("".equals(mDeviceDescriptor)) {
+            String android_id = Settings.Secure.getString(mContext.getContentResolver(),
+                    Settings.Secure.ANDROID_ID);
+            mDeviceDescriptor = android_id;
+
+            mPrefs.edit().putString(PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY, android_id).apply();
+        }
+
+        mPrefs.registerOnSharedPreferenceChangeListener(sharedPreferenceChangeListener);
+    }
+
+    private void handleCommands(Intent intent) {
+        Bundle extras = intent.getExtras();
+
+        // check passed in intent for commands sent from Beacon Sensor wrapper class
+        if (extras != null) {
+            if (extras.containsKey(PIBeaconSensor.ADAPTER_KEY)) {
+                mPiApiAdapter = (PIAPIAdapter) extras.get(PIBeaconSensor.ADAPTER_KEY);
+            }
+            if (extras.containsKey(PIBeaconSensor.SEND_INTERVAL_KEY)) {
+                PILogger.d(TAG, "updating send interval to: " + mSendInterval);
+                mSendInterval = extras.getLong(PIBeaconSensor.SEND_INTERVAL_KEY);
+            }
+            if (extras.containsKey(PIBeaconSensor.BEACON_LAYOUT_KEY)) {
+                String beaconLayout = intent.getStringExtra(PIBeaconSensor.BEACON_LAYOUT_KEY);
+                PILogger.d(TAG, "adding beacon layout: " + beaconLayout);
+                mBeaconManager.getBeaconParsers().add(new BeaconParser()
+                        .setBeaconLayout(beaconLayout));
+            }
+            if (extras.containsKey(PIBeaconSensor.BACKGROUND_SCAN_PERIOD_KEY)) {
+                PILogger.d(TAG, "updating background scan period to: " + mBackgroundScanPeriod);
+                mBackgroundScanPeriod = extras.getLong(PIBeaconSensor.BACKGROUND_SCAN_PERIOD_KEY);
+                mBeaconManager.setBackgroundScanPeriod(mBackgroundScanPeriod);
+            }
+            if (extras.containsKey(PIBeaconSensor.BACKGROUND_BETWEEN_SCAN_PERIOD_KEY)) {
+                PILogger.d(TAG, "updating background between scan period to: " + mBackgroundBetweenScanPeriod);
+                mBackgroundBetweenScanPeriod = extras.getLong(PIBeaconSensor.BACKGROUND_BETWEEN_SCAN_PERIOD_KEY);
+                mBeaconManager.setBackgroundBetweenScanPeriod(mBackgroundBetweenScanPeriod);
+            }
+            if (extras.containsKey(PIBeaconSensor.START_IN_BACKGROUND_KEY)) {
+                PILogger.d(TAG, "service started up in the background, starting sensor in background mode");
+                mBeaconManager.setBackgroundMode(true);
+            }
+        }
+
+        if (intent.getAction() != null) {
+            String action = intent.getAction();
+            if (action.equals(PIBeaconSensor.INTENT_ACTION_START)){
+                PILogger.d(TAG, "Service has started scanning for beacons");
+                mBeaconManager.bind(this);
+            } else if (action.equals(PIBeaconSensor.INTENT_ACTION_STOP)){
+                PILogger.d(TAG, "Service has stopped scanning for beacons");
+                mBeaconManager.unbind(this);
+                stopSelf();
+            }
+        }
     }
 
     @Override
@@ -182,26 +221,27 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             }
         });
 
-        mPiApiAdapter.getProximityUUIDs(new PIAPICompletionHandler() {
-            @Override
-            public void onComplete(PIAPIResult result) {
-                if (result.getResponseCode() == 200) {
-                    ArrayList<String> uuids = (ArrayList<String>) result.getResult();
-                    if (uuids.size() > 0) {
-                        for (Object uuid : uuids.toArray()) {
-                            // this is temporary
-                            // with only one uuid per org assumption in RegionManager
-                            // we will only range in the last uuid in the list
-                            mRegionManager.add((String) uuid);
+        if (mPrefs.contains(PIBeaconSensor.UUID_KEY)) {
+            mRegionManager.add(mPrefs.getString(PIBeaconSensor.UUID_KEY, ""));
+        } else {
+            mPiApiAdapter.getProximityUUIDs(new PIAPICompletionHandler() {
+                @Override
+                public void onComplete(PIAPIResult result) {
+                    if (result.getResponseCode() == 200) {
+                        ArrayList<String> uuids = (ArrayList<String>) result.getResult();
+                        if (uuids.size() > 0) {
+                            String uuid = (String) uuids.get(0);
+                            mRegionManager.add(uuid);
+                            mPrefs.edit().putString(PIBeaconSensor.UUID_KEY, uuid).apply();
+                        } else {
+                            PILogger.e(TAG, "Call to Management server returned an empty array of proximity UUIDs");
                         }
                     } else {
-                        PILogger.e(TAG, "Call to Management server returned an empty array of proximity UUIDs");
+                        PILogger.e(TAG, result.toString());
                     }
-                } else {
-                    PILogger.e(TAG, result.toString());
                 }
-            }
-        });
+            });
+        }
     }
 
     private void sendBeaconNotification(Collection<Beacon> beacons) {
@@ -239,7 +279,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
 
         PIBeaconData data = new PIBeaconData(nearestBeacon);
         data.setDetectedTime(detectedTime);
-        data.setDeviceDescriptor(mDeviceId);
+        data.setDeviceDescriptor(mDeviceDescriptor);
         beaconArray.add(data.getBeaconAsJson());
 
         payload.put("bnm", beaconArray);
