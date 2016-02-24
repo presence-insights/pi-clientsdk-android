@@ -120,11 +120,12 @@ class GeofenceManager implements LocationListener {
         log.debug("onLocationChanged(location=" + location + ") new location");
         if (referenceLocation != null) d = referenceLocation.distanceTo(location);
         if (d > maxDistance) {
-            log.debug("onLocationChanged(location=" + location + ")");
+            //log.debug("onLocationChanged(location=" + location + ")");
             Set<String> alreadyInSet = new HashSet<>();
             // where clause to find all geofences whose center's distance to the new location is < maxDistance
             String where = createWhereClause(location.getLatitude(), location.getLongitude(), maxDistance /2);
             List<PIGeofence> list = PIGeofence.find(PIGeofence.class, where);
+            log.debug(String.format("where clause=%s, found fences: %s", where, list));
             TreeMap<Float, PIGeofence> map = new TreeMap<>();
             if ((list != null) && !list.isEmpty()) {
                 for (PIGeofence g : list) {
@@ -141,7 +142,7 @@ class GeofenceManager implements LocationListener {
             clearFencesExcluding(alreadyInSet);
             int count = 0;
             List<PIGeofence> newFences = new ArrayList<>(map.size());
-            for (PIGeofence g : newFences) {
+            for (PIGeofence g : map.values()) {
                 fenceMap.put(g.getCode(), g);
                 newFences.add(g);
                 count++;
