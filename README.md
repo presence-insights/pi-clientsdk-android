@@ -19,7 +19,7 @@ This library contains classes that are useful for interfacing with Presence Insi
 *   [JCenter](http://jcenter.bintray.com/com/ibm/pi/pi-sdk/)
 *   [MavenCentral](https://repo1.maven.org/maven2/com/ibm/pi/pi-sdk/)
 
-In the project level `build.gradle`,
+In the project `build.gradle`,
 
     allprojects {
         repositories {
@@ -33,7 +33,7 @@ In the project level `build.gradle`,
 In the module `build.gradle`,
 
     dependencies {
-        compile 'com.ibm.pi:pi-sdk:<version_number>'
+        compile 'com.ibm.pi:pi-sdk:1.3.0'
     }
 
 ### Manually
@@ -44,24 +44,24 @@ In the module `build.gradle`,
 
 2. Add the following dependencies to the modules `build.gradle` file:
 
-    dependencies {
-        compile 'org.altbeacon:android-beacon-library:2.7'
-        compile (name:'presence-insights-<version_number>', ext:'aar')
-    }
+        dependencies {
+            compile 'org.altbeacon:android-beacon-library:2.7'
+            compile (name:'presence-insights-1.3.0', ext:'aar')
+        }
 
 3. You will also have to add the `flatDir` attribute to the project `build.gradle` file:
 
-    allprojects {
-        repositories {
-            flatDir {
-                dirs 'libs'
+        allprojects {
+            repositories {
+                flatDir {
+                    dirs 'libs'
+                }
             }
         }
-    }
 
 4. Add the `altbeacon` library to the dependencies. This is a requirement if you are taking this manual approach. Edit the modules `build.gradle` file and add:
 
-    compile 'org.altbeacon:android-beacon-library:2.7' to the `dependencies` object.
+        compile 'org.altbeacon:android-beacon-library:2.7'
 
 Sync your gradle project. You should now have access to all of the Presence Insights APIs!
 
