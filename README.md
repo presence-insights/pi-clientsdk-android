@@ -51,16 +51,13 @@ In the module `build.gradle`,
 
 2. Add the following dependencies to the modules `build.gradle` file:
 
-        ```
         dependencies {
             compile 'org.altbeacon:android-beacon-library:2.7'
             compile (name:'presence-insights-1.3.0', ext:'aar')
         }
-        ```
 
 3. You will also have to add the `flatDir` attribute to the project `build.gradle` file:
 
-        ```
         allprojects {
             repositories {
                 flatDir {
@@ -68,7 +65,6 @@ In the module `build.gradle`,
                 }
             }
         }
-        ```
 
 4. Add the `altbeacon` library to the dependencies. This is a requirement if you are taking this manual approach. Edit the modules `build.gradle` file and add:
 
@@ -82,12 +78,10 @@ You can build the Presence Insights SDK straight from Git. This is useful if you
 
 In the terminal, type:
  
-    ```
     git clone git@github.ibm.com:PresenceInsights/pi-clientsdk-android.git
     cd pi-clientsdk-android
     chmod +x build-android.sh
     sh build-android.sh
-    ```
     
 **Tip:** At this point, you may need to configure your development environment. Just follow the error messages. Some common issues include forgetting to create an `ANDROID_HOME` environment variable, or not having the correct android SDK downloaded. 
 
