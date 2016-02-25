@@ -59,7 +59,9 @@ public class PIDevice {
             data = (JSONObject) deviceObj.get(JSON_DATA);
             unencryptedData = (JSONObject) deviceObj.get(JSON_UNENCRYPTED_DATA);
             blacklisted = (Boolean) deviceObj.get(JSON_BLACKLIST);
-            autoblacklisted = (Boolean) deviceObj.get(JSON_AUTOBLACKLIST);
+            if (deviceObj.containsKey(JSON_AUTOBLACKLIST)) {
+                autoblacklisted = (Boolean) deviceObj.get(JSON_AUTOBLACKLIST);
+            }
         }
     }
 

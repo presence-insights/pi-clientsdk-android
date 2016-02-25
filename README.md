@@ -141,42 +141,43 @@ Don't forget to add the Internet permission to your manifest file!
 <uses-permission android:name="android.permission.INTERNET" />
 ```
 
-####The PI Beacon Sensor
+####The PIBeaconSensor
 
 After you initialize the adapter, you can initialize a Beacon Sensor.
 
-```
-PIBeaconSensor mBeaconSensor = PIBeaconSensor.getInstance(context, mAdapter);
-```
+    PIBeaconSensor mBeaconSensor = PIBeaconSensor.getInstance(context, mAdapter);
 
 Before starting the beacon sensor you will need to add the beacon layout to tell the sensor how to read the BLE advertisement from your beacons.
 
-```
-// adding beacon layout for iBeacons
-mBeaconSensor.addBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24");
-```
+    // adding beacon layout for iBeacons
+    mBeaconSensor.addBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24");
 
 *Note:* From AltBeacon's [Github](https://github.com/AltBeacon/android-beacon-library), "**IMPORTANT:** By default, this library will only detect beacons meeting the AltBeacon specification."
 
 Now we can start the beacon sensor.
 
-```
-mBeaconSensor.start()
-```
+    mBeaconSensor.start()
 
 And that's really all there is to getting the app to start sending the device location back to your Presence Insights instance.
 
 The SDK by default sends information about the beacons around you every 5 seconds. This can be adjusted (time in ms).
 
-```
-mBeaconSensor.setSendInterval(10000); // send every 10 seconds
-```
+    mBeaconSensor.setSendInterval(10000); // send every 10 seconds
 
 To stop beacon sensing,
 
-```
-mBeaconSensor.stop()
-```
+    mBeaconSensor.stop()
+
+The PIBeaconSensor monitors and ranges for beacons in the background. By default, we set `backgroundScanPeriod` to 1.1 seconds,
+and `backgroundBetweenScanPeriod` to 1 minute. These can be adjusted by calling,
+
+    // how long to scan for each cycle
+    mBeaconSensor.setBackgroundScanPeriod()
+    // how long to wait in between each cycle
+    mBeaconSensor.setBackgroundBetweenScanPeriod()
+
+The beacon sensor will survive the user hitting the back button and restarting the phone, but will kill the service if
+the user swipes away the app from the task switcher, or the user force stops the app from settings.
 
 ## Listening for monitoring and ranging callbacks
 
@@ -253,6 +254,6 @@ Finally, once the PIDeviceInfo object is ready to register, make the call to reg
         
 *    How can I send location events when the application is in the background or not open?
 
-    1. There is a background process we create that uses scanPeriod (how long you scan) and betweenScanPeriod (how long to wait before waking up and scanning BLE). You should set these to values that make sense for your application. Consider the fact that scanning for BLE devices drains the battery and reduces a users privacy. 
-    2. If a user force closes the app, Android will stop these background services. If a user restarts their phone, these background processes will not be running. Consider solutions such as signage around your venue to encourage users to open the application. 
+    1. There is a background process we create that uses backgroundScanPeriod (how long you scan) and backgroundBetweenScanPeriod (how long to wait before waking up and scanning BLE). You should set these to values that make sense for your application. Consider the fact that scanning for BLE devices drains the battery and reduces a users privacy.
+    2. If a user force closes the app, Android will stop these background services. Consider solutions such as signage around your venue to encourage users to open the application. However, if a user restarts their phone, and your app was scanning for beacons, we will start back up and continue scanning.
 
