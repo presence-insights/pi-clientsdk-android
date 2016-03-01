@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package com.ibm.pisdk;
+package com.ibm.pi.beacon;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
@@ -26,6 +26,9 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+
+import com.ibm.pi.core.PIAPIAdapter;
+import com.ibm.pi.core.PILogger;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.Region;
@@ -123,7 +126,7 @@ public class PIBeaconSensor {
      *
      * @param context Activity context
      * @param adapter to handle sending of the beacon notification message
-     * @see com.ibm.pisdk.PIAPIAdapter
+     * @see com.ibm.pi.core.PIAPIAdapter
      */
     public static PIBeaconSensor getInstance(Context context, PIAPIAdapter adapter) {
         if (sInstance == null) {

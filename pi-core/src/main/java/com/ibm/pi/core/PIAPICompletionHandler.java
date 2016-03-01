@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-package com.ibm.pisdk;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
+package com.ibm.pi.core;
 
 /**
- * This receiver will instantiate a beacon sensor on boot up of the device.
- * If the sensor was running before the user restarted the phone, it will pick up where it left off
+ * This interface provides a callback method for the PIAPIAdapter's asynchronous calls.
  *
  * @author Ciaran Hannigan (cehannig@us.ibm.com)
  */
-public class onBootComplete extends BroadcastReceiver {
+public interface PIAPICompletionHandler {
 
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        PIBeaconSensor sensor = PIBeaconSensor.getInstance(context, null);
-    }
+    /**
+     * Provides the results of the API call.
+     *
+     * @param result result of asynchronous call from API.
+     */
+    void onComplete(PIAPIResult result);
 }

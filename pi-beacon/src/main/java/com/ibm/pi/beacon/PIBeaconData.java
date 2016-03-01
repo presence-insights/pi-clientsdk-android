@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package com.ibm.pisdk;
+package com.ibm.pi.beacon;
 
 import android.util.Log;
 

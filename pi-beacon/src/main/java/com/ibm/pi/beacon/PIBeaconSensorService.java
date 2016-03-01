@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package com.ibm.pisdk;
+package com.ibm.pi.beacon;
 
 import android.app.Service;
 import android.content.Context;
@@ -27,6 +27,11 @@ import android.support.v4.content.LocalBroadcastManager;
 
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
+import com.ibm.pi.core.PIAPIAdapter;
+import com.ibm.pi.core.PIAPICompletionHandler;
+import com.ibm.pi.core.PIAPIResult;
+import com.ibm.pi.core.PIDeviceInfo;
+import com.ibm.pi.core.PILogger;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;

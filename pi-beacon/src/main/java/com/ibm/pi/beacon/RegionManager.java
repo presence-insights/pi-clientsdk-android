@@ -14,9 +14,11 @@
  * limitations under the License.
  **/
 
-package com.ibm.pisdk;
+package com.ibm.pi.beacon;
 
 import android.os.RemoteException;
+
+import com.ibm.pi.core.PILogger;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconManager;

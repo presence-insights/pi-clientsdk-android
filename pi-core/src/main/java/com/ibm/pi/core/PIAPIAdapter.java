@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package com.ibm.pisdk;
+package com.ibm.pi.core;
 
 import android.content.Context;
 import android.graphics.BitmapFactory;
@@ -23,13 +23,13 @@ import android.util.Base64;
 
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
-import com.ibm.pisdk.doctypes.PIBeacon;
-import com.ibm.pisdk.doctypes.PIDevice;
-import com.ibm.pisdk.doctypes.PIFloor;
-import com.ibm.pisdk.doctypes.PIOrg;
-import com.ibm.pisdk.doctypes.PISensor;
-import com.ibm.pisdk.doctypes.PISite;
-import com.ibm.pisdk.doctypes.PIZone;
+import com.ibm.pi.core.doctypes.PIBeacon;
+import com.ibm.pi.core.doctypes.PIDevice;
+import com.ibm.pi.core.doctypes.PIFloor;
+import com.ibm.pi.core.doctypes.PIOrg;
+import com.ibm.pi.core.doctypes.PISensor;
+import com.ibm.pi.core.doctypes.PISite;
+import com.ibm.pi.core.doctypes.PIZone;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -645,7 +645,7 @@ public class PIAPIAdapter implements Serializable {
      * @param payload a combination of PIBeaconData and the device descriptor
      * @param completionHandler callback for APIs asynchronous calls.
      */
-    protected void sendBeaconNotificationMessage(JSONObject payload, PIAPICompletionHandler completionHandler) {
+    public void sendBeaconNotificationMessage(JSONObject payload, PIAPICompletionHandler completionHandler) {
         String bnm = String.format("%s/tenants/%s/orgs/%s", mConnectorURL, mTenantCode, mOrgCode);
         try {
             URL url = new URL(bnm);

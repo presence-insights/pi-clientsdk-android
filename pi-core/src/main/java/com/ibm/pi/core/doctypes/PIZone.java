@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package com.ibm.pisdk.doctypes;
+package com.ibm.pi.core.doctypes;
 
 import android.graphics.Point;
 

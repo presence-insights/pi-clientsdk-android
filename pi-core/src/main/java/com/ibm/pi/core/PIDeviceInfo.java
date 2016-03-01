@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package com.ibm.pisdk;
+package com.ibm.pi.core;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -38,8 +38,8 @@ public class PIDeviceInfo {
     static final String JSON_BLACKLIST = "blacklist";
 
     // shared prefs
-    protected static final String PI_SHARED_PREF = "com.ibm.pisdk.shared_prefs";
-    protected static final String PI_SHARED_PREF_DESCRIPTOR_KEY = "device_descriptor";
+    public static final String PI_SHARED_PREF = "com.ibm.pisdk.shared_prefs";
+    public static final String PI_SHARED_PREF_DESCRIPTOR_KEY = "device_descriptor";
 
     private String mName;
     private String mDeviceDescriptor;
