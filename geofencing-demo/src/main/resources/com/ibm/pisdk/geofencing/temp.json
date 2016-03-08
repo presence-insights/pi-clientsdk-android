@@ -1,0 +1,29 @@
+{
+  "message": "Conflict",
+  "stack": "Error: Conflict\n    at Request.callback (/nfs/home/olaousy/pi-outdoor/proxy-sync-project/pi-outdoor-proxysync/node_modules/superagent/lib/node/index.js:826:17)\n    at IncomingMessage.<anonymous> (/nfs/home/olaousy/pi-outdoor/proxy-sync-project/pi-outdoor-proxysync/node_modules/superagent/lib/node/index.js:1049:12)\n    at IncomingMessage.emit (events.js:129:20)\n    at _stream_readable.js:908:16\n    at process._tickCallback (node.js:355:11)",
+  "original": null,
+  "response": {
+    "req": {
+      "method": "POST",
+      "url": "http://localhost:3000/pi-config/v2/tenants/xf504jy/orgs",
+      "data": {
+        "description": "org for device id 29836103b49ca9c7",
+        "registrationTypes": ["Internal"],
+        "name": "android-29836103b49ca9c7"
+      }
+    },
+    "header": {
+      "x-powered-by": "Express",
+      "x-request-id": "cafdb3a389fa419bbbe687012883c045",
+      "location": "http://localhost:3000/pi-config/v2/tenants/xf504jy/orgs/cp1dyns",
+      "content-type": "application/json; charset=utf-8",
+      "content-length": "406",
+      "etag": "W/\"196-7dc765b0\"",
+      "date": "Thu, 25 Feb 2016 16:24:39 GMT",
+      "connection": "close"
+    },
+    "status": 409,
+    "text": "{\"message\":\"Failed to create the document\",\"code\":\"PIMC005E\",\"errors\":[{\"message\":\"A \\\"org\\\" document with a matching unique key already exists inside the specified \\\"tenant\\\". Please retry your request and supply a different value for the unique key: \\\"{\\\"name\\\":\\\"android-29836103b49ca9c7\\\"}\\\"\",\"code\":\"PIMC063E\",\"headers\":{\"Location\":\"http://localhost:3000/pi-config/v2/tenants/xf504jy/orgs/cp1dyns\"}}]}"
+  },
+  "status": 409
+}

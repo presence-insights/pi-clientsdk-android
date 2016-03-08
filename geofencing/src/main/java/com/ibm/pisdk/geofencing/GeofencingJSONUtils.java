@@ -25,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Utility methods to parse one or more geofences in geojson format.
@@ -33,11 +34,15 @@ public class GeofencingJSONUtils {
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(PIGeofencingService.class);
+    private static final Logger log = LoggingConfiguration.getLogger(PIGeofencingService.class);
     /**
      * Date format used to convert dates from/to UTC format such as "2015-08-24T09:00:00-05:00".
      */
     private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZZZZZ";
+    /**
+     * Date format used to convert dates from/to UTC format such as "2015-08-24T09:00:00-05:00".
+     */
+    private static final String TMP_DESC = UUID.randomUUID().toString();
 
     /**
      * Parse a list of geofences.
@@ -223,7 +228,8 @@ public class GeofencingJSONUtils {
     static JSONObject toJSONGeofenceEvent(PIGeofence fence, String deviceID, String date, GeofenceNotificationType type) {
         JSONObject json = new JSONObject();
         try {
-            json.put("descriptor", deviceID);
+            json.put("descriptor", TMP_DESC);
+            //json.put("descriptor", deviceID);
             json.put("detectedTime", date);
             JSONObject data = new JSONObject();
             json.put("data", data);

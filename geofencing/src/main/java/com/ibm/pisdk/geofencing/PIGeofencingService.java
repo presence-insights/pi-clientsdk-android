@@ -55,7 +55,7 @@ public class PIGeofencingService {
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(PIGeofencingService.class);
+    private static final Logger log = LoggingConfiguration.getLogger(PIGeofencingService.class);
     static final String INTENT_ID = "com.ibm.pisdk.geofencing.PIGeofencingService";
     /**
      * Part of a request path pointing to the geofence connector.
@@ -65,6 +65,9 @@ public class PIGeofencingService {
      * Part of a request path pointing to the pi conifg connector.
      */
     static final String CONFIG_CONNECTOR_PATH = "pi-config/v2";
+
+    static final int MODE_SERVICE = 1;
+    static final int MODE_APP = 2;
     /**
      * The restful service which connects to and communicates with the Adaptive Experience server.
      */
@@ -72,7 +75,7 @@ public class PIGeofencingService {
     /**
      * The Google API client.
      */
-    private GoogleApiClient googleApiClient;
+    GoogleApiClient googleApiClient;
     /**
      * The Android application context.
      */
@@ -80,7 +83,11 @@ public class PIGeofencingService {
     /**
      * Handles the geofences that are currently monitored.
      */
-    final GeofenceManager geofenceManager;
+    //final GeofenceManager geofenceManager;
+    /**
+     * Handles the geofences that are currently monitored.
+     */
+    final int maxDistance;
     /**
      * The callback used to notify the app of geofence events.
      */
@@ -96,11 +103,17 @@ public class PIGeofencingService {
     /**
      * Provides uniquely identifying information for the device.
      */
-    private final GeofencingDeviceInfo deviceInfo;
+    private final String deviceDescriptor;
     /**
      * Whether geofence events are posted to the PI geofence connector.
      */
     private boolean sendingGeofenceEvents = true;
+    Class<? extends PIGeofenceCallbackService> callbackServiceClass;
+    /**
+     *
+     */
+    final Settings settings;
+    final int mode;
 
     /**
      * Initialize this service.
@@ -114,7 +127,7 @@ public class PIGeofencingService {
      * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
      */
     public PIGeofencingService(Context context, String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
-        this(null, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
+        this(MODE_APP, null, null, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
     }
 
     /**
@@ -130,27 +143,80 @@ public class PIGeofencingService {
      * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
      */
     public PIGeofencingService(PIGeofenceCallback geofenceCallback, Context context, String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
-        LoggingConfiguration.configure(context);
+        this(MODE_APP, null, geofenceCallback, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
+    }
+
+    /**
+     * Initialize this service.
+     * @param context the Android application context.
+     * @param baseURL base URL of the PI server.
+     * @param tenantCode PI tenant code.
+     * @param orgCode PI org code.
+     * @param username PI username.
+     * @param password PI password.
+     * @param maxDistance distance threshold for sigificant location changes.
+     * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
+     */
+    public PIGeofencingService(Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context, String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
+        this(MODE_APP, callbackServiceClass, null, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
+    }
+
+    /**
+     * Initialize this service.
+     * @param geofenceCallback callback invoked a geofence is triggered.
+     * @param context the Android application context.
+     * @param baseURL base URL of the PI server.
+     * @param tenantCode PI tenant code.
+     * @param orgCode PI org code.
+     * @param username PI username.
+     * @param password PI password.
+     * @param maxDistance distance threshold for sigificant location changes.
+     * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
+     */
+    PIGeofencingService(int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, PIGeofenceCallback geofenceCallback, Context context,
+        String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
+        this.mode = mode;
+        this.maxDistance = maxDistance;
+        this.callbackServiceClass = callbackServiceClass;
+        LoggingConfiguration.configure();
         this.httpService = new PIHttpService(context, baseURL, tenantCode, orgCode, username, password);
         this.geofenceCallback = new DelegatingGeofenceCallback(this, geofenceCallback);
         callbackMap.put(INTENT_ID, this.geofenceCallback);
         this.context = context;
-        this.deviceInfo = new GeofencingDeviceInfo(context);
-        int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
-        log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
-        geofenceManager = new GeofenceManager(this, maxDistance);
-        GoogleLocationAPICallback serviceCallback = new GoogleLocationAPICallback(this);
-        googleApiClient = new GoogleApiClient.Builder(context).addApi(LocationServices.API).addConnectionCallbacks(serviceCallback).addOnConnectionFailedListener(serviceCallback).build();
-        log.debug("initGms() connecting to google play services ...");
-        googleApiClient.connect();
+        if (context != null) {
+            this.settings = new Settings(context);
+            log.debug("PIGeofencingService settings = " + settings);
+            String desc = settings.getString("descriptor", null);
+            this.deviceDescriptor = (desc == null) ? new GeofencingDeviceInfo(context).getDescriptor() : desc;
+            int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
+            log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
+        } else {
+            this.settings = null;
+            this.deviceDescriptor = "";
+        }
+        //geofenceManager = new GeofenceManager(this, maxDistance);
+        if (context != null) {
+            GoogleLocationAPICallback serviceCallback = new GoogleLocationAPICallback(this);
+            googleApiClient = new GoogleApiClient.Builder(context)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(serviceCallback)
+                .addOnConnectionFailedListener(serviceCallback)
+                .build();
+            log.debug("initGms() connecting to google play services ...");
+            googleApiClient.connect();
+        }
     }
 
     /**
      * Provide an optional callback to receive notifications of geofence entry and exit events.
      * @param geofenceCallback the callback to set.
      */
-    public void setGeofenceCallabck(PIGeofenceCallback geofenceCallback) {
+    public void setGeofenceCallback(PIGeofenceCallback geofenceCallback) {
         this.geofenceCallback.setDelegate(geofenceCallback);
+    }
+
+    public Class<? extends PIGeofenceCallbackService> getCallbackService() {
+        return callbackServiceClass;
     }
 
     /**
@@ -175,7 +241,7 @@ public class PIGeofencingService {
                     log.error("error notifying connector for geofences " + fences + " : " + error.toString());
                 }
             };
-            JSONObject payload = GeofencingJSONUtils.toJSONGeofenceEvent(fences, type, deviceInfo.getDescriptor(), BuildConfig.VERSION_NAME);
+            JSONObject payload = GeofencingJSONUtils.toJSONGeofenceEvent(fences, type, deviceDescriptor, BuildConfig.VERSION_NAME);
             PIRequest request = new PISimpleRequest(callback, HttpMethod.POST, payload.toString());
             String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s", GEOFENCE_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode());
             request.setPath(path);
@@ -329,7 +395,6 @@ public class PIGeofencingService {
      */
     public void monitorGeofences(List<PIGeofence> geofences) {
         log.debug("monitorGeofences(" + geofences + ")");
-        geofences = geofenceManager.filterFromPrefs(geofences);
         if (!geofences.isEmpty()) {
             List<Geofence> list = new ArrayList<>(geofences.size());
             for (PIGeofence geofence : geofences) {
@@ -353,7 +418,6 @@ public class PIGeofencingService {
                     log.debug("add geofence request status " + status);
                 }
             });
-            geofenceManager.addFencesToPrefs(geofences);
             geofenceCallback.onGeofencesMonitored(geofences);
         }
     }
@@ -364,14 +428,12 @@ public class PIGeofencingService {
      */
     public void unmonitorGeofences(List<PIGeofence> geofences) {
         log.debug("unmonitorGeofences(" + geofences + ")");
-        geofences = geofenceManager.filterFromPrefs(geofences);
         if (!geofences.isEmpty()) {
             List<String> uuidsToRemove = new ArrayList<>(geofences.size());
             for (PIGeofence g : geofences) {
                 uuidsToRemove.add(g.getCode());
             }
             LocationServices.GeofencingApi.removeGeofences(googleApiClient, uuidsToRemove);
-            geofenceManager.removeFencesFromPrefs(geofences);
             geofenceCallback.onGeofencesUnmonitored(geofences);
         }
     }
@@ -401,18 +463,13 @@ public class PIGeofencingService {
     private PendingIntent getPendingIntent(String geofenceCallbackUuid) {
         if (pendingIntent == null) {
             Intent intent = new Intent(context, GeofenceTransitionsService.class);
+            ServiceConfig config = new ServiceConfig().fromGeofencingService(this);
+            config.toIntent(intent);
             intent.putExtra(INTENT_ID, geofenceCallbackUuid);
-            // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling monitorGeofences() and unmonitorGeofences()
+            intent.setClass(context, GeofenceTransitionsService.class);
             pendingIntent = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         }
         return pendingIntent;
-    }
-
-    /**
-     * Get the google API client used by this service.
-     */
-    public GoogleApiClient getGoogleApiClient() {
-        return googleApiClient;
     }
 
     /**
@@ -442,12 +499,7 @@ public class PIGeofencingService {
                         List<PIGeofence> geofences = list.getGeofences();
                         if (!geofences.isEmpty()) {
                             PIGeofence.saveInTx(geofences);
-                            geofenceManager.addFences(geofences);
                             setInitialLocation();
-                        /*
-                        } else if (initialRequest) {
-                            loadGeofencesFromServer(false);
-                        */
                         }
                         log.debug("loadGeofences() got " + list.getGeofences().size() + " geofences");
                     } catch (Exception e) {
@@ -477,7 +529,7 @@ public class PIGeofencingService {
                 Location last = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
                 log.debug("setInitialLocation() last location = " + last);
                 if (last != null) {
-                    geofenceManager.onLocationChanged(last, true);
+                    new GeofenceManager(PIGeofencingService.this).onLocationChanged(last, true);
                 }
             }
         };

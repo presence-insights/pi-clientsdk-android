@@ -46,6 +46,7 @@ import com.ibm.pisdk.doctypes.PIOrg;
 import com.ibm.pisdk.geofencing.LoggingConfiguration;
 import com.ibm.pisdk.geofencing.PIGeofence;
 import com.ibm.pisdk.geofencing.PIGeofencingService;
+import com.ibm.pisdk.geofencing.Settings;
 import com.ibm.pisdk.geofencing.rest.PIRequestCallback;
 import com.ibm.pisdk.geofencing.rest.PIRequestError;
 
@@ -55,6 +56,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Handles a Google map where a number of geofences are highlighted as semi-transparent red circles.
@@ -65,7 +67,7 @@ public class MapsActivity extends FragmentActivity {
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(MapsActivity.class.getSimpleName());
+    private static final Logger log = LoggingConfiguration.getLogger(MapsActivity.class.getSimpleName());
     /**
      * Color for fences active on the map.
      */
@@ -151,7 +153,7 @@ public class MapsActivity extends FragmentActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        LoggingConfiguration.configure(this);
+        LoggingConfiguration.configure();
         log.debug("***************************************************************************************");
         super.onCreate(savedInstanceState);
         settings = new Settings(this);
@@ -184,30 +186,35 @@ public class MapsActivity extends FragmentActivity {
             DemoUtils.deleteGeofenceDB(this);
         }
         */
-        //settings.putString("orgCode", "xy1hyz9");
+        settings.putString("orgCode", "6x07ykw");
+        settings.commit();
         String orgCode = settings.getString("orgCode", null);
-        service = new PIGeofencingService(new MyGeofenceCallback(this), this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
-        //service = new PIGeofencingService(new MyGeofenceCallback(this), this, "http://unknown.server.com", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
-        if (orgCode == null) {
-            String androidId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-            log.debug("andoidId = " + androidId);
-            service.createOrg("android-" + androidId, "org for device id " + androidId, null, true, new PIRequestCallback<PIOrg>() {
-                @Override
-                public void onSuccess(PIOrg result) {
-                    settings.putString("orgCode", result.getCode());
-                }
+        log.debug(String.format("found orgCode = %s from settings", orgCode));
+        //service = new PIGeofencingService(new MyGeofenceCallback(this), this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        service = new PIGeofencingService(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        if (service != null) {
+            if (orgCode == null) {
+                //String orgName = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+                String orgName = "android-" + UUID.randomUUID().toString();
+                log.debug("org name = " + orgName);
+                service.createOrg(orgName, "org for id " + orgName, null, true, new PIRequestCallback<PIOrg>() {
+                    @Override
+                    public void onSuccess(PIOrg result) {
+                        settings.putString("orgCode", result.getCode()).commit();
+                    }
 
-                @Override
-                public void onError(PIRequestError error) {
-                    log.error("error creating org: " + error);
-                }
-            });
-        }
-        service.setSendingGeofenceEvents(true);
-        try {
-            startSimulation(geofenceManager.getFences());
-        } catch(Exception e) {
-            log.error("error in startSimulation()", e);
+                    @Override
+                    public void onError(PIRequestError error) {
+                        log.error("error creating org: " + error);
+                    }
+                });
+            }
+            service.setSendingGeofenceEvents(true);
+            try {
+                startSimulation(geofenceManager.getFences());
+            } catch(Exception e) {
+                log.error("error in startSimulation()", e);
+            }
         }
     }
 
@@ -226,7 +233,7 @@ public class MapsActivity extends FragmentActivity {
                     for (PIGeofence g : fences) {
                         refreshGeofenceInfo(g, false);
                     }
-                } catch(Exception e) {
+                } catch (Exception e) {
                     log.error("error in startSimulation()", e);
                 }
             }
@@ -258,12 +265,6 @@ public class MapsActivity extends FragmentActivity {
                     @Override
                     public void onProviderDisabled(String provider) { }
                  });
-                LatLng latlng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-                List<PIGeofence> fences = geofenceManager.getFences();
-                Map<String, Object> map = (fences != null) && !fences.isEmpty() ? DemoUtils.computeBounds(fences, latlng) : DemoUtils.computeBounds(latlng, 0.0005, 0.0005);
-                log.debug("setUpMapIfNeeded() : bounds map = " + map + ", fences = " + fences);
-                final LatLngBounds bounds = (LatLngBounds) map.get("bounds");
-                final LatLng loc = (LatLng) map.get("center");
                 // set the map center and zoom level/bounds once it is loaded
                 googleMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
                     @Override
@@ -271,6 +272,14 @@ public class MapsActivity extends FragmentActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                List<PIGeofence> fences = geofenceManager.getFences();
+                                LatLng latlng = currentLocation != null
+                                    ? new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude())
+                                    : googleMap.getCameraPosition().target;
+                                Map<String, Object> map = (fences != null) && !fences.isEmpty() ? DemoUtils.computeBounds(fences, latlng) : DemoUtils.computeBounds(latlng, 0.0005, 0.0005);
+                                log.debug("setUpMapIfNeeded() : bounds map = " + map + ", fences = " + fences);
+                                LatLngBounds bounds = (LatLngBounds) map.get("bounds");
+                                LatLng loc = (LatLng) map.get("center");
                                 if (currentZoom >= 0f) {
                                     log.debug("setUpMapIfNeeded() setting zoom");
                                     googleMap.moveCamera(CameraUpdateFactory.zoomTo(currentZoom));
@@ -423,21 +432,30 @@ public class MapsActivity extends FragmentActivity {
 
     void initGeofences() {
         try {
-            List<PIGeofence> fences = PIGeofence.listAll(PIGeofence.class);
+            final List<PIGeofence> fences = PIGeofence.listAll(PIGeofence.class);
             log.debug("initGeofences() " + (fences == null ? 0 : fences.size()) + " fences in local DB");
             geofenceManager.clearFences();
             geofenceManager.addFences(fences);
-            for (PIGeofence g: fences) {
-                boolean active = false;
-                if (currentLocation != null) {
-                    Location loc = new Location(LocationManager.NETWORK_PROVIDER);
-                    loc.setLatitude(g.getLatitude());
-                    loc.setLongitude(g.getLongitude());
-                    loc.setTime(System.currentTimeMillis());
-                    active = loc.distanceTo(currentLocation) <= g.getRadius();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        for (PIGeofence g: fences) {
+                            boolean active = false;
+                            if (currentLocation != null) {
+                                Location loc = new Location(LocationManager.NETWORK_PROVIDER);
+                                loc.setLatitude(g.getLatitude());
+                                loc.setLongitude(g.getLongitude());
+                                loc.setTime(System.currentTimeMillis());
+                                active = loc.distanceTo(currentLocation) <= g.getRadius();
+                            }
+                            refreshGeofenceInfo(g, active);
+                        }
+                    } catch(Exception e) {
+                        log.error(e.getMessage(), e);
+                    }
                 }
-                refreshGeofenceInfo(g, active);
-            }
+            });
         } catch(Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -449,7 +467,7 @@ public class MapsActivity extends FragmentActivity {
             case R.id.action_tracking:
                 trackingEnabled = !trackingEnabled;
                 log.debug("tracking is now " + (trackingEnabled ? "enabled" : "disabled"));
-                settings.putBoolean("tracking.enabled", trackingEnabled);
+                settings.putBoolean("tracking.enabled", trackingEnabled).commit();
                 item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
                 log.debug(String.format("onOptionsItemSelected() tracking is now %s", trackingEnabled ? "enabled" : "disabled"));
                 break;

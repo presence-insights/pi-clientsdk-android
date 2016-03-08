@@ -18,10 +18,12 @@ package com.ibm.pisdk.geofencing;
 
 import com.orm.SugarRecord;
 
+import java.io.Serializable;
+
 /**
  * Instances of this class represent geofences.
  */
-public class PIGeofence extends SugarRecord {
+public class PIGeofence extends SugarRecord implements Serializable {
     private String code;
     private String name;
     private String description;

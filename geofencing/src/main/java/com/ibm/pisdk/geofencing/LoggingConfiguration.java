@@ -21,6 +21,7 @@ import android.os.Environment;
 import android.util.Log;
 
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 
@@ -34,13 +35,15 @@ public class LoggingConfiguration {
      * Whether configuration already happened.
      */
     private static boolean configured = false;
+    /**
+     * Path to the log file on the file system.
+     */
     private static String logfile = null;
 
     /**
      * Configure log4j.
-     * @param context used to retrieve the root file dir of the app for internal storage.
      */
-    public synchronized static void configure(Context context) {
+    public synchronized static void configure() {
         if (!configured) {
             configured = true;
             final LogConfigurator configurator = new LogConfigurator();
@@ -63,5 +66,15 @@ public class LoggingConfiguration {
 
     public static String getLogFile() {
         return logfile;
+    }
+
+    public static Logger getLogger(Class<?> clazz) {
+        configure();
+        return Logger.getLogger(clazz);
+    }
+
+    public static Logger getLogger(String loggerName) {
+        configure();
+        return Logger.getLogger(loggerName);
     }
 }

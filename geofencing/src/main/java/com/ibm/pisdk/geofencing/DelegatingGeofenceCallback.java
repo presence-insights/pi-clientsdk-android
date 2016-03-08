@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 class DelegatingGeofenceCallback implements PIGeofenceCallback {
     private final AtomicReference<PIGeofenceCallback> delegate = new AtomicReference<>(null);
-    private final PIGeofencingService service;
+    final PIGeofencingService service;
 
     DelegatingGeofenceCallback(final PIGeofencingService service, final PIGeofenceCallback delegate) {
         this.service = service;

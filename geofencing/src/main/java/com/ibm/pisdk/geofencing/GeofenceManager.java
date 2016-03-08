@@ -16,12 +16,12 @@
 
 package com.ibm.pisdk.geofencing;
 
-import android.content.SharedPreferences;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
 import android.location.LocationManager;
-import android.preference.PreferenceManager;
 
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.apache.log4j.Logger;
@@ -30,126 +30,156 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
 /**
  * .
  */
-class GeofenceManager implements LocationListener {
+//public class GeofenceManager extends IntentService {
+public class GeofenceManager extends BroadcastReceiver {
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(GeofenceManager.class);
+    private static final Logger log = LoggingConfiguration.getLogger(GeofenceManager.class);
     /**
      * Key for the shared preferences that stores the uuids of the registered fences.
      */
-    private static final String GEOFENCES_PREF_KEY = "com.ibm.pisdk.geofencing.geofences";
+    private static final String GEOFENCES_PREF_KEY = "com.ibm.pi.geofences";
     /**
      * Key for the shared preferences that stores the uuids of the registered fences.
      */
     private static final Set<String> GEOFENCES_PREF_DEFAULT = Collections.emptySet();
     /**
-     * Mapping of registered geofences to their uuids.
+     * .
      */
-    private final Map<String, PIGeofence> fenceMap = new LinkedHashMap<>();
-    private final PIGeofencingService service;
+    private static final String REFERENCE_LOCATION_LAT = "com.ibm.pi.ref_lat";
+    private static final String REFERENCE_LOCATION_LNG = "com.ibm.pi.ref_lng";
+    private PIGeofencingService geofencingService;
     private Location referenceLocation = null;
     private double maxDistance;
+    private Settings settings;
+    private ServiceConfig config;
 
-    GeofenceManager(PIGeofencingService service, int maxDistance) {
-        this.service = service;
-        this.maxDistance = maxDistance;
+    public GeofenceManager() {
+        //this(GeofenceManager.class.getName());
     }
 
-    public void addFences(Collection<PIGeofence> fences) {
-        synchronized (fenceMap) {
-            for (PIGeofence fence : fences) {
-                fenceMap.put(fence.getCode(), fence);
-            }
-        }
+    /*
+    public GeofenceManager(String name) {
+        super(name);
     }
+    */
 
-    public void clearFences() {
-        synchronized (fenceMap) {
-            List<PIGeofence> list = getFences();
-            if ((list != null) && !list.isEmpty()) {
-                service.unmonitorGeofences(list);
-                fenceMap.clear();
-            }
-        }
-    }
-
-    public void clearFencesExcluding(Collection<String> excludedCodes) {
-        synchronized (fenceMap) {
-            List<PIGeofence> list = new ArrayList<>();
-            for (Map.Entry<String, PIGeofence> entry: fenceMap.entrySet()) {
-                if (!excludedCodes.contains(entry.getKey())) {
-                    list.add(entry.getValue());
-                }
-            }
-            if ((list != null) && !list.isEmpty()) {
-                service.unmonitorGeofences(list);
-                for (PIGeofence fence: list) {
-                    fenceMap.remove(fence.getCode());
-                }
-            }
-        }
-    }
-
-    /**
-     * Get all fences in the cache.
-     */
-    List<PIGeofence> getFences() {
-        synchronized (fenceMap) {
-            return new ArrayList<>(fenceMap.values());
-        }
+    public GeofenceManager(PIGeofencingService geofencingService) {
+        this();
+        this.geofencingService = geofencingService;
+        this.settings = geofencingService.settings;
+        this.maxDistance = geofencingService.maxDistance;
+        this.referenceLocation = retrieveReferenceLocation();
+        this.config = new ServiceConfig().fromGeofencingService(geofencingService);
+        log.debug(String.format("config=%s, settings=%s", config, settings));
     }
 
     @Override
-    public void onLocationChanged(Location location) {
-        onLocationChanged(location, false);
+    public void onReceive(Context context, Intent intent) {
+        boolean shouldProcess = intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED) != null;
+        if (shouldProcess) {
+            if (geofencingService == null) {
+                this.config = new ServiceConfig().fromIntent(intent);
+                log.debug("onReceive() config=" + config);
+                this.maxDistance = config.maxDistance;
+                log.debug("onReceive() settings=" + settings);
+                this.geofencingService = new PIGeofencingService(PIGeofencingService.MODE_SERVICE, null, null, context,
+                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
+                this.settings = geofencingService.settings;
+                this.referenceLocation = retrieveReferenceLocation();
+            }
+            Location location = (Location) intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED);
+            onLocationChanged(location, false);
+        } else {
+            //log.debug("no location result");
+        }
     }
+
+    /*
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        boolean shouldProcess = LocationResult.hasResult(intent) || (intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED) != null);
+        if (shouldProcess) {
+            if (geofencingService == null) {
+                this.config = new ServiceConfig().fromIntent(intent);
+                log.debug("onHandleIntent() config=" + config);
+                Context ctx = config.createContext(this);
+                //Context ctx = getApplicationContext();
+                this.maxDistance = config.maxDistance;
+                log.debug("onHandleIntent() settings=" + settings);
+                this.geofencingService = new PIGeofencingService(PIGeofencingService.MODE_SERVICE, null, null, ctx,
+                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
+                this.settings = geofencingService.settings;
+                this.referenceLocation = retrieveReferenceLocation();
+            }
+            // doesn't work due to android issue https://code.google.com/p/android/issues/detail?id=197296
+            //LocationResult result = LocationResult.extractResult(intent);
+            //Location location = result.getLastLocation();
+            Location location = (Location) intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED);
+            onLocationChanged(location, false);
+        } else {
+            //log.debug("no location result");
+        }
+    }
+    */
 
     void onLocationChanged(Location location, boolean initial) {
         double d = maxDistance + 1d;
         log.debug("onLocationChanged(location=" + location + ") new location");
-        if (referenceLocation != null) d = referenceLocation.distanceTo(location);
+        if (referenceLocation != null) {
+            d = referenceLocation.distanceTo(location);
+        }
         if (d > maxDistance) {
-            //log.debug("onLocationChanged(location=" + location + ")");
-            Set<String> alreadyInSet = new HashSet<>();
             // where clause to find all geofences whose center's distance to the new location is < maxDistance
             String where = createWhereClause(location.getLatitude(), location.getLongitude(), maxDistance /2);
-            List<PIGeofence> list = PIGeofence.find(PIGeofence.class, where);
-            log.debug(String.format("where clause=%s, found fences: %s", where, list));
+            List<PIGeofence> bboxFences = PIGeofence.find(PIGeofence.class, where);
+            log.debug(String.format("where clause=%s, found fences: %s", where, bboxFences));
             TreeMap<Float, PIGeofence> map = new TreeMap<>();
-            if ((list != null) && !list.isEmpty()) {
-                for (PIGeofence g : list) {
+            if ((bboxFences != null) && !bboxFences.isEmpty()) {
+                for (PIGeofence g : bboxFences) {
                     Location l = new Location(LocationManager.NETWORK_PROVIDER);
                     l.setLatitude(g.getLatitude());
                     l.setLongitude(g.getLongitude());
                     float distance = l.distanceTo(location);
-                    if (initial && (distance < g.getRadius())) {
-                        alreadyInSet.add(g.getCode());
-                    }
                     map.put(distance, g);
                 }
             }
-            clearFencesExcluding(alreadyInSet);
             int count = 0;
-            List<PIGeofence> newFences = new ArrayList<>(map.size());
+            bboxFences = new ArrayList<>(map.size());
             for (PIGeofence g : map.values()) {
-                fenceMap.put(g.getCode(), g);
-                newFences.add(g);
+                bboxFences.add(g);
                 count++;
                 if (count >= 100) break;
             }
-            service.monitorGeofences(newFences);
+            List<PIGeofence> monitoredFences = extractGeofences(settings);
+            List<PIGeofence> toAdd = new ArrayList<>();
+            List<PIGeofence> toRemove = new ArrayList<>();
+            for (PIGeofence fence: bboxFences) {
+                if (!monitoredFences.contains(fence)) {
+                    toAdd.add(fence);
+                }
+            }
+            for (PIGeofence fence: monitoredFences) {
+                if (!bboxFences.contains(fence)) {
+                    toRemove.add(fence);
+                }
+            }
+            geofencingService.unmonitorGeofences(toRemove);
+            geofencingService.monitorGeofences(toAdd);
+            updateGeofences(settings, bboxFences);
             referenceLocation = location;
+            storeReferenceLocation(referenceLocation);
+            log.debug("committing settings=" + settings);
+            settings.commit();
         }
     }
 
@@ -184,52 +214,68 @@ class GeofenceManager implements LocationListener {
         return String.format(Locale.US, "latitude < %f AND longitude < %f AND latitude > %f AND longitude > %f", pos1.latitude, pos2.longitude, pos3.latitude, pos4.longitude);
     }
 
-    List<PIGeofence> filterFromPrefs(List<PIGeofence> fences) {
-        List<PIGeofence> filtered = new ArrayList<>();
-        Set<String> uuids = PreferenceManager.getDefaultSharedPreferences(service.context).getStringSet(GEOFENCES_PREF_KEY, GEOFENCES_PREF_DEFAULT);
-        if (uuids == null) {
-            uuids = GEOFENCES_PREF_DEFAULT;
-        }
-        for (PIGeofence fence: fences) {
-            if (!uuids.contains(fence.getCode())) {
-                filtered.add(fence);
-            }
-        }
-        return filtered;
+    private Location retrieveReferenceLocation() {
+        double lat = settings.getDouble(REFERENCE_LOCATION_LAT, -1d);
+        double lng = settings.getDouble(REFERENCE_LOCATION_LNG, -1d);
+        Location location = new Location(LocationManager.NETWORK_PROVIDER);
+        location.setLatitude(lat);
+        location.setLongitude(lng);
+        return location;
     }
 
-    void addFencesToPrefs(List<PIGeofence> fences) {
-        updatePrefs(fences, false);
+    private void storeReferenceLocation(Location location) {
+        settings.putDouble(REFERENCE_LOCATION_LAT, location.getLatitude());
+        settings.putDouble(REFERENCE_LOCATION_LNG, location.getLongitude());
     }
 
-    void removeFencesFromPrefs(List<PIGeofence> fences) {
-        updatePrefs(fences, true);
-    }
-
-    private void updatePrefs(List<PIGeofence> fences, boolean remove) {
-        Set<String> uuids = getUuidsFromPrefs();
-        for (PIGeofence fence: fences) {
-            if (remove) {
-                uuids.remove(fence.getCode());
-            } else {
-                uuids.add(fence.getCode());
-            }
-        }
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(service.context);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putStringSet(GEOFENCES_PREF_KEY, uuids);
-        editor.apply();
-    }
-
-    private Set<String> getUuidsFromPrefs() {
-        Set<String> uuids = PreferenceManager.getDefaultSharedPreferences(service.context).getStringSet(GEOFENCES_PREF_KEY, GEOFENCES_PREF_DEFAULT);
+    /**
+     * Extract the codes of all monitored geofences from the settings.
+     */
+    static Collection<String> getUuidsFromPrefs(Settings settings) {
+        Collection<String> uuids = settings.getStrings(GEOFENCES_PREF_KEY, GEOFENCES_PREF_DEFAULT);
         if ((uuids == null) || (uuids == GEOFENCES_PREF_DEFAULT)) {
             uuids = new HashSet<>();
         }
         return uuids;
     }
 
-    public void setMaxDistance(double maxDistance) {
-        this.maxDistance = maxDistance;
+    /**
+     * Extract the monitored geofences from the settings.
+     */
+    static List<PIGeofence> extractGeofences(Settings settings) {
+        Collection<String> geofenceCodes = getUuidsFromPrefs(settings);
+        List<PIGeofence> geofences = new ArrayList<>(geofenceCodes.size());
+        for (String code: geofenceCodes) {
+            List<PIGeofence> list = PIGeofence.find(PIGeofence.class, "code = ?", code);
+            if (!list.isEmpty()) {
+                geofences.add(list.get(0));
+            }
+        }
+        return geofences;
     }
+
+    static void updateGeofences(Settings settings, Collection<PIGeofence> fences) {
+        if (fences != null) {
+            List<String> fenceCodes = new ArrayList<>(fences.size());
+            for (PIGeofence fence: fences) {
+                fenceCodes.add(fence.getCode());
+            }
+            settings.putStrings(GEOFENCES_PREF_KEY, fenceCodes);
+        }
+    }
+
+    /*
+    @Override
+    public boolean equals(Object o) {
+        if (o != null) {
+            return o.getClass() == GeofenceManager.class;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+    */
 }

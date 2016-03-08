@@ -16,13 +16,14 @@
 
 package com.ibm.pisdk.geofencing;
 
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.Looper;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
 
 import org.apache.log4j.Logger;
 
@@ -33,31 +34,31 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(PIGeofencingService.class);
-    private final PIGeofencingService service;
+    private static final Logger log = LoggingConfiguration.getLogger(GoogleLocationAPICallback.class);
+    private final PIGeofencingService geofencingService;
+    private PendingIntent pendingIntent = null;
 
-    public GoogleLocationAPICallback(PIGeofencingService service) {
-        this.service = service;
+    public GoogleLocationAPICallback(PIGeofencingService geofencingService) {
+        this.geofencingService = geofencingService;
     }
 
     @Override
     public void onConnected(Bundle bundle) {
         log.debug("connected to google API");
-        // register a location change listener
-        final LocationRequest locationRequest = LocationRequest.create()
-            .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY)
-            //.setPriority(LocationRequest.PRIORITY_LOW_POWER)
-            .setInterval(10000L)
-            .setFastestInterval(10000L);
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                Looper.prepare();
-                LocationServices.FusedLocationApi.requestLocationUpdates(service.getGoogleApiClient(), locationRequest, service.geofenceManager);
-            }
-        };
-        new Thread(r).start();
-        service.loadGeofences();
+        if (geofencingService.mode == PIGeofencingService.MODE_APP) {
+            // register a location change listener
+            log.debug("registering location listener service");
+            /* doesn't work due to android issue https://code.google.com/p/android/issues/detail?id=197296
+            final LocationRequest locationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY)
+                .setInterval(10000L)
+                .setFastestInterval(10000L);
+            LocationServices.FusedLocationApi.requestLocationUpdates(geofencingService.googleApiClient, locationRequest, getPendingIntent());
+            */
+            LocationManager lm = (LocationManager) geofencingService.context.getSystemService(Context.LOCATION_SERVICE);
+            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10_000L, 50f, getPendingIntent());
+        }
+        geofencingService.loadGeofences();
     }
 
     @Override
@@ -68,5 +69,23 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
         log.debug("failed to connect to google API: " + connectionResult);
+    }
+
+    /**
+     * Get a pending intent for the specified callback.
+     * @return a <code>PendingIntent</code> instance.
+     */
+    private PendingIntent getPendingIntent() {
+        if (pendingIntent == null) {
+            Intent intent = new Intent(geofencingService.context, GeofenceManager.class);
+            new ServiceConfig().fromGeofencingService(geofencingService).toIntent(intent);
+            //intent.putExtra(ServiceConfig.EXTRA_LOCATION_UPDATE, true);
+            intent.setClass(geofencingService.context, GeofenceManager.class);
+            //intent.setPackage(geofencingService.context.getPackageName());
+            //intent.setExtrasClassLoader(geofencingService.context.getClassLoader());
+            //pendingIntent = PendingIntent.getService(geofencingService.context, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+            pendingIntent = PendingIntent.getService(geofencingService.context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        }
+        return pendingIntent;
     }
 }
