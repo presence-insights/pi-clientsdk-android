@@ -185,36 +185,35 @@ public class MapsActivity extends FragmentActivity {
             dbDeleted = true;
             DemoUtils.deleteGeofenceDB(this);
         }
-        */
         settings.putString("orgCode", "6x07ykw");
         settings.commit();
+        */
         String orgCode = settings.getString("orgCode", null);
         log.debug(String.format("found orgCode = %s from settings", orgCode));
         //service = new PIGeofencingService(new MyGeofenceCallback(this), this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
-        service = new PIGeofencingService(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
-        if (service != null) {
-            if (orgCode == null) {
-                //String orgName = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-                String orgName = "android-" + UUID.randomUUID().toString();
-                log.debug("org name = " + orgName);
-                service.createOrg(orgName, "org for id " + orgName, null, true, new PIRequestCallback<PIOrg>() {
-                    @Override
-                    public void onSuccess(PIOrg result) {
-                        settings.putString("orgCode", result.getCode()).commit();
-                    }
+        //service = new PIGeofencingService(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        service = PIGeofencingService.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        service.setSendingGeofenceEvents(false);
+        if (orgCode == null) {
+            //String orgName = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+            String orgName = "android-" + UUID.randomUUID().toString();
+            log.debug("org name = " + orgName);
+            service.createOrg(orgName, "org for id " + orgName, null, true, new PIRequestCallback<PIOrg>() {
+                @Override
+                public void onSuccess(PIOrg result) {
+                    settings.putString("orgCode", result.getCode()).commit();
+                }
 
-                    @Override
-                    public void onError(PIRequestError error) {
-                        log.error("error creating org: " + error);
-                    }
-                });
-            }
-            service.setSendingGeofenceEvents(true);
-            try {
-                startSimulation(geofenceManager.getFences());
-            } catch(Exception e) {
-                log.error("error in startSimulation()", e);
-            }
+                @Override
+                public void onError(PIRequestError error) {
+                    log.error("error creating org: " + error);
+                }
+            });
+        }
+        try {
+            startSimulation(geofenceManager.getFences());
+        } catch(Exception e) {
+            log.error("error in startSimulation()", e);
         }
     }
 

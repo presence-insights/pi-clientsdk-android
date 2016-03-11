@@ -105,6 +105,7 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
         log.debug("HTTP method = " + request.getMethod() + ", request url = " + connection.getURL() + ", payload = " + request.getPayload());
         connection.setInstanceFollowRedirects(true);
         connection.setConnectTimeout(30_000);
+        connection.setReadTimeout(30_000);
         if (request.isBasicAuthRequired()) service.setAuthHeader(connection);
         HttpMethod method = request.getMethod();
         connection.setRequestMethod(method.name());
@@ -124,12 +125,15 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
         } catch (ConnectException | SocketTimeoutException e) {
             return false;
         }
-        // workaround for issue described at http://stackoverflow.com/q/17121213
         try {
             statusCode = connection.getResponseCode();
         } catch (ConnectException | SocketTimeoutException e) {
+            if (nbTries >= MAX_TRIES) {
+                log.error("code " + statusCode + ", exception: ", e);
+            }
             return false;
         } catch (IOException e) {
+            // workaround for issue described at http://stackoverflow.com/q/17121213
             statusCode = connection.getResponseCode();
             if (statusCode != 401) {
                 log.error("code " + statusCode + ", exception: ", e);

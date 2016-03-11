@@ -3,7 +3,9 @@ package com.ibm.pisdk.geofencing;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.ibm.pisdk.geofencing.rest.PIHttpService;
 
 import org.apache.log4j.Logger;
@@ -22,17 +24,19 @@ class ServiceConfig implements Serializable {
     private static final Logger log = LoggingConfiguration.getLogger(ServiceConfig.class);
     //static final String GEOFENCING_SERVICE_CONFIG = "geofencing_service_config";
     private static final String PREFIX = "com.ibm.pi.sdk.";
-    static final String EXTRA_LOCATION_UPDATE = PREFIX + "extra.location_update";
-    static final String EXTRA_SERVER_URL = PREFIX + "extra.server";
-    static final String EXTRA_TENANT_CODE = PREFIX + "extra.tenant";
-    static final String EXTRA_ORG_CODE = PREFIX + "extra.org";
-    static final String EXTRA_USERNAME = PREFIX + "extra.username";
-    static final String EXTRA_PASSWORD = PREFIX + "extra.password";
-    static final String EXTRA_MAX_DISTANCE = PREFIX + "extra.max_distance";
-    static final String EXTRA_PACKAGE_NAME = PREFIX + "extra.package";
+    static final String EXTRA_LOCATION_UPDATE =       PREFIX + "extra.location_update";
+    static final String EXTRA_SERVER_URL =            PREFIX + "extra.server";
+    static final String EXTRA_TENANT_CODE =           PREFIX + "extra.tenant";
+    static final String EXTRA_ORG_CODE =              PREFIX + "extra.org";
+    static final String EXTRA_USERNAME =              PREFIX + "extra.username";
+    static final String EXTRA_PASSWORD =              PREFIX + "extra.password";
+    static final String EXTRA_MAX_DISTANCE =          PREFIX + "extra.max_distance";
+    static final String EXTRA_PACKAGE_NAME =          PREFIX + "extra.package";
     static final String EXTRA_CALLBACK_SERVICE_NAME = PREFIX + "extra.callback_service";
-    static final String EXTRA_GEOFENCES = PREFIX + "extra.geofences";
-    static final String EXTRA_EVENT_TYPE = PREFIX + "extra.event_type";
+    static final String EXTRA_GEOFENCES =             PREFIX + "extra.geofences";
+    static final String EXTRA_EVENT_TYPE =            PREFIX + "extra.event_type";
+    static final String EXTRA_LATITUDE =              PREFIX + "extra.latitude";
+    static final String EXTRA_LONGITUDE =             PREFIX + "extra.longitude";
 
     enum EventType {
         ENTER,
@@ -51,6 +55,7 @@ class ServiceConfig implements Serializable {
     String callbackServiceName;
     List<PIGeofence> geofences;
     EventType eventType;
+    LatLng newLocation;
 
     Context createContext(Service service) {
         Context context = null;
@@ -63,6 +68,26 @@ class ServiceConfig implements Serializable {
         return context;
     }
 
+    @SuppressWarnings("unchecked")
+    Class<? extends PIGeofenceCallbackService> loadCallbackServiceClass(Context context) {
+        Class<? extends PIGeofenceCallbackService> clazz = null;
+        if (callbackServiceName != null) {
+            try {
+                ClassLoader cl = context.getClassLoader();
+                clazz = (Class<? extends PIGeofenceCallbackService>) Class.forName(callbackServiceName, true, cl);
+            } catch(Exception e) {
+                log.error(String.format("exeption loading callback service class '%s'", callbackServiceName), e);
+            } catch(Error e) {
+                log.error(String.format("error loading callback service class '%s'", callbackServiceName), e);
+                throw e;
+            }
+        }
+        return clazz;
+    }
+
+    /**
+     * Set the values of the fields in this class from extras stored in the specified geofencing service.
+     */
     ServiceConfig fromGeofencingService(PIGeofencingService service) {
         PIHttpService httpService = service.httpService;
         serverUrl = httpService.getServerURL();
@@ -72,9 +97,10 @@ class ServiceConfig implements Serializable {
         password = httpService.getPassword();
         maxDistance = service.maxDistance;
         packageName = service.context.getPackageName();
-        if (service.callbackServiceClass != null) {
-            callbackServiceName = service.callbackServiceClass.getName();
+        if (service.callbackServiceName != null) {
+            callbackServiceName = service.callbackServiceName;
         }
+        debugCheck();
         return this;
     }
 
@@ -91,9 +117,13 @@ class ServiceConfig implements Serializable {
             .append(", callbackServiceName=").append(callbackServiceName)
             .append(", geofences=").append(geofences)
             .append(", eventType=").append(eventType)
+            .append(", newLocation=").append(newLocation)
             .append(']').toString();
     }
 
+    /**
+     * Set the values of the fields in this class from extras stored in the specified intent.
+     */
     ServiceConfig fromIntent(Intent intent) {
         serverUrl = intent.getStringExtra(EXTRA_SERVER_URL);
         tenantCode = intent.getStringExtra(EXTRA_TENANT_CODE);
@@ -103,6 +133,9 @@ class ServiceConfig implements Serializable {
         packageName = intent.getStringExtra(EXTRA_PACKAGE_NAME);
         callbackServiceName = intent.getStringExtra(EXTRA_CALLBACK_SERVICE_NAME);
         maxDistance = intent.getDoubleExtra(EXTRA_MAX_DISTANCE, 10_000d);
+        if (intent.getBooleanExtra(EXTRA_LOCATION_UPDATE, false)) {
+            newLocation = new LatLng(intent.getDoubleExtra(EXTRA_LATITUDE, 0d), intent.getDoubleExtra(EXTRA_LONGITUDE, 0d));
+        }
         String s = intent.getStringExtra(EXTRA_GEOFENCES);
         if (s != null) {
             String[] codes = s.split("\\|");
@@ -123,10 +156,15 @@ class ServiceConfig implements Serializable {
             } catch(Exception ignore) {
             }
         }
+        debugCheck();
         return this;
     }
 
+    /**
+     * Converts the fields in this class to simple types and adds them as extras to the specified intent.
+     */
     ServiceConfig toIntent(Intent intent) {
+        debugCheck();
         intent.putExtra(EXTRA_SERVER_URL, serverUrl);
         intent.putExtra(EXTRA_TENANT_CODE, tenantCode);
         intent.putExtra(EXTRA_ORG_CODE, orgCode);
@@ -135,6 +173,11 @@ class ServiceConfig implements Serializable {
         intent.putExtra(EXTRA_PACKAGE_NAME, packageName);
         intent.putExtra(EXTRA_CALLBACK_SERVICE_NAME, callbackServiceName);
         intent.putExtra(EXTRA_MAX_DISTANCE, maxDistance);
+        if (newLocation != null) {
+            intent.putExtra(EXTRA_LOCATION_UPDATE, true);
+            intent.putExtra(EXTRA_LATITUDE, newLocation.latitude);
+            intent.putExtra(EXTRA_LONGITUDE, newLocation.longitude);
+        }
         if (geofences != null) {
             StringBuilder sb = new StringBuilder();
             int count = 0;
@@ -151,5 +194,11 @@ class ServiceConfig implements Serializable {
             intent.putExtra(EXTRA_EVENT_TYPE, eventType.name());
         }
         return this;
+    }
+
+    private void debugCheck() {
+        if (callbackServiceName == null) {
+            log.debug("toIntent() service is null, call stack:" + Log.getStackTraceString(new Exception()));
+        }
     }
 }

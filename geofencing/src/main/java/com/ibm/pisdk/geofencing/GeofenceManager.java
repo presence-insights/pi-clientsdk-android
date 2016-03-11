@@ -33,12 +33,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.TreeMap;
 
 /**
- * .
+ * Receives location change events and determines whether they are significant changes, that is,
+ * whether the new location is outside the current bounding box.
  */
-//public class GeofenceManager extends IntentService {
 public class GeofenceManager extends BroadcastReceiver {
     /**
      * Logger for this class.
@@ -53,168 +52,60 @@ public class GeofenceManager extends BroadcastReceiver {
      */
     private static final Set<String> GEOFENCES_PREF_DEFAULT = Collections.emptySet();
     /**
-     * .
+     * Settings key for the last reference location.
      */
     private static final String REFERENCE_LOCATION_LAT = "com.ibm.pi.ref_lat";
     private static final String REFERENCE_LOCATION_LNG = "com.ibm.pi.ref_lng";
-    private PIGeofencingService geofencingService;
+    private Context context;
     private Location referenceLocation = null;
     private double maxDistance;
     private Settings settings;
     private ServiceConfig config;
 
     public GeofenceManager() {
-        //this(GeofenceManager.class.getName());
     }
-
-    /*
-    public GeofenceManager(String name) {
-        super(name);
-    }
-    */
 
     public GeofenceManager(PIGeofencingService geofencingService) {
         this();
-        this.geofencingService = geofencingService;
+        this.context = geofencingService.context;
         this.settings = geofencingService.settings;
         this.maxDistance = geofencingService.maxDistance;
-        this.referenceLocation = retrieveReferenceLocation();
+        this.referenceLocation = retrieveReferenceLocation(settings);
         this.config = new ServiceConfig().fromGeofencingService(geofencingService);
-        log.debug(String.format("config=%s, settings=%s", config, settings));
+        //log.debug(String.format("GeofenceManager() config=%s, settings=%s", config, settings));
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
         boolean shouldProcess = intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED) != null;
         if (shouldProcess) {
-            if (geofencingService == null) {
-                this.config = new ServiceConfig().fromIntent(intent);
-                log.debug("onReceive() config=" + config);
-                this.maxDistance = config.maxDistance;
-                log.debug("onReceive() settings=" + settings);
-                this.geofencingService = new PIGeofencingService(PIGeofencingService.MODE_SERVICE, null, null, context,
-                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-                this.settings = geofencingService.settings;
-                this.referenceLocation = retrieveReferenceLocation();
-            }
+            this.config = new ServiceConfig().fromIntent(intent);
+            this.context = context;
+            this.maxDistance = config.maxDistance;
+            this.settings = new Settings(context);
+            //log.debug(String.format("onReceive() config=%s, settings=%s", config, settings));
+            this.referenceLocation = retrieveReferenceLocation(settings);
             Location location = (Location) intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED);
             onLocationChanged(location, false);
-        } else {
-            //log.debug("no location result");
         }
     }
-
-    /*
-    @Override
-    protected void onHandleIntent(Intent intent) {
-        boolean shouldProcess = LocationResult.hasResult(intent) || (intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED) != null);
-        if (shouldProcess) {
-            if (geofencingService == null) {
-                this.config = new ServiceConfig().fromIntent(intent);
-                log.debug("onHandleIntent() config=" + config);
-                Context ctx = config.createContext(this);
-                //Context ctx = getApplicationContext();
-                this.maxDistance = config.maxDistance;
-                log.debug("onHandleIntent() settings=" + settings);
-                this.geofencingService = new PIGeofencingService(PIGeofencingService.MODE_SERVICE, null, null, ctx,
-                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-                this.settings = geofencingService.settings;
-                this.referenceLocation = retrieveReferenceLocation();
-            }
-            // doesn't work due to android issue https://code.google.com/p/android/issues/detail?id=197296
-            //LocationResult result = LocationResult.extractResult(intent);
-            //Location location = result.getLastLocation();
-            Location location = (Location) intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED);
-            onLocationChanged(location, false);
-        } else {
-            //log.debug("no location result");
-        }
-    }
-    */
 
     void onLocationChanged(Location location, boolean initial) {
         double d = maxDistance + 1d;
-        log.debug("onLocationChanged(location=" + location + ") new location");
         if (referenceLocation != null) {
             d = referenceLocation.distanceTo(location);
         }
+        //log.debug(String.format("onLocationChanged(location=%s; d=%,.0f)", location, d));
         if (d > maxDistance) {
-            // where clause to find all geofences whose center's distance to the new location is < maxDistance
-            String where = createWhereClause(location.getLatitude(), location.getLongitude(), maxDistance /2);
-            List<PIGeofence> bboxFences = PIGeofence.find(PIGeofence.class, where);
-            log.debug(String.format("where clause=%s, found fences: %s", where, bboxFences));
-            TreeMap<Float, PIGeofence> map = new TreeMap<>();
-            if ((bboxFences != null) && !bboxFences.isEmpty()) {
-                for (PIGeofence g : bboxFences) {
-                    Location l = new Location(LocationManager.NETWORK_PROVIDER);
-                    l.setLatitude(g.getLatitude());
-                    l.setLongitude(g.getLongitude());
-                    float distance = l.distanceTo(location);
-                    map.put(distance, g);
-                }
-            }
-            int count = 0;
-            bboxFences = new ArrayList<>(map.size());
-            for (PIGeofence g : map.values()) {
-                bboxFences.add(g);
-                count++;
-                if (count >= 100) break;
-            }
-            List<PIGeofence> monitoredFences = extractGeofences(settings);
-            List<PIGeofence> toAdd = new ArrayList<>();
-            List<PIGeofence> toRemove = new ArrayList<>();
-            for (PIGeofence fence: bboxFences) {
-                if (!monitoredFences.contains(fence)) {
-                    toAdd.add(fence);
-                }
-            }
-            for (PIGeofence fence: monitoredFences) {
-                if (!bboxFences.contains(fence)) {
-                    toRemove.add(fence);
-                }
-            }
-            geofencingService.unmonitorGeofences(toRemove);
-            geofencingService.monitorGeofences(toAdd);
-            updateGeofences(settings, bboxFences);
-            referenceLocation = location;
-            storeReferenceLocation(referenceLocation);
-            log.debug("committing settings=" + settings);
-            settings.commit();
+            log.debug(String.format(Locale.US, "onLocationChanged() detected significant location change, distance to ref = %,.0f m, new location = %s", d, location));
+            Intent intent = new Intent(context, SignificantLocationChangeService.class);
+            config.newLocation = new LatLng(location.getLatitude(), location.getLongitude());
+            config.toIntent(intent);
+            context.startService(intent);
         }
     }
 
-    /**
-     * Calculate the coordinates of a point located at the specified distance on the specified bearing.
-     * @param latitude the source point latitude.
-     * @param longitude the source point longitude.
-     * @param distance the distance to the source.
-     * @param bearing direction in which to go for the target point, expressed in degrees.
-     * @return a computed {@link LatLng} instance.
-     */
-    private LatLng calculateDerivedPosition(double latitude, double longitude, double distance, double bearing) {
-        double latitudeRadians = Math.toRadians(latitude);
-        double longitudeRadians = Math.toRadians(longitude);
-        double EarthRadius = 6371000d; // meters
-        double angularDistance = distance / EarthRadius;
-        double trueCourse = Math.toRadians(bearing);
-        double lat = Math.asin(Math.sin(latitudeRadians) * Math.cos(angularDistance) + Math.cos(latitudeRadians) * Math.sin(angularDistance) * Math.cos(trueCourse));
-        double dlon = Math.atan2(Math.sin(trueCourse) * Math.sin(angularDistance) * Math.cos(latitudeRadians), Math.cos(angularDistance) - Math.sin(latitudeRadians) * Math.sin(lat));
-        double lon = ((longitudeRadians + dlon + Math.PI) % (Math.PI * 2)) - Math.PI;
-        return new LatLng(Math.toDegrees(lat), Math.toDegrees(lon));
-    }
-
-    /**
-     * Create a where clause to find the geofences closest to the specified location and in the specified range.
-     */
-    private String createWhereClause(double latitude, double longitude, double radius) {
-        LatLng pos1 = calculateDerivedPosition(latitude, longitude, radius, 0d);
-        LatLng pos2 = calculateDerivedPosition(latitude, longitude, radius, 90d);
-        LatLng pos3 = calculateDerivedPosition(latitude, longitude, radius, 180d);
-        LatLng pos4 = calculateDerivedPosition(latitude, longitude, radius, 270d);
-        return String.format(Locale.US, "latitude < %f AND longitude < %f AND latitude > %f AND longitude > %f", pos1.latitude, pos2.longitude, pos3.latitude, pos4.longitude);
-    }
-
-    private Location retrieveReferenceLocation() {
+    static Location retrieveReferenceLocation(Settings settings) {
         double lat = settings.getDouble(REFERENCE_LOCATION_LAT, -1d);
         double lng = settings.getDouble(REFERENCE_LOCATION_LNG, -1d);
         Location location = new Location(LocationManager.NETWORK_PROVIDER);
@@ -223,7 +114,7 @@ public class GeofenceManager extends BroadcastReceiver {
         return location;
     }
 
-    private void storeReferenceLocation(Location location) {
+    static void storeReferenceLocation(Settings settings, Location location) {
         settings.putDouble(REFERENCE_LOCATION_LAT, location.getLatitude());
         settings.putDouble(REFERENCE_LOCATION_LNG, location.getLongitude());
     }
@@ -231,7 +122,7 @@ public class GeofenceManager extends BroadcastReceiver {
     /**
      * Extract the codes of all monitored geofences from the settings.
      */
-    static Collection<String> getUuidsFromPrefs(Settings settings) {
+    static Collection<String> geofenceCodesFromPrefs(Settings settings) {
         Collection<String> uuids = settings.getStrings(GEOFENCES_PREF_KEY, GEOFENCES_PREF_DEFAULT);
         if ((uuids == null) || (uuids == GEOFENCES_PREF_DEFAULT)) {
             uuids = new HashSet<>();
@@ -243,7 +134,16 @@ public class GeofenceManager extends BroadcastReceiver {
      * Extract the monitored geofences from the settings.
      */
     static List<PIGeofence> extractGeofences(Settings settings) {
-        Collection<String> geofenceCodes = getUuidsFromPrefs(settings);
+        return geofencesFromCodes(geofenceCodesFromPrefs(settings));
+    }
+
+    static void updateGeofences(Settings settings, Collection<PIGeofence> fences) {
+        if (fences != null) {
+            settings.putStrings(GEOFENCES_PREF_KEY, geofencesToCodes(fences));
+        }
+    }
+
+    static List<PIGeofence> geofencesFromCodes(Collection<String> geofenceCodes) {
         List<PIGeofence> geofences = new ArrayList<>(geofenceCodes.size());
         for (String code: geofenceCodes) {
             List<PIGeofence> list = PIGeofence.find(PIGeofence.class, "code = ?", code);
@@ -254,28 +154,11 @@ public class GeofenceManager extends BroadcastReceiver {
         return geofences;
     }
 
-    static void updateGeofences(Settings settings, Collection<PIGeofence> fences) {
-        if (fences != null) {
-            List<String> fenceCodes = new ArrayList<>(fences.size());
-            for (PIGeofence fence: fences) {
-                fenceCodes.add(fence.getCode());
-            }
-            settings.putStrings(GEOFENCES_PREF_KEY, fenceCodes);
+    static List<String> geofencesToCodes(Collection<PIGeofence> geofences) {
+        List<String> geofenceCodes = new ArrayList<>(geofences.size());
+        for (PIGeofence fence: geofences) {
+            geofenceCodes.add(fence.getCode());
         }
+        return geofenceCodes;
     }
-
-    /*
-    @Override
-    public boolean equals(Object o) {
-        if (o != null) {
-            return o.getClass() == GeofenceManager.class;
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-    */
 }

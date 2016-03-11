@@ -8,8 +8,8 @@
         android:name="com.orm.SugarApp" android:allowBackup="false" tools:replace="android:allowBackup">
         <meta-data android:name="DOMAIN_PACKAGE_NAME" android:value="com.ibm.pisdk.geofencing"/>
         <service android:name="com.ibm.pisdk.geofencing.GeofenceTransitionsService" android:exported="true"/>
-        <!--<service android:name="com.ibm.pisdk.geofencing.GeofenceManager" android:exported="true"/>-->
-        <r android:name="com.ibm.pisdk.geofencing.GeofenceManager" android:exported="true"/>
+        <service android:name="com.ibm.pisdk.geofencing.SignificantLocationChangeService" android:exported="true"/>
+        <receiver android:name="com.ibm.pisdk.geofencing.GeofenceManager" android:exported="true"/>
         <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version"/>
     </application>
 

@@ -72,17 +72,13 @@ public class GeofenceTransitionsService extends IntentService {
             PIGeofencingService service = null;
             Context ctx = null;
             Class<? extends PIGeofenceCallbackService> clazz = null;
-            // happens when the app is off
             if (callback == null) {
-                //ctx = getApplicationContext();
                 ctx = config.createContext(this);
-                service = new PIGeofencingService(PIGeofencingService.MODE_SERVICE, clazz, null, ctx,
-                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-                callback = service.geofenceCallback;
             } else {
                 service = ((DelegatingGeofenceCallback) callback).service;
                 ctx = service.context;
             }
+            // happens when the app is off
             if (config.callbackServiceName != null) {
                 try {
                     ClassLoader cl = ctx.getClassLoader();
@@ -94,14 +90,18 @@ public class GeofenceTransitionsService extends IntentService {
                     throw e;
                 }
             }
+            if (callback == null) {
+                service = PIGeofencingService.newInstance(PIGeofencingService.MODE_GEOFENCE_EVENT, clazz, ctx,
+                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
+                callback = service.geofenceCallback;
+            }
             List<PIGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
             for (Geofence g : triggeringGeofences) {
                 String code = g.getRequestId();
                 List<PIGeofence> list = PIGeofence.find(PIGeofence.class, "code = ?", code);
                 if (!list.isEmpty()) geofences.add(list.get(0));
             }
-            log.debug(String.format("callback = %s, callback service name = %s, clazz=%s, triggered geofences = %s", callback, config.callbackServiceName, clazz, geofences));
-            /*
+            log.debug(String.format("callback = %s, clazz=%s, triggered geofences = %s", callback, clazz, geofences));
             if (callback != null) {
                 if (transition == Geofence.GEOFENCE_TRANSITION_ENTER) {
                     callback.onGeofencesEnter(geofences);
@@ -121,25 +121,8 @@ public class GeofenceTransitionsService extends IntentService {
                     log.error(String.format("error starting callback service '%s'", config.callbackServiceName), e);
                 }
             }
-            */
         } else {
             log.error("invalid transition type: " + transition);
-            //Log.e(LOG_TAG, "invalid transition type: " + transition);
         }
     }
-
-    /*
-    @Override
-    public boolean equals(Object o) {
-        if (o != null) {
-            return o.getClass() == GeofenceTransitionsService.class;
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-    */
 }

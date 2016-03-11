@@ -37,17 +37,40 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
+/**
+ * A container for app properties and settings that are persistent accross app uninstall and device reboots.
+ * <p>It si backe by a file located on the device external storage, including emulated external storage.
+ */
 public class Settings {
     /**
      * Logger for this class.
      */
     private static final Logger log = LoggingConfiguration.getLogger(Settings.class);
+    /**
+     * Fallback name used if the file name for the settings cannot be computed
+     */
     private static final String PROPS_PATH = ".pi-sdk-props";
+    /**
+     * The value separator for multi-valued properties, e.g. list of fnece codes.
+     */
     private static final Pattern SEPARATOR_PATTERN = Pattern.compile("|", Pattern.LITERAL);
+    /**
+     * The name of the backing file. It is computed by encoding the app's package name in Bas64 (without padding).
+     */
     private final String fileName;
+    /**
+     * Contains the properties. To persist any change, {@link #commit()} must be called.
+     */
     private final Properties properties = new Properties();
+    /**
+     * Used for synchronization of baking file access.
+     */
     private final Lock lock = new ReentrantLock();
 
+    /**
+     * Initialize wih the specified app context.
+     * @param context used to compute the file name from the app package name.
+     */
     public Settings(Context context) {
         String name;
         try {
@@ -127,6 +150,9 @@ public class Settings {
         return putString(key, Boolean.toString(value));
     }
 
+    /**
+     * Actually persist the changes in file.
+     */
     public void commit() {
         /*
         new AsyncTask<Void, Void, Void>() {
