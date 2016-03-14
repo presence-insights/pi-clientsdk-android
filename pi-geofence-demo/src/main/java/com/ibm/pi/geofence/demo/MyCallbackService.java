@@ -10,6 +10,7 @@ import android.support.v4.app.NotificationCompat;
 import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofenceCallbackService;
+import com.ibm.pi.geofence.Settings;
 
 import org.apache.log4j.Logger;
 
@@ -28,6 +29,7 @@ public class MyCallbackService extends PIGeofenceCallbackService {
     private static final AtomicInteger notifId = new AtomicInteger(0);
     //#private static final String SLACK_CHANNEL = "@lolo4j";
     private final SlackHTTPService slackService;
+    private Settings settings;
 
     public MyCallbackService() {
         this("callback service");
@@ -51,21 +53,21 @@ public class MyCallbackService extends PIGeofenceCallbackService {
     @Override
     public void onGeofencesEnter(final List<PIGeofence> geofences) {
         log.debug("entering geofence(s) " + geofences);
-        //if (context.trackingEnabled) {
+        if (getSettings().getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
             //updateUI(geofences, true);
             sendNotification(geofences, "enter");
             slackService.postGeofenceMessages(geofences, "enter", SLACK_CHANNEL);
-        //}
+        }
     }
 
     @Override
     public void onGeofencesExit(final List<PIGeofence> geofences) {
         log.debug("exiting geofence(s) " + geofences);
-        //if (context.trackingEnabled) {
+        if (getSettings().getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
             //updateUI(geofences, false);
             sendNotification(geofences, "exit");
             slackService.postGeofenceMessages(geofences, "exit", SLACK_CHANNEL);
-        //}
+        }
     }
 
     /*
@@ -115,5 +117,12 @@ public class MyCallbackService extends PIGeofenceCallbackService {
         NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         // mId allows you to update the notification later on.
         mNotificationManager.notify(notifId.incrementAndGet(), mBuilder.build());
+    }
+
+    public Settings getSettings() {
+        if (settings == null) {
+            settings = new Settings(getContext());
+        }
+        return settings;
     }
 }

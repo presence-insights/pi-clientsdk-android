@@ -86,6 +86,10 @@ public class MapsActivity extends FragmentActivity {
      */
     private static final int MODE_EDIT = 2;
     /**
+     * Settings key for the tracking enabled flag.
+     */
+    static final String TRACKING_ENABLED_KEY = "tracking.enabled";
+    /**
      * Might be null if Google Play services APK is not available.
      */
     GoogleMap googleMap;
@@ -160,7 +164,7 @@ public class MapsActivity extends FragmentActivity {
         settings = new Settings(this);
         setContentView(R.layout.maps_activity);
         mapCrossHair = (ImageView) findViewById(R.id.map_cross_hair);
-        trackingEnabled = settings.getBoolean("tracking.enabled", true);
+        trackingEnabled = settings.getBoolean(TRACKING_ENABLED_KEY, true);
         log.debug("in onCreate() tracking is " + (trackingEnabled ? "enabled" : "disabled"));
         addFenceButton = (Button) findViewById(R.id.addFenceButton);
         addFenceButton.setOnClickListener(new View.OnClickListener() {
@@ -465,7 +469,7 @@ public class MapsActivity extends FragmentActivity {
             case R.id.action_tracking:
                 trackingEnabled = !trackingEnabled;
                 log.debug("tracking is now " + (trackingEnabled ? "enabled" : "disabled"));
-                settings.putBoolean("tracking.enabled", trackingEnabled).commit();
+                settings.putBoolean(TRACKING_ENABLED_KEY, trackingEnabled).commit();
                 item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
                 log.debug(String.format("onOptionsItemSelected() tracking is now %s", trackingEnabled ? "enabled" : "disabled"));
                 break;
