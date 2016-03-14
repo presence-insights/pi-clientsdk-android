@@ -3,7 +3,6 @@ package com.ibm.pi.geofence;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.ibm.pi.geofence.rest.PIHttpService;
@@ -24,7 +23,7 @@ class ServiceConfig implements Serializable {
     private static final Logger log = LoggingConfiguration.getLogger(ServiceConfig.class);
     //static final String GEOFENCING_SERVICE_CONFIG = "geofencing_service_config";
     private static final String PREFIX = "com.ibm.pi.sdk.";
-    static final String EXTRA_LOCATION_UPDATE =       PREFIX + "extra.location_update";
+    static final String EXTRA_LOCATION_UPDATE_FLAG =  PREFIX + "extra.location_update";
     static final String EXTRA_SERVER_URL =            PREFIX + "extra.server";
     static final String EXTRA_TENANT_CODE =           PREFIX + "extra.tenant";
     static final String EXTRA_ORG_CODE =              PREFIX + "extra.org";
@@ -37,6 +36,7 @@ class ServiceConfig implements Serializable {
     static final String EXTRA_EVENT_TYPE =            PREFIX + "extra.event_type";
     static final String EXTRA_LATITUDE =              PREFIX + "extra.latitude";
     static final String EXTRA_LONGITUDE =             PREFIX + "extra.longitude";
+    static final String EXTRA_REBOOT_EVENT_FLAG =     PREFIX + "extra.reboot_event";
 
     enum EventType {
         ENTER,
@@ -133,7 +133,7 @@ class ServiceConfig implements Serializable {
         packageName = intent.getStringExtra(EXTRA_PACKAGE_NAME);
         callbackServiceName = intent.getStringExtra(EXTRA_CALLBACK_SERVICE_NAME);
         maxDistance = intent.getDoubleExtra(EXTRA_MAX_DISTANCE, 10_000d);
-        if (intent.getBooleanExtra(EXTRA_LOCATION_UPDATE, false)) {
+        if (intent.getBooleanExtra(EXTRA_LOCATION_UPDATE_FLAG, false)) {
             newLocation = new LatLng(intent.getDoubleExtra(EXTRA_LATITUDE, 0d), intent.getDoubleExtra(EXTRA_LONGITUDE, 0d));
         }
         String s = intent.getStringExtra(EXTRA_GEOFENCES);
@@ -174,7 +174,7 @@ class ServiceConfig implements Serializable {
         intent.putExtra(EXTRA_CALLBACK_SERVICE_NAME, callbackServiceName);
         intent.putExtra(EXTRA_MAX_DISTANCE, maxDistance);
         if (newLocation != null) {
-            intent.putExtra(EXTRA_LOCATION_UPDATE, true);
+            intent.putExtra(EXTRA_LOCATION_UPDATE_FLAG, true);
             intent.putExtra(EXTRA_LATITUDE, newLocation.latitude);
             intent.putExtra(EXTRA_LONGITUDE, newLocation.longitude);
         }
@@ -197,8 +197,10 @@ class ServiceConfig implements Serializable {
     }
 
     private void debugCheck() {
+        /*
         if (callbackServiceName == null) {
             log.debug("toIntent() service is null, call stack:" + Log.getStackTraceString(new Exception()));
         }
+        */
     }
 }

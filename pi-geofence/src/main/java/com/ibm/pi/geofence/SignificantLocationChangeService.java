@@ -56,8 +56,8 @@ public class SignificantLocationChangeService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        boolean shouldProcess = intent.getExtras().get(ServiceConfig.EXTRA_LOCATION_UPDATE) != null;
-        if (shouldProcess) {
+        boolean locationUpdate = intent.getExtras().get(ServiceConfig.EXTRA_LOCATION_UPDATE_FLAG) != null;
+        if (locationUpdate) {
             ServiceConfig config = new ServiceConfig().fromIntent(intent);
             log.debug("onHandleIntent() config=" + config);
             if (geofencingService == null) {
@@ -111,6 +111,17 @@ public class SignificantLocationChangeService extends IntentService {
             GeofenceManager.storeReferenceLocation(settings, location);
             log.debug("committing settings=" + settings);
             settings.commit();
+        } else if (intent.getBooleanExtra(ServiceConfig.EXTRA_REBOOT_EVENT_FLAG, false)) {
+            try {
+                ServiceConfig config = new ServiceConfig().fromIntent(intent);
+                log.debug("onHandleIntent(rebot_event) config=" + config);
+                Context context = config.createContext(this);
+                PIGeofencingService geofencingService = PIGeofencingService.newInstance(PIGeofencingService.MODE_REBOOT, null, context, null, null, null, null, null, 10_000);
+                List<PIGeofence> geofences = GeofenceManager.extractGeofences(geofencingService.settings);
+                geofencingService.monitorGeofences(geofences);
+            } catch(Exception e) {
+                log.error("error handling post-reboot remonitoring", e);
+            }
         }
     }
 

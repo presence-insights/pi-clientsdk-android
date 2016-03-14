@@ -72,6 +72,7 @@ public class PIGeofencingService {
     static final int MODE_APP = 1;
     static final int MODE_GEOFENCE_EVENT = 2;
     static final int MODE_MONITORING_REQUEST = 3;
+    static final int MODE_REBOOT = 4;
     /**
      * The restful service which connects to and communicates with the Adaptive Experience server.
      */
@@ -197,13 +198,13 @@ public class PIGeofencingService {
                 .addOnConnectionFailedListener(googleAPICallback)
                 .build();
             log.debug("initGms() connecting to google play services ...");
-            if (mode == MODE_MONITORING_REQUEST) {
+            if ((mode == MODE_MONITORING_REQUEST) || (mode == MODE_REBOOT)) {
                 try {
-                    // can't run blockingConenct() on the UI thread
+                    // can't run blockingConnect() on the UI thread
                     ConnectionResult result = new AsyncTask<Void, Void, ConnectionResult>() {
                         @Override
                         protected ConnectionResult doInBackground(Void... params) {
-                            return googleApiClient.blockingConnect(60L, TimeUnit.SECONDS);
+                            return googleApiClient.blockingConnect(60_000L, TimeUnit.MILLISECONDS);
                         }
                     }.execute().get();
                     log.debug(String.format("google api connection %s, result=%s", (result.isSuccess() ? "success" : "error"), result));
@@ -426,7 +427,8 @@ public class PIGeofencingService {
                 );
             }
             GeofencingRequest request = new GeofencingRequest.Builder()
-                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                //.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                .setInitialTrigger(0)
                 .addGeofences(list).build();
             // used to keep track of the add request
             PendingIntent pi = getPendingIntent(INTENT_ID);

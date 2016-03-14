@@ -3,6 +3,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
         android:name="com.orm.SugarApp" android:allowBackup="false" tools:replace="android:allowBackup">
@@ -10,6 +11,11 @@
         <service android:name="com.ibm.pi.geofence.GeofenceTransitionsService" android:exported="true"/>
         <service android:name="com.ibm.pi.geofence.SignificantLocationChangeService" android:exported="true"/>
         <receiver android:name="com.ibm.pi.geofence.GeofenceManager" android:exported="true"/>
+        <receiver android:name="com.ibm.pi.geofence.DeviceRebootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
         <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version"/>
     </application>
 

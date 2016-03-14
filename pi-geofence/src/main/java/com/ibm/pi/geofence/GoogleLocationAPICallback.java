@@ -27,6 +27,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 
 import org.apache.log4j.Logger;
 
+import java.util.List;
+
 /**
  * Callback implementation for feedback on the Google API connection state.
  */
@@ -55,11 +57,13 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
             .setInterval(10000L).setFastestInterval(10000L);
         LocationServices.FusedLocationApi.requestLocationUpdates(geofencingService.googleApiClient, locationRequest, getPendingIntent());
         */
-        log.debug("registering location listener service");
-        LocationManager lm = (LocationManager) geofencingService.context.getSystemService(Context.LOCATION_SERVICE);
-        PendingIntent pi = getPendingIntent();
-        lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10_000L, 50f, pi);
-        lm.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 10_000L, 50f, pi);
+        if (geofencingService.mode != PIGeofencingService.MODE_REBOOT) {
+            log.debug("registering location listener service");
+            LocationManager lm = (LocationManager) geofencingService.context.getSystemService(Context.LOCATION_SERVICE);
+            PendingIntent pi = getPendingIntent();
+            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10_000L, 50f, pi);
+            lm.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 10_000L, 50f, pi);
+        }
     }
 
     @Override
