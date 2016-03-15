@@ -16,6 +16,8 @@
 
 package com.ibm.pi.geofence.rest;
 
+import com.ibm.pi.geofence.LoggingConfiguration;
+
 import org.apache.log4j.Logger;
 
 import java.io.BufferedInputStream;
@@ -39,7 +41,7 @@ final class Utils {
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(Utils.class.getSimpleName());
+    private static final Logger log = LoggingConfiguration.getLogger(Utils.class.getSimpleName());
     // Android system properties
     static final String PROPERTY_HTTP_AGENT = "http.agent";
     /**

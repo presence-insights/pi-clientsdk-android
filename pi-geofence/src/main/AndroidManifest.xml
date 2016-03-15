@@ -7,7 +7,7 @@
 
     <application
         android:name="com.orm.SugarApp" android:allowBackup="false" tools:replace="android:allowBackup">
-        <meta-data android:name="DOMAIN_PACKAGE_NAME" android:value="com.ibm.pisdk.geofencing"/>
+        <meta-data android:name="DOMAIN_PACKAGE_NAME" android:value="com.ibm.pi.geofence"/>
         <service android:name="com.ibm.pi.geofence.GeofenceTransitionsService" android:exported="true"/>
         <service android:name="com.ibm.pi.geofence.SignificantLocationChangeService" android:exported="true"/>
         <receiver android:name="com.ibm.pi.geofence.GeofenceManager" android:exported="true"/>

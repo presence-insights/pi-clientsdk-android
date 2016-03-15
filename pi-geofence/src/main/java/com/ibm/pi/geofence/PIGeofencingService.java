@@ -134,6 +134,7 @@ public class PIGeofencingService {
      */
     PIGeofencingService(int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
         String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
+        log.debug("pi-geofence version " + BuildConfig.VERSION_NAME);
         this.mode = mode;
         this.maxDistance = maxDistance;
         if (callbackServiceClass != null) {
