@@ -18,6 +18,8 @@ package com.ibm.pi.geofence.rest;
 
 import android.os.AsyncTask;
 
+import com.ibm.pi.geofence.LoggingConfiguration;
+
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -38,7 +40,7 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(RequestAsyncTask.class);
+    private static final Logger log = LoggingConfiguration.getLogger(RequestAsyncTask.class.getSimpleName());
     /**
      * Maximum number of connection attemps.
      */

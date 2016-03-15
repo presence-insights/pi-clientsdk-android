@@ -19,6 +19,7 @@ package com.ibm.pi.geofence.demo;
 import android.content.Context;
 import android.net.Uri;
 
+import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.rest.HttpMethod;
 import com.ibm.pi.geofence.rest.PIHttpService;
@@ -39,7 +40,7 @@ public class SlackHTTPService extends PIHttpService {
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(SlackHTTPService.class);
+    private static final Logger log = LoggingConfiguration.getLogger(SlackHTTPService.class);
 
     public SlackHTTPService(Context context) {
         super(context, "https://cloudplatform.slack.com", null, null, null, null);

@@ -44,7 +44,7 @@ public class Settings {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(Settings.class);
+    private static final Logger log = LoggingConfiguration.getLogger(Settings.class.getSimpleName());
     /**
      * Fallback name used if the file name for the settings cannot be computed
      */

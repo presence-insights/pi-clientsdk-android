@@ -53,7 +53,7 @@ public class DemoUtils {
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(DemoUtils.class);
+    private static final Logger log = Logger.getLogger(DemoUtils.class.getSimpleName());
     private static Random rand = new Random(System.nanoTime());
 
     /**

@@ -34,7 +34,7 @@ public class GeofencingJSONUtils {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(PIGeofencingService.class);
+    private static final Logger log = LoggingConfiguration.getLogger(PIGeofencingService.class.getSimpleName());
     /**
      * Date format used to convert dates from/to UTC format such as "2015-08-24T09:00:00-05:00".
      */

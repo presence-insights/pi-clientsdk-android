@@ -42,7 +42,7 @@ public class SignificantLocationChangeService extends IntentService {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(SignificantLocationChangeService.class);
+    private static final Logger log = LoggingConfiguration.getLogger(SignificantLocationChangeService.class.getSimpleName());
     private PIGeofencingService geofencingService;
     private Settings settings;
 

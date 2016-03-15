@@ -42,7 +42,7 @@ public class GeofenceManager extends BroadcastReceiver {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(GeofenceManager.class);
+    private static final Logger log = LoggingConfiguration.getLogger(GeofenceManager.class.getSimpleName());
     /**
      * Key for the shared preferences that stores the uuids of the registered fences.
      */

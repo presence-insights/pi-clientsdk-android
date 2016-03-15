@@ -20,7 +20,7 @@ class ServiceConfig implements Serializable {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(ServiceConfig.class);
+    private static final Logger log = LoggingConfiguration.getLogger(ServiceConfig.class.getSimpleName());
     //static final String GEOFENCING_SERVICE_CONFIG = "geofencing_service_config";
     private static final String PREFIX = "com.ibm.pi.sdk.";
     static final String EXTRA_LOCATION_UPDATE_FLAG =  PREFIX + "extra.location_update";

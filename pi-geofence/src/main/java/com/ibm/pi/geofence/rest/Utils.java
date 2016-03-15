@@ -39,7 +39,7 @@ final class Utils {
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(Utils.class);
+    private static final Logger log = Logger.getLogger(Utils.class.getSimpleName());
     // Android system properties
     static final String PROPERTY_HTTP_AGENT = "http.agent";
     /**

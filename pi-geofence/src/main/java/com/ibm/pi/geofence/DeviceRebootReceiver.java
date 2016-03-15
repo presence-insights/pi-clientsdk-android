@@ -30,7 +30,7 @@ public class DeviceRebootReceiver extends BroadcastReceiver {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(DeviceRebootReceiver.class);
+    private static final Logger log = LoggingConfiguration.getLogger(DeviceRebootReceiver.class.getSimpleName());
 
     public DeviceRebootReceiver() {
     }

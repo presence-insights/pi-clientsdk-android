@@ -15,7 +15,7 @@ public abstract class PIGeofenceCallbackService extends IntentService implements
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(PIGeofenceCallbackService.class);
+    private static final Logger log = LoggingConfiguration.getLogger(PIGeofenceCallbackService.class.getSimpleName());
     private Context context;
 
     public PIGeofenceCallbackService() {

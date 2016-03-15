@@ -41,16 +41,6 @@ public class MyCallbackService extends PIGeofenceCallbackService {
     }
 
     @Override
-    public void onGeofencesMonitored(final List<PIGeofence> geofences) {
-        log.debug("onGeofencesMonitored() geofences = " + geofences);
-    }
-
-    @Override
-    public void onGeofencesUnmonitored(List<PIGeofence> geofences) {
-        log.debug("onGeofencesUnmonitored() geofences = " + geofences);
-    }
-
-    @Override
     public void onGeofencesEnter(final List<PIGeofence> geofences) {
         log.debug("entering geofence(s) " + geofences);
         if (getSettings().getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {

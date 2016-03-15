@@ -58,7 +58,7 @@ public class PIGeofencingService {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(PIGeofencingService.class);
+    private static final Logger log = LoggingConfiguration.getLogger(PIGeofencingService.class.getSimpleName());
     static final String INTENT_ID = "PIGeofencingService";
     /**
      * Part of a request path pointing to the geofence connector.
@@ -140,7 +140,6 @@ public class PIGeofencingService {
             this.callbackServiceName = callbackServiceClass.getName();
         } else {
         }
-        LoggingConfiguration.configure();
         this.httpService = new PIHttpService(context, baseURL, tenantCode, orgCode, username, password);
         this.geofenceCallback = new DelegatingGeofenceCallback(this, null);
         callbackMap.put(INTENT_ID, this.geofenceCallback);
@@ -528,6 +527,37 @@ public class PIGeofencingService {
             request.setPath(String.format("%s/tenants/%s/orgs/%s/geofences", CONFIG_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode()));
             httpService.executeRequest(request);
         }
+    }
+
+    private String checkConfig() {
+        List<String> list = new ArrayList<>();
+        if (httpService == null) {
+            list.add("http service");
+        } else if (httpService.getTenantCode() == null) {
+            list.add("tenant code");
+        } else if (httpService.getOrgCode() == null) {
+            list.add("org code");
+        } else if (httpService.getUsername() == null) {
+            list.add("username");
+        } else if (httpService.getPassword() == null) {
+            list.add("password");
+        } else if (httpService.getServerURL() == null) {
+            list.add("server url");
+        }
+        if (list.isEmpty()) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder("[");
+        int count = 0;
+        for (String s: list) {
+            if (count > 0) {
+                sb.append(", ");
+            }
+            count++;
+            sb.append(s);
+        }
+        sb.append(']');
+        return sb.toString();
     }
 
     /**

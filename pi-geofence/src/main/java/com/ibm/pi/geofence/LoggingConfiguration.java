@@ -42,7 +42,7 @@ public class LoggingConfiguration {
     /**
      * Configure log4j.
      */
-    public synchronized static void configure() {
+    private synchronized static void configure() {
         if (!configured) {
             configured = true;
             final LogConfigurator configurator = new LogConfigurator();
@@ -55,6 +55,7 @@ public class LoggingConfiguration {
             configurator.setImmediateFlush(true);
             configurator.setMaxFileSize(1024 * 1024);
             configurator.setMaxBackupSize(0);
+            configurator.setFilePattern("%d [%-5p][%c.%M(%L)] %m%n");
             configurator.setUseLogCatAppender(true);
             configurator.setRootLevel(Level.DEBUG);
             configurator.setLevel("com.ibm.pisdk", Level.DEBUG);

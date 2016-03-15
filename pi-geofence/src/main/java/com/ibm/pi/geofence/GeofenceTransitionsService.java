@@ -35,7 +35,7 @@ public class GeofenceTransitionsService extends IntentService {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(GeofenceTransitionsService.class);
+    private static final Logger log = LoggingConfiguration.getLogger(GeofenceTransitionsService.class.getSimpleName());
 
     public GeofenceTransitionsService() {
         super(GeofenceTransitionsService.class.getName());

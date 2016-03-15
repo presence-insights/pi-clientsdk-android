@@ -20,6 +20,8 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Base64;
 
+import com.ibm.pi.geofence.LoggingConfiguration;
+
 import org.apache.log4j.Logger;
 
 import java.net.CookieManager;
@@ -46,7 +48,7 @@ public class PIHttpService {
     /**
      * Logger for this class.
      */
-    private static final Logger log = Logger.getLogger(PIHttpService.class);
+    private static final Logger log = LoggingConfiguration.getLogger(PIHttpService.class.getSimpleName());
     private CookieManager manager = new CookieManager();
     /**
      * Used to queue the http requests.

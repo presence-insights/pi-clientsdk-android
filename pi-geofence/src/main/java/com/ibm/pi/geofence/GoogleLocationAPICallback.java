@@ -36,7 +36,7 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(GoogleLocationAPICallback.class);
+    private static final Logger log = LoggingConfiguration.getLogger(GoogleLocationAPICallback.class.getSimpleName());
     private final PIGeofencingService geofencingService;
     private PendingIntent pendingIntent = null;
 

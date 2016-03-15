@@ -158,7 +158,6 @@ public class MapsActivity extends FragmentActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        LoggingConfiguration.configure();
         log.debug("***************************************************************************************");
         super.onCreate(savedInstanceState);
         settings = new Settings(this);
