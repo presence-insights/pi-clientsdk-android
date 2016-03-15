@@ -132,37 +132,6 @@ public class PIGeofencingService {
      * @param maxDistance distance threshold for sigificant location changes.
      * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
      */
-    public PIGeofencingService(Context context, String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
-        this(MODE_APP, null, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
-    }
-
-    /**
-     * Initialize this service.
-     * @param context the Android application context.
-     * @param baseURL base URL of the PI server.
-     * @param tenantCode PI tenant code.
-     * @param orgCode PI org code.
-     * @param username PI username.
-     * @param password PI password.
-     * @param maxDistance distance threshold for sigificant location changes.
-     * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
-     */
-    public PIGeofencingService(Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
-            String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
-        this(MODE_APP, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
-    }
-
-    /**
-     * Initialize this service.
-     * @param context the Android application context.
-     * @param baseURL base URL of the PI server.
-     * @param tenantCode PI tenant code.
-     * @param orgCode PI org code.
-     * @param username PI username.
-     * @param password PI password.
-     * @param maxDistance distance threshold for sigificant location changes.
-     * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
-     */
     PIGeofencingService(int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
         String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
         this.mode = mode;
@@ -217,11 +186,33 @@ public class PIGeofencingService {
         }
     }
 
+    /**
+     * Initialize this service.
+     * @param context the Android application context.
+     * @param baseURL base URL of the PI server.
+     * @param tenantCode PI tenant code.
+     * @param orgCode PI org code.
+     * @param username PI username.
+     * @param password PI password.
+     * @param maxDistance distance threshold for sigificant location changes.
+     * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
+     */
     public static PIGeofencingService newInstance(Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
         String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
         return newInstance(MODE_APP, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
     }
 
+    /**
+     * Initialize this service.
+     * @param context the Android application context.
+     * @param baseURL base URL of the PI server.
+     * @param tenantCode PI tenant code.
+     * @param orgCode PI org code.
+     * @param username PI username.
+     * @param password PI password.
+     * @param maxDistance distance threshold for sigificant location changes.
+     * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
+     */
     static PIGeofencingService newInstance(int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
                                            String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
         PIGeofencingService geofencingService = new PIGeofencingService(
@@ -427,8 +418,8 @@ public class PIGeofencingService {
                 );
             }
             GeofencingRequest request = new GeofencingRequest.Builder()
-                //.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-                .setInitialTrigger(0)
+                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                //.setInitialTrigger(0)
                 .addGeofences(list).build();
             // used to keep track of the add request
             PendingIntent pi = getPendingIntent(INTENT_ID);
@@ -499,7 +490,7 @@ public class PIGeofencingService {
         Iterator<PIGeofence> it = PIGeofence.findAll(PIGeofence.class);
         if ((httpService.getServerURL() != null) && !it.hasNext()) {
             log.debug("loadGeofences() loading geofences from the server");
-            loadGeofencesFromServer(true);
+            loadGeofencesFromServer();
         } else {
             log.debug("loadGeofences() found geofences in local database");
             setInitialLocation();
@@ -509,7 +500,7 @@ public class PIGeofencingService {
     /**
      * Query the geofences from the server, based on the current anchor.
      */
-    private void loadGeofencesFromServer(final boolean initialRequest) {
+    private void loadGeofencesFromServer() {
         if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
             PIRequestCallback<JSONObject> cb = new PIRequestCallback<JSONObject>() {
                 @Override
