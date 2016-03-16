@@ -2,8 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- "Mark Favorite", should appear as action button if possible -->
     <item
+        android:id="@+id/run_test"
+        android:icon="@mipmap/aeicon"
+        android:title=""
+        android:visible="false"
+        android:showAsAction="ifRoom"/>
+    <item
         android:id="@+id/action_tracking"
-        android:icon="@android:drawable/presence_video_online"
+        android:icon="@mipmap/tracking_on"
         android:title=""
         android:showAsAction="ifRoom"/>
     <item

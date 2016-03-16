@@ -19,6 +19,7 @@ package com.ibm.pi.geofence;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.location.Criteria;
 import android.location.LocationManager;
 import android.os.Bundle;
 
@@ -26,8 +27,6 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 import org.apache.log4j.Logger;
-
-import java.util.List;
 
 /**
  * Callback implementation for feedback on the Google API connection state.
@@ -50,18 +49,20 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
         if (geofencingService.mode == PIGeofencingService.MODE_APP) {
             geofencingService.loadGeofences();
         }
-        // register a location change listener
-        /* doesn't work due to android issue https://code.google.com/p/android/issues/detail?id=197296
-        final LocationRequest locationRequest = LocationRequest.create()
-            .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY)
-            .setInterval(10000L).setFastestInterval(10000L);
-        LocationServices.FusedLocationApi.requestLocationUpdates(geofencingService.googleApiClient, locationRequest, getPendingIntent());
-        */
         if (geofencingService.mode != PIGeofencingService.MODE_REBOOT) {
+            // register a location change listener
+            /*
+            // doesn't work due to android issue https://code.google.com/p/android/issues/detail?id=197296
+                final LocationRequest locationRequest = LocationRequest.create()
+                    .setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY)
+                    .setInterval(10000L).setFastestInterval(10000L);
+                LocationServices.FusedLocationApi.requestLocationUpdates(geofencingService.googleApiClient, locationRequest, getPendingIntent());
+            */
             log.debug("registering location listener service");
             LocationManager lm = (LocationManager) geofencingService.context.getSystemService(Context.LOCATION_SERVICE);
             PendingIntent pi = getPendingIntent();
             lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10_000L, 50f, pi);
+            // taking advantage of location updates emitted by other apps, to no cost for our own
             lm.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 10_000L, 50f, pi);
         }
     }
@@ -82,9 +83,11 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
      */
     private PendingIntent getPendingIntent() {
         if (pendingIntent == null) {
-            Intent intent = new Intent(geofencingService.context, GeofenceManager.class);
+            Class<?> clazz = GeofenceManager.class;
+            //Class<?> clazz = FusedGeofenceManager.class;
+            Intent intent = new Intent(geofencingService.context, clazz);
             new ServiceConfig().fromGeofencingService(geofencingService).toIntent(intent);
-            intent.setClass(geofencingService.context, GeofenceManager.class);
+            intent.setClass(geofencingService.context, clazz);
             pendingIntent = PendingIntent.getBroadcast(geofencingService.context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         }
         return pendingIntent;

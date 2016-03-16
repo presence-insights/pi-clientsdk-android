@@ -54,10 +54,14 @@ import com.ibm.pisdk.geofencing.demo.R;
 import org.apache.log4j.Logger;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Handles a Google map where a number of geofences are highlighted as semi-transparent red circles.
@@ -162,7 +166,6 @@ public class MapsActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         settings = new Settings(this);
         setContentView(R.layout.maps_activity);
-        //this.findViewById(R.id.map).getL;
         mapCrossHair = (ImageView) findViewById(R.id.map_cross_hair);
         trackingEnabled = settings.getBoolean(TRACKING_ENABLED_KEY, true);
         log.debug("in onCreate() tracking is " + (trackingEnabled ? "enabled" : "disabled"));
@@ -206,7 +209,7 @@ public class MapsActivity extends FragmentActivity {
                 public void onSuccess(PIOrg result) {
                     String orgCode = result.getCode();
                     updateTitle(orgCode);
-                        settings.putString("orgCode", orgCode).commit();
+                    settings.putString("orgCode", orgCode).commit();
                 }
 
                 @Override
@@ -216,6 +219,9 @@ public class MapsActivity extends FragmentActivity {
             });
         } else {
             updateTitle(orgCode);
+            if ("6x07ykw".equals(orgCode)) {
+
+            }
         }
         try {
             startSimulation(geofenceManager.getFences());
@@ -224,12 +230,15 @@ public class MapsActivity extends FragmentActivity {
         }
     }
 
+    /**
+     * Update the title in the action bar with the specified org code.
+     */
     private void updateTitle(String orgCode) {
         try {
             String s = getString(R.string.title_activity_maps);
-            getActionBar().setTitle(String.format("%s (org: %S)", s, orgCode));
+            getActionBar().setTitle(String.format("%s (org: %s)", s, orgCode));
         } catch(Exception e) {
-            log.error(String.format("error setting title bar with org=", orgCode), e);
+            log.error(String.format("error setting title bar with org=%s", orgCode), e);
         }
     }
 
@@ -476,14 +485,15 @@ public class MapsActivity extends FragmentActivity {
         }
     }
 
+    private final AtomicBoolean simulationStarted = new AtomicBoolean(false);
+
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(final MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_tracking:
                 trackingEnabled = !trackingEnabled;
                 log.debug("tracking is now " + (trackingEnabled ? "enabled" : "disabled"));
                 settings.putBoolean(TRACKING_ENABLED_KEY, trackingEnabled).commit();
-                //item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
                 item.setIcon(trackingEnabled ? R.mipmap.tracking_on : R.mipmap.tracking_off);
                 log.debug(String.format("onOptionsItemSelected() tracking is now %s", trackingEnabled ? "enabled" : "disabled"));
                 break;
@@ -508,6 +518,35 @@ public class MapsActivity extends FragmentActivity {
                     log.debug(e.getMessage(), e);
                 }
                 break;
+            case R.id.run_test:
+                if (simulationStarted.compareAndSet(false, true)) {
+                    item.setVisible(false);
+                    try {
+                        List<PIGeofence> list = new ArrayList<>(PIGeofence.listAll(PIGeofence.class));
+                        Collections.sort(list, new Comparator<PIGeofence>() {
+                            @Override
+                            public int compare(PIGeofence lhs, PIGeofence rhs) {
+                                return ((Double) rhs.getLatitude()).compareTo(lhs.getLatitude());
+                            }
+                        });
+                        TravelSimulator ts = new TravelSimulator(this, list, 2, 20_000L, new TravelSimulator.Callback() {
+                            @Override
+                            public void onSimulationEnded() {
+                                simulationStarted.set(false);
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        item.setVisible(true);
+                                    }
+                                });
+                            }
+                        });
+                        new Thread(ts, "TravelSimulator").start();
+                    } catch(Exception e) {
+                        log.debug(e.getMessage(), e);
+                    }
+                }
+                break;
         }
        return super.onOptionsItemSelected(item);
     }
@@ -516,8 +555,12 @@ public class MapsActivity extends FragmentActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu, menu);
         MenuItem item = menu.findItem(R.id.action_tracking);
-        //item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
         item.setIcon(trackingEnabled ? R.mipmap.tracking_on : R.mipmap.tracking_off);
+        if ("6x07ykw".equals(settings.getString("orgCode", ""))) {
+            log.debug("setting run_test item visible");
+            item = menu.findItem(R.id.run_test);
+            item.setVisible(true);
+        }
         return true;
     }
 

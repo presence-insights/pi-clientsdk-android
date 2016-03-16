@@ -61,7 +61,7 @@ class ServiceConfig implements Serializable {
         Context context = null;
         try {
             context = service.createPackageContext(packageName, Context.CONTEXT_INCLUDE_CODE);
-            log.debug(String.format("successfully created context for %s : %s", packageName, context));
+            //log.debug(String.format("successfully created context for %s : %s", packageName, context));
         } catch(Exception e) {
             log.error(String.format("error creating context for %s", packageName), e);
         }

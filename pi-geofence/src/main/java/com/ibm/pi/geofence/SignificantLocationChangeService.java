@@ -114,7 +114,7 @@ public class SignificantLocationChangeService extends IntentService {
         } else if (intent.getBooleanExtra(ServiceConfig.EXTRA_REBOOT_EVENT_FLAG, false)) {
             try {
                 ServiceConfig config = new ServiceConfig().fromIntent(intent);
-                log.debug("onHandleIntent(rebot_event) config=" + config);
+                log.debug("onHandleIntent(reboot_event) config=" + config);
                 Context context = config.createContext(this);
                 PIGeofencingService geofencingService = PIGeofencingService.newInstance(PIGeofencingService.MODE_REBOOT, null, context, null, null, null, null, null, 10_000);
                 List<PIGeofence> geofences = GeofenceManager.extractGeofences(geofencingService.settings);

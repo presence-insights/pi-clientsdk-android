@@ -40,7 +40,7 @@ public class SlackHTTPService extends PIHttpService {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(SlackHTTPService.class);
+    private static final Logger log = LoggingConfiguration.getLogger(SlackHTTPService.class.getSimpleName());
 
     public SlackHTTPService(Context context) {
         super(context, "https://cloudplatform.slack.com", null, null, null, null);

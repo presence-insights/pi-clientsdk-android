@@ -24,7 +24,7 @@ public class MyCallbackService extends PIGeofenceCallbackService {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(MyCallbackService.class);
+    private static final Logger log = LoggingConfiguration.getLogger(MyCallbackService.class.getSimpleName());
     private static final String SLACK_CHANNEL = "#geo-spam";
     private static final AtomicInteger notifId = new AtomicInteger(0);
     //#private static final String SLACK_CHANNEL = "@lolo4j";

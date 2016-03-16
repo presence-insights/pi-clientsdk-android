@@ -83,9 +83,9 @@ public class GeofenceManager extends BroadcastReceiver {
             this.context = context;
             this.maxDistance = config.maxDistance;
             this.settings = new Settings(context);
-            //log.debug(String.format("onReceive() config=%s, settings=%s", config, settings));
             this.referenceLocation = retrieveReferenceLocation(settings);
             Location location = (Location) intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED);
+            //log.debug(String.format("onReceive() config=%s, settings=%s", config, settings));
             onLocationChanged(location, false);
         }
     }

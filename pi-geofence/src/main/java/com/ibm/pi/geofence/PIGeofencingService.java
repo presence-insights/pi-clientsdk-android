@@ -411,8 +411,8 @@ public class PIGeofencingService {
                 list.add(new Geofence.Builder().setRequestId(geofence.getCode())
                         .setCircularRegion(geofence.getLatitude(), geofence.getLongitude(), (float) geofence.getRadius())
                         .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setNotificationResponsiveness(100)
-                        .setLoiteringDelay(100)
+                        .setNotificationResponsiveness(10_000)
+                        .setLoiteringDelay(300000)
                         .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)
                         .build()
                 );
@@ -487,8 +487,7 @@ public class PIGeofencingService {
      * Load geofences from the local database if they are present, or from the server if not.
      */
     void loadGeofences() {
-        Iterator<PIGeofence> it = PIGeofence.findAll(PIGeofence.class);
-        if ((httpService.getServerURL() != null) && !it.hasNext()) {
+        if ((httpService.getServerURL() != null) && (PIGeofence.count(PIGeofence.class) <= 0L)) {
             log.debug("loadGeofences() loading geofences from the server");
             loadGeofencesFromServer();
         } else {
