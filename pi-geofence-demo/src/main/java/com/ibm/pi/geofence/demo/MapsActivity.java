@@ -42,13 +42,13 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.ui.IconGenerator;
-import com.ibm.pisdk.doctypes.PIOrg;
 import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofencingService;
 import com.ibm.pi.geofence.Settings;
 import com.ibm.pi.geofence.rest.PIRequestCallback;
 import com.ibm.pi.geofence.rest.PIRequestError;
+import com.ibm.pisdk.doctypes.PIOrg;
 import com.ibm.pisdk.geofencing.demo.R;
 
 import org.apache.log4j.Logger;
@@ -162,6 +162,7 @@ public class MapsActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         settings = new Settings(this);
         setContentView(R.layout.maps_activity);
+        //this.findViewById(R.id.map).getL;
         mapCrossHair = (ImageView) findViewById(R.id.map_cross_hair);
         trackingEnabled = settings.getBoolean(TRACKING_ENABLED_KEY, true);
         log.debug("in onCreate() tracking is " + (trackingEnabled ? "enabled" : "disabled"));
@@ -203,7 +204,9 @@ public class MapsActivity extends FragmentActivity {
             service.createOrg(orgName, "org for id " + orgName, null, true, new PIRequestCallback<PIOrg>() {
                 @Override
                 public void onSuccess(PIOrg result) {
-                    settings.putString("orgCode", result.getCode()).commit();
+                    String orgCode = result.getCode();
+                    updateTitle(orgCode);
+                        settings.putString("orgCode", orgCode).commit();
                 }
 
                 @Override
@@ -211,11 +214,22 @@ public class MapsActivity extends FragmentActivity {
                     log.error("error creating org: " + error);
                 }
             });
+        } else {
+            updateTitle(orgCode);
         }
         try {
             startSimulation(geofenceManager.getFences());
         } catch(Exception e) {
             log.error("error in startSimulation()", e);
+        }
+    }
+
+    private void updateTitle(String orgCode) {
+        try {
+            String s = getString(R.string.title_activity_maps);
+            getActionBar().setTitle(String.format("%s (org: %S)", s, orgCode));
+        } catch(Exception e) {
+            log.error(String.format("error setting title bar with org=", orgCode), e);
         }
     }
 
@@ -469,7 +483,8 @@ public class MapsActivity extends FragmentActivity {
                 trackingEnabled = !trackingEnabled;
                 log.debug("tracking is now " + (trackingEnabled ? "enabled" : "disabled"));
                 settings.putBoolean(TRACKING_ENABLED_KEY, trackingEnabled).commit();
-                item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
+                //item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
+                item.setIcon(trackingEnabled ? R.mipmap.tracking_on : R.mipmap.tracking_off);
                 log.debug(String.format("onOptionsItemSelected() tracking is now %s", trackingEnabled ? "enabled" : "disabled"));
                 break;
             case R.id.action_mail_log:
@@ -501,7 +516,8 @@ public class MapsActivity extends FragmentActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu, menu);
         MenuItem item = menu.findItem(R.id.action_tracking);
-        item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
+        //item.setIcon(trackingEnabled ? android.R.drawable.presence_video_online : android.R.drawable.presence_video_busy);
+        item.setIcon(trackingEnabled ? R.mipmap.tracking_on : R.mipmap.tracking_off);
         return true;
     }
 
