@@ -146,12 +146,20 @@ public class GeofenceManager extends BroadcastReceiver {
     static List<PIGeofence> geofencesFromCodes(Collection<String> geofenceCodes) {
         List<PIGeofence> geofences = new ArrayList<>(geofenceCodes.size());
         for (String code: geofenceCodes) {
-            List<PIGeofence> list = PIGeofence.find(PIGeofence.class, "code = ?", code);
-            if (!list.isEmpty()) {
-                geofences.add(list.get(0));
+            PIGeofence geofence = geofenceFromCode(code);
+            if (geofence != null) {
+                geofences.add(geofence);
             }
         }
         return geofences;
+    }
+
+    static PIGeofence geofenceFromCode(String geofenceCode) {
+        List<PIGeofence> list = PIGeofence.find(PIGeofence.class, "code = ?", geofenceCode);
+        if (!list.isEmpty()) {
+            return list.get(0);
+        }
+        return null;
     }
 
     static List<String> geofencesToCodes(Collection<PIGeofence> geofences) {

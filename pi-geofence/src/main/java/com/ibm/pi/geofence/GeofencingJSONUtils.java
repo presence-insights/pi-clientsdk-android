@@ -38,9 +38,9 @@ public class GeofencingJSONUtils {
     /**
      * Date format used to convert dates from/to UTC format such as "2015-08-24T09:00:00-05:00".
      */
-    private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZZZZZ";
+    static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     /**
-     * Date format used to convert dates from/to UTC format such as "2015-08-24T09:00:00-05:00".
+     * Date format used to convert dates from/to UTC format such as "2015-08-24T09:00:00.123Z".
      */
     private static final String TMP_DESC = UUID.randomUUID().toString();
 
@@ -85,7 +85,9 @@ public class GeofencingJSONUtils {
         String name = props.has("name") ? props.getString("name") : null;
         String description = props.has("description") ? props.getString("description") : null;
         double radius = props.has("radius") ? props.getDouble("radius") : -1d;
-        return  new PIGeofence(code, name, description, lat, lng, radius);
+        PIGeofence geofence = new PIGeofence(code, name, description, lat, lng, radius);
+        updateGeofenceTimestampsFromJSON(geofence, feature);
+        return geofence;
     }
 
     /**
@@ -240,5 +242,26 @@ public class GeofencingJSONUtils {
             log.error("exception generating json for geofence list", e);
         }
         return json;
+    }
+
+    static PIGeofence updateGeofenceTimestampsFromJSON(PIGeofence geofence, JSONObject json) {
+        try {
+            JSONObject properties = json.getJSONObject("properties");
+            JSONObject created = properties.getJSONObject("@created");
+            long createdTImestamp = created.getLong("timestamp");
+            geofence.setCreatedTimestamp(createdTImestamp);
+            long updatedTimestamp = 0L;
+            if (properties.has("@updated")) {
+                JSONObject updated = properties.getJSONObject("@updated");
+                updatedTimestamp = updated.getLong("timestamp");
+            }
+            if (updatedTimestamp <= 0d) {
+                updatedTimestamp = createdTImestamp;
+            }
+            geofence.setUpdatedTimestamp(updatedTimestamp);
+        } catch(JSONException e) {
+            log.error("exception geofence timestamps for " + json, e);
+        }
+        return geofence;
     }
 }

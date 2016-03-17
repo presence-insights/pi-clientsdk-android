@@ -30,6 +30,8 @@ public class PIGeofence extends SugarRecord implements Serializable {
     private double latitude;
     private double longitude;
     private double radius;
+    private long createdTimestamp;
+    private long updatedTimestamp;
 
     public PIGeofence() {
     }
@@ -89,6 +91,22 @@ public class PIGeofence extends SugarRecord implements Serializable {
 
     public void setRadius(double radius) {
         this.radius = radius;
+    }
+
+    public long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(long createdTimestamp) {
+        this.createdTimestamp = createdTimestamp;
+    }
+
+    public long getUpdatedTimestamp() {
+        return updatedTimestamp;
+    }
+
+    public void setUpdatedTimestamp(long updatedTimestamp) {
+        this.updatedTimestamp = updatedTimestamp;
     }
 
     @Override

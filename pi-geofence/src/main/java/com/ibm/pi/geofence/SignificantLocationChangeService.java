@@ -62,11 +62,12 @@ public class SignificantLocationChangeService extends IntentService {
             log.debug("onHandleIntent() config=" + config);
             if (geofencingService == null) {
                 Context ctx = config.createContext(this);
-                this.geofencingService = PIGeofencingService.newInstance(PIGeofencingService.MODE_MONITORING_REQUEST, config.loadCallbackServiceClass(ctx), ctx,
+                this.settings = new Settings(ctx);
+                this.geofencingService = PIGeofencingService.newInstance(settings, PIGeofencingService.MODE_MONITORING_REQUEST, config.loadCallbackServiceClass(ctx), ctx,
                     config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-                this.settings = geofencingService.settings;
                 log.debug("onHandleIntent() settings=" + settings);
             }
+            config.populateFromSettings(settings);
             Location location = new Location(LocationManager.NETWORK_PROVIDER);
             location.setLatitude(config.newLocation.latitude);
             location.setLongitude(config.newLocation.longitude);
@@ -116,8 +117,11 @@ public class SignificantLocationChangeService extends IntentService {
                 ServiceConfig config = new ServiceConfig().fromIntent(intent);
                 log.debug("onHandleIntent(reboot_event) config=" + config);
                 Context context = config.createContext(this);
-                PIGeofencingService geofencingService = PIGeofencingService.newInstance(PIGeofencingService.MODE_REBOOT, null, context, null, null, null, null, null, 10_000);
-                List<PIGeofence> geofences = GeofenceManager.extractGeofences(geofencingService.settings);
+                Settings settings = new Settings(context);
+                config.populateFromSettings(settings);
+                PIGeofencingService geofencingService = PIGeofencingService.newInstance(settings, PIGeofencingService.MODE_REBOOT, null, context,
+                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
+                List<PIGeofence> geofences = GeofenceManager.extractGeofences(settings);
                 geofencingService.monitorGeofences(geofences);
             } catch(Exception e) {
                 log.error("error handling post-reboot remonitoring", e);

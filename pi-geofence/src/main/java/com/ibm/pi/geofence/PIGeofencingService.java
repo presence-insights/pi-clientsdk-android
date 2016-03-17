@@ -44,7 +44,6 @@ import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -117,7 +116,7 @@ public class PIGeofencingService {
     /**
      *
      */
-    final Settings settings;
+    Settings settings;
     final int mode;
     GoogleLocationAPICallback googleAPICallback;
 
@@ -132,7 +131,7 @@ public class PIGeofencingService {
      * @param maxDistance distance threshold for sigificant location changes.
      * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
      */
-    PIGeofencingService(int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
+    PIGeofencingService(Settings settings, int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
         String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
         log.debug("pi-geofence version " + BuildConfig.VERSION_NAME);
         this.mode = mode;
@@ -145,7 +144,12 @@ public class PIGeofencingService {
         this.geofenceCallback = new DelegatingGeofenceCallback(this, null);
         callbackMap.put(INTENT_ID, this.geofenceCallback);
         this.context = context;
-        if (context != null) {
+        if (settings != null) {
+            this.settings = settings;
+        } else if (context != null) {
+            this.settings = new Settings(context);
+        }
+        if (settings != null) {
             this.settings = new Settings(context);
             log.debug("PIGeofencingService() settings = " + settings);
             String desc = settings.getString("descriptor", null);
@@ -153,7 +157,6 @@ public class PIGeofencingService {
             int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
             log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
         } else {
-            this.settings = null;
             this.deviceDescriptor = "";
         }
     }
@@ -199,7 +202,7 @@ public class PIGeofencingService {
      */
     public static PIGeofencingService newInstance(Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
         String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
-        return newInstance(MODE_APP, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
+        return newInstance(null, MODE_APP, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
     }
 
     /**
@@ -213,10 +216,13 @@ public class PIGeofencingService {
      * @param maxDistance distance threshold for sigificant location changes.
      * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
      */
-    static PIGeofencingService newInstance(int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
+    static PIGeofencingService newInstance(Settings settings, int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
                                            String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
         PIGeofencingService geofencingService = new PIGeofencingService(
-            mode, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
+            settings, mode, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
+        if (geofencingService.mode == MODE_APP) {
+            geofencingService.updateSettings();
+        }
         geofencingService.connectGoogleAPI();
         return geofencingService;
     }
@@ -333,6 +339,10 @@ public class PIGeofencingService {
                 @Override
                 public void onSuccess(JSONObject result) {
                     log.debug("sucessfully posted geofence " + fence);
+                    PIGeofence updated = GeofencingJSONUtils.updateGeofenceTimestampsFromJSON(fence, result);
+                    if (updated != null) {
+                        updated.save();
+                    }
                     if (userCallback != null) {
                         try {
                             userCallback.onSuccess(GeofencingJSONUtils.parsePostGeofenceResponse(result));
@@ -475,6 +485,7 @@ public class PIGeofencingService {
         if (pendingIntent == null) {
             Intent intent = new Intent(context, GeofenceTransitionsService.class);
             ServiceConfig config = new ServiceConfig().fromGeofencingService(this);
+            config.populateFromSettings(settings);
             config.toIntent(intent);
             intent.putExtra(INTENT_ID, geofenceCallbackUuid);
             intent.setClass(context, GeofenceTransitionsService.class);
@@ -500,6 +511,13 @@ public class PIGeofencingService {
      * Query the geofences from the server, based on the current anchor.
      */
     private void loadGeofencesFromServer() {
+        loadGeofencesFromServer(null);
+    }
+
+    /**
+     * Query the geofences from the server, based on the current anchor.
+     */
+    private void loadGeofencesFromServer(String lastSyncDate) {
         if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
             PIRequestCallback<JSONObject> cb = new PIRequestCallback<JSONObject>() {
                 @Override
@@ -527,37 +545,6 @@ public class PIGeofencingService {
             request.setPath(String.format("%s/tenants/%s/orgs/%s/geofences", CONFIG_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode()));
             httpService.executeRequest(request);
         }
-    }
-
-    private String checkConfig() {
-        List<String> list = new ArrayList<>();
-        if (httpService == null) {
-            list.add("http service");
-        } else if (httpService.getTenantCode() == null) {
-            list.add("tenant code");
-        } else if (httpService.getOrgCode() == null) {
-            list.add("org code");
-        } else if (httpService.getUsername() == null) {
-            list.add("username");
-        } else if (httpService.getPassword() == null) {
-            list.add("password");
-        } else if (httpService.getServerURL() == null) {
-            list.add("server url");
-        }
-        if (list.isEmpty()) {
-            return null;
-        }
-        StringBuilder sb = new StringBuilder("[");
-        int count = 0;
-        for (String s: list) {
-            if (count > 0) {
-                sb.append(", ");
-            }
-            count++;
-            sb.append(s);
-        }
-        sb.append(']');
-        return sb.toString();
     }
 
     /**
@@ -592,5 +579,16 @@ public class PIGeofencingService {
             case ConnectionResult.SERVICE_INVALID: return "SERVICE_INVALID";
             default: return "undefined";
         }
+    }
+
+    private void updateSettings() {
+        settings.putString(ServiceConfig.EXTRA_SERVER_URL, httpService.getServerURL());
+        settings.putString(ServiceConfig.EXTRA_TENANT_CODE, httpService.getTenantCode());
+        settings.putString(ServiceConfig.EXTRA_ORG_CODE, httpService.getOrgCode());
+        settings.putString(ServiceConfig.EXTRA_USERNAME, httpService.getUsername());
+        settings.putString(ServiceConfig.EXTRA_PASSWORD, httpService.getPassword());
+        settings.putString(ServiceConfig.EXTRA_CALLBACK_SERVICE_NAME, callbackServiceName);
+        settings.putInt(ServiceConfig.EXTRA_MAX_DISTANCE, maxDistance);
+        settings.commit();
     }
 }

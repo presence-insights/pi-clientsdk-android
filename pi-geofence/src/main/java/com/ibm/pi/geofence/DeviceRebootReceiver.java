@@ -39,13 +39,14 @@ public class DeviceRebootReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         try {
             log.debug("onReceive() processing device reboot event, context=" + context + ", package=" + context.getPackageName());
+            Settings settings = new Settings(context);
             ServiceConfig config = new ServiceConfig();
+            config.populateFromSettings(settings);
             config.packageName = context.getPackageName();
             Intent newIntent = new Intent(context, SignificantLocationChangeService.class);
             newIntent.putExtra(ServiceConfig.EXTRA_REBOOT_EVENT_FLAG, true);
             config.toIntent(newIntent);
             context.startService(newIntent);
-            //config.toIntent(
         } catch(Exception e) {
             log.error("error in onReceive()", e);
         }

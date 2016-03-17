@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -57,6 +58,9 @@ class ServiceConfig implements Serializable {
     EventType eventType;
     LatLng newLocation;
 
+    /**
+     * Create an application context based on the app's package name.
+     */
     Context createContext(Service service) {
         Context context = null;
         try {
@@ -68,6 +72,21 @@ class ServiceConfig implements Serializable {
         return context;
     }
 
+    /**
+     * Attempt to load the class of the user-specified callback service,
+     * so the service can be invoked as:
+     * <pre>
+     * ServiceConfig config = ...;
+     * Context context = ...;
+     * Class<? extends PIGeofenceCallbackService> clazz =
+     *   config.loadCallbackServiceClass(context);
+     * Intent intent = new Intent(context, clazz);
+     * ...
+     * context.startService(intent)
+     * </pre>
+     * @param context the context whose class loader loads the desired class.
+     * @return a class that extends {@link PIGeofenceCallbackService}.
+     */
     @SuppressWarnings("unchecked")
     Class<? extends PIGeofenceCallbackService> loadCallbackServiceClass(Context context) {
         Class<? extends PIGeofenceCallbackService> clazz = null;
@@ -140,13 +159,7 @@ class ServiceConfig implements Serializable {
         if (s != null) {
             String[] codes = s.split("\\|");
             if ((codes != null) && (codes.length > 0)) {
-                geofences = new ArrayList<>(codes.length);
-                for (String code: codes) {
-                    List<PIGeofence> list = PIGeofence.find(PIGeofence.class, "code = ?", code);
-                    if (!list.isEmpty()) {
-                        geofences.add(list.get(0));
-                    }
-                }
+                geofences = GeofenceManager.geofencesFromCodes(Arrays.asList(codes));
             }
         }
         s = intent.getStringExtra(EXTRA_EVENT_TYPE);
@@ -196,11 +209,23 @@ class ServiceConfig implements Serializable {
         return this;
     }
 
+    /**
+     * Used for debugging purposes only.
+     */
     private void debugCheck() {
         /*
         if (callbackServiceName == null) {
             log.debug("toIntent() service is null, call stack:" + Log.getStackTraceString(new Exception()));
         }
         */
+    }
+
+    void populateFromSettings(Settings settings) {
+        serverUrl = settings.getString(EXTRA_SERVER_URL, null);
+        tenantCode = settings.getString(EXTRA_TENANT_CODE, null);
+        orgCode = settings.getString(EXTRA_ORG_CODE, null);
+        username = settings.getString(EXTRA_USERNAME, null);
+        password = settings.getString(EXTRA_PASSWORD, null);
+        callbackServiceName = settings.getString(EXTRA_CALLBACK_SERVICE_NAME, null);
     }
 }

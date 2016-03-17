@@ -519,31 +519,33 @@ public class MapsActivity extends FragmentActivity {
                 }
                 break;
             case R.id.run_test:
-                if (simulationStarted.compareAndSet(false, true)) {
-                    item.setVisible(false);
-                    try {
-                        List<PIGeofence> list = new ArrayList<>(PIGeofence.listAll(PIGeofence.class));
-                        Collections.sort(list, new Comparator<PIGeofence>() {
-                            @Override
-                            public int compare(PIGeofence lhs, PIGeofence rhs) {
-                                return ((Double) rhs.getLatitude()).compareTo(lhs.getLatitude());
-                            }
-                        });
-                        TravelSimulator ts = new TravelSimulator(this, list, 2, 20_000L, new TravelSimulator.Callback() {
-                            @Override
-                            public void onSimulationEnded() {
-                                simulationStarted.set(false);
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        item.setVisible(true);
-                                    }
-                                });
-                            }
-                        });
-                        new Thread(ts, "TravelSimulator").start();
-                    } catch(Exception e) {
-                        log.debug(e.getMessage(), e);
+                if ("6x07ykw".equals(settings.getString("orgCode", ""))) {
+                    if (simulationStarted.compareAndSet(false, true)) {
+                        item.setVisible(false);
+                        try {
+                            List<PIGeofence> list = new ArrayList<>(PIGeofence.listAll(PIGeofence.class));
+                            Collections.sort(list, new Comparator<PIGeofence>() {
+                                @Override
+                                public int compare(PIGeofence lhs, PIGeofence rhs) {
+                                    return ((Double) rhs.getLatitude()).compareTo(lhs.getLatitude());
+                                }
+                            });
+                            TravelSimulator ts = new TravelSimulator(this, list, 2, 20_000L, new TravelSimulator.Callback() {
+                                @Override
+                                public void onSimulationEnded() {
+                                    simulationStarted.set(false);
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            item.setVisible(true);
+                                        }
+                                    });
+                                }
+                            });
+                            new Thread(ts, "TravelSimulator").start();
+                        } catch(Exception e) {
+                            log.debug(e.getMessage(), e);
+                        }
                     }
                 }
                 break;

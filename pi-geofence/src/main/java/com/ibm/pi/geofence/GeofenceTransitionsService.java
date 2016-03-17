@@ -71,35 +71,34 @@ public class GeofenceTransitionsService extends IntentService {
             PIGeofenceCallback callback = PIGeofencingService.callbackMap.get(intent.getStringExtra(PIGeofencingService.INTENT_ID));
             PIGeofencingService service = null;
             Context ctx = null;
+            Settings settings = null;
             Class<? extends PIGeofenceCallbackService> clazz = null;
             if (callback == null) {
                 ctx = config.createContext(this);
+                settings = new Settings(ctx);
+                config.populateFromSettings(settings);
             } else {
                 service = ((DelegatingGeofenceCallback) callback).service;
                 ctx = service.context;
+                settings = service.settings;
             }
+            config.populateFromSettings(service.settings);
             // happens when the app is off
             if (config.callbackServiceName != null) {
-                try {
-                    ClassLoader cl = ctx.getClassLoader();
-                    clazz = (Class<? extends PIGeofenceCallbackService>) Class.forName(config.callbackServiceName, true, cl);
-                } catch(Exception e) {
-                    log.error(String.format("exeption loading callback service class '%s'", config.callbackServiceName), e);
-                } catch(Error e) {
-                    log.error(String.format("error loading callback service class '%s'", config.callbackServiceName), e);
-                    throw e;
-                }
+                clazz = config.loadCallbackServiceClass(ctx);
             }
             if (callback == null) {
-                service = PIGeofencingService.newInstance(PIGeofencingService.MODE_GEOFENCE_EVENT, clazz, ctx,
+                service = PIGeofencingService.newInstance(settings, PIGeofencingService.MODE_GEOFENCE_EVENT, clazz, ctx,
                     config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
                 callback = service.geofenceCallback;
             }
             List<PIGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
             for (Geofence g : triggeringGeofences) {
                 String code = g.getRequestId();
-                List<PIGeofence> list = PIGeofence.find(PIGeofence.class, "code = ?", code);
-                if (!list.isEmpty()) geofences.add(list.get(0));
+                PIGeofence geofence = GeofenceManager.geofenceFromCode(code);
+                if (geofence != null) {
+                    geofences.add(geofence);
+                }
             }
             log.debug(String.format("callback = %s, clazz=%s, triggered geofences = %s", callback, clazz, geofences));
             if (callback != null) {

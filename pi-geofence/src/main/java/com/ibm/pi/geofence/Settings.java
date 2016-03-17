@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Properties;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -205,6 +206,14 @@ public class Settings {
 
     @Override
     public String toString() {
-        return String.format("%s[filename=%s, properties=%s]", getClass().getSimpleName(), fileName, properties);
+        Properties props = new Properties();
+        Enumeration names = properties.propertyNames();
+        while (names.hasMoreElements()) {
+            String name = (String) names.nextElement();
+            if (!name.toLowerCase().contains("password")) {
+                props.put(name, properties.getProperty(name));
+            }
+        }
+        return String.format("%s[filename=%s, properties=%s]", getClass().getSimpleName(), fileName, props);
     }
 }
