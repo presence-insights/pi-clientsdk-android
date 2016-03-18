@@ -45,6 +45,7 @@ public class SignificantLocationChangeService extends IntentService {
     private static final Logger log = LoggingConfiguration.getLogger(SignificantLocationChangeService.class.getSimpleName());
     private PIGeofencingService geofencingService;
     private Settings settings;
+    private ServiceConfig config;
 
     public SignificantLocationChangeService() {
         super(SignificantLocationChangeService.class.getSimpleName());
@@ -58,7 +59,7 @@ public class SignificantLocationChangeService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         boolean locationUpdate = intent.getExtras().get(ServiceConfig.EXTRA_LOCATION_UPDATE_FLAG) != null;
         if (locationUpdate) {
-            ServiceConfig config = new ServiceConfig().fromIntent(intent);
+            config = new ServiceConfig().fromIntent(intent);
             log.debug("onHandleIntent() config=" + config);
             if (geofencingService == null) {
                 Context ctx = config.createContext(this);
@@ -71,47 +72,7 @@ public class SignificantLocationChangeService extends IntentService {
             Location location = new Location(LocationManager.NETWORK_PROVIDER);
             location.setLatitude(config.newLocation.latitude);
             location.setLongitude(config.newLocation.longitude);
-
-            // where clause to find all geofences whose distance to the new location is < maxDistance
-            String where = createWhereClause(location.getLatitude(), location.getLongitude(), config.maxDistance / 2);
-            List<PIGeofence> bboxFences = PIGeofence.find(PIGeofence.class, where);
-            log.debug(String.format("where clause=%s, found fences: %s", where, bboxFences));
-            TreeMap<Float, PIGeofence> map = new TreeMap<>();
-            if ((bboxFences != null) && !bboxFences.isEmpty()) {
-                for (PIGeofence g : bboxFences) {
-                    Location l = new Location(LocationManager.NETWORK_PROVIDER);
-                    l.setLatitude(g.getLatitude());
-                    l.setLongitude(g.getLongitude());
-                    float distance = l.distanceTo(location);
-                    map.put(distance, g);
-                }
-            }
-            int count = 0;
-            bboxFences = new ArrayList<>(map.size());
-            for (PIGeofence g : map.values()) {
-                bboxFences.add(g);
-                count++;
-                if (count >= 100) break;
-            }
-            List<PIGeofence> monitoredFences = GeofenceManager.extractGeofences(settings);
-            List<PIGeofence> toAdd = new ArrayList<>();
-            List<PIGeofence> toRemove = new ArrayList<>();
-            for (PIGeofence fence: bboxFences) {
-                if (!monitoredFences.contains(fence)) {
-                    toAdd.add(fence);
-                }
-            }
-            for (PIGeofence fence: monitoredFences) {
-                if (!bboxFences.contains(fence)) {
-                    toRemove.add(fence);
-                }
-            }
-            geofencingService.unmonitorGeofences(toRemove);
-            geofencingService.monitorGeofences(toAdd);
-            GeofenceManager.updateGeofences(settings, bboxFences);
-            GeofenceManager.storeReferenceLocation(settings, location);
-            log.debug("committing settings=" + settings);
-            settings.commit();
+            processNewLocation(location);
         } else if (intent.getBooleanExtra(ServiceConfig.EXTRA_REBOOT_EVENT_FLAG, false)) {
             try {
                 ServiceConfig config = new ServiceConfig().fromIntent(intent);
@@ -127,6 +88,49 @@ public class SignificantLocationChangeService extends IntentService {
                 log.error("error handling post-reboot remonitoring", e);
             }
         }
+    }
+
+    void processNewLocation(Location location) {
+        // where clause to find all geofences whose distance to the new location is < maxDistance
+        String where = createWhereClause(location.getLatitude(), location.getLongitude(), config.maxDistance / 2);
+        List<PIGeofence> bboxFences = PIGeofence.find(PIGeofence.class, where);
+        log.debug(String.format("where clause=%s, found fences: %s", where, bboxFences));
+        TreeMap<Float, PIGeofence> map = new TreeMap<>();
+        if ((bboxFences != null) && !bboxFences.isEmpty()) {
+            for (PIGeofence g : bboxFences) {
+                Location l = new Location(LocationManager.NETWORK_PROVIDER);
+                l.setLatitude(g.getLatitude());
+                l.setLongitude(g.getLongitude());
+                float distance = l.distanceTo(location);
+                map.put(distance, g);
+            }
+        }
+        int count = 0;
+        bboxFences = new ArrayList<>(map.size());
+        for (PIGeofence g : map.values()) {
+            bboxFences.add(g);
+            count++;
+            if (count >= 100) break;
+        }
+        List<PIGeofence> monitoredFences = GeofenceManager.extractGeofences(settings);
+        List<PIGeofence> toAdd = new ArrayList<>();
+        List<PIGeofence> toRemove = new ArrayList<>();
+        for (PIGeofence fence: bboxFences) {
+            if (!monitoredFences.contains(fence)) {
+                toAdd.add(fence);
+            }
+        }
+        for (PIGeofence fence: monitoredFences) {
+            if (!bboxFences.contains(fence)) {
+                toRemove.add(fence);
+            }
+        }
+        geofencingService.unmonitorGeofences(toRemove);
+        geofencingService.monitorGeofences(toAdd);
+        GeofenceManager.updateGeofences(settings, bboxFences);
+        GeofenceManager.storeReferenceLocation(settings, location);
+        log.debug("committing settings=" + settings);
+        settings.commit();
     }
 
     /**

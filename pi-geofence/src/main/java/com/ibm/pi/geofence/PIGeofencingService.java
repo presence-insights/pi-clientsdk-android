@@ -44,6 +44,8 @@ import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -339,13 +341,20 @@ public class PIGeofencingService {
                 @Override
                 public void onSuccess(JSONObject result) {
                     log.debug("sucessfully posted geofence " + fence);
-                    PIGeofence updated = GeofencingJSONUtils.updateGeofenceTimestampsFromJSON(fence, result);
+                    //PIGeofence updated = GeofencingJSONUtils.updateGeofenceTimestampsFromJSON(fence, result);
+                    PIGeofence updated = null;
+                    try {
+                        updated = GeofencingJSONUtils.parseGeofence(result);
+                    } catch(Exception e) {
+                        log.error("error parsing JSON response: ", e);
+                    }
                     if (updated != null) {
                         updated.save();
+                        setInitialLocation();
                     }
                     if (userCallback != null) {
                         try {
-                            userCallback.onSuccess(GeofencingJSONUtils.parsePostGeofenceResponse(result));
+                            userCallback.onSuccess(updated);
                         } catch(Exception e) {
                             userCallback.onError(new PIRequestError(-1, e, "error parsing response for registration of fence " + fence));
                         }
@@ -360,9 +369,57 @@ public class PIGeofencingService {
                     }
                 }
             };
-            JSONObject payload = GeofencingJSONUtils.toJSONGeofence(fence);
+            JSONObject payload = GeofencingJSONUtils.toJSONGeofence(this, fence, false);
             PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.POST, payload.toString());
             String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s/geofences", CONFIG_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode());
+            request.setPath(path);
+            request.setBasicAuthRequired(true);
+            httpService.executeRequest(request);
+        }
+    }
+
+    /**
+     * Register the specified single geofence with the PI server.
+     * @param fence the geofence to register.
+     */
+    public void updateGeofence(final PIGeofence fence, final PIRequestCallback<PIGeofence> userCallback) {
+        log.debug("registerGeofence(" + fence + ")");
+        if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
+            PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
+                @Override
+                public void onSuccess(JSONObject result) {
+                    log.debug("sucessfully updated geofence " + fence);
+                    PIGeofence updated = null;
+                    try {
+                        updated = GeofencingJSONUtils.parseGeofence(result);
+                    } catch(Exception e) {
+                        log.error("error parsing JSON response: ", e);
+                    }
+                    if (updated != null) {
+                        updated.save();
+                        setInitialLocation();
+                    }
+                    if (userCallback != null) {
+                        try {
+                            userCallback.onSuccess(updated);
+                        } catch(Exception e) {
+                            userCallback.onError(new PIRequestError(-1, e, "error parsing response for registration of fence " + fence));
+                        }
+                    }
+                }
+
+                @Override
+                public void onError(PIRequestError error) {
+                    log.error("error putting geofence " + fence + " : " + error.toString());
+                    if (userCallback != null) {
+                        userCallback.onError(error);
+                    }
+                }
+            };
+            JSONObject payload = GeofencingJSONUtils.toJSONGeofence(this, fence, true);
+            PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.PUT, payload.toString());
+            String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s/geofences/%s",
+                CONFIG_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode(), fence.getCode());
             request.setPath(path);
             request.setBasicAuthRequired(true);
             httpService.executeRequest(request);
@@ -373,11 +430,11 @@ public class PIGeofencingService {
      * Unregister the specified geofences from the PI server.
      * @param fences the geofences to unregister.
      */
-    public void deleteGeofences(final List<PIGeofence> fences) {
+    public void deleteGeofences(final List<PIGeofence> fences, final PIRequestCallback<PIGeofence> userCallback) {
         log.debug("deleteGeofences(" + fences + ")");
         if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
             for (PIGeofence fence: fences) {
-                deleteGeofence(fence);
+                deleteGeofence(fence, userCallback);
             }
         }
     }
@@ -386,21 +443,34 @@ public class PIGeofencingService {
      * Unregister the specified single geofence from the PI server.
      * @param fence the geofence to unregister.
      */
-    public void deleteGeofence(final PIGeofence fence) {
+    public void deleteGeofence(final PIGeofence fence, final PIRequestCallback<PIGeofence> userCallback) {
         log.debug("deleteGeofence(" + fence + ")");
         if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
-            PIRequestCallback<Void> callback = new PIRequestCallback<Void>() {
+            PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
                 @Override
-                public void onSuccess(Void result) {
+                public void onSuccess(JSONObject result) {
                     log.debug("sucessfully deleted geofence " + fence);
+                    fence.delete();
+                    setInitialLocation();
+                    if (userCallback != null) {
+                        try {
+                            userCallback.onSuccess(fence);
+                        } catch(Exception e) {
+                            userCallback.onError(new PIRequestError(-1, e, "error parsing response for deletion of fence " + fence));
+                        }
+                    }
                 }
 
                 @Override
                 public void onError(PIRequestError error) {
                     log.error("error deleting geofence " + fence + " : " + error.toString());
+                    if (userCallback != null) {
+                        userCallback.onError(error);
+                    }
                 }
             };
-            PIRequest<Void> request = new PISimpleRequest(callback, HttpMethod.DELETE, null);
+            PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.DELETE, null);
+            //PIRequest<Void> request = new PISimpleRequest(callback, HttpMethod.DELETE, callback);
             String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s/geofences/%s",
                 CONFIG_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode(), fence.getCode());
             request.setPath(path);
@@ -498,7 +568,7 @@ public class PIGeofencingService {
      * Load geofences from the local database if they are present, or from the server if not.
      */
     void loadGeofences() {
-        if ((httpService.getServerURL() != null) && (PIGeofence.count(PIGeofence.class) <= 0L)) {
+        if (httpService.getServerURL() != null) {
             log.debug("loadGeofences() loading geofences from the server");
             loadGeofencesFromServer();
         } else {
@@ -511,7 +581,7 @@ public class PIGeofencingService {
      * Query the geofences from the server, based on the current anchor.
      */
     private void loadGeofencesFromServer() {
-        loadGeofencesFromServer(null);
+        loadGeofencesFromServer(settings.getString(ServiceConfig.EXTRA_LAST_SYNC_DATE, null));
     }
 
     /**
@@ -524,6 +594,9 @@ public class PIGeofencingService {
                 public void onSuccess(JSONObject result) {
                     try {
                         PIGeofenceList list = GeofencingJSONUtils.parseGeofences(result);
+                        if (list.getLastSyncDate() != null) {
+                            settings.putString(ServiceConfig.EXTRA_LAST_SYNC_DATE, list.getLastSyncDate()).commit();
+                        }
                         List<PIGeofence> geofences = list.getGeofences();
                         if (!geofences.isEmpty()) {
                             PIGeofence.saveInTx(geofences);
@@ -543,6 +616,9 @@ public class PIGeofencingService {
             };
             PIJSONPayloadRequest request = new PIJSONPayloadRequest(cb, HttpMethod.GET, null);
             request.setPath(String.format("%s/tenants/%s/orgs/%s/geofences", CONFIG_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode()));
+            if (lastSyncDate != null) {
+                request.addParameter("lastSyncDate", lastSyncDate);
+            }
             httpService.executeRequest(request);
         }
     }
@@ -582,6 +658,10 @@ public class PIGeofencingService {
     }
 
     private void updateSettings() {
+        if (settings.getString(ServiceConfig.EXTRA_LAST_SYNC_DATE, null) == null) {
+            String syncDate = GeofencingJSONUtils.formatDate(new Date());
+            settings.putString(ServiceConfig.EXTRA_LAST_SYNC_DATE, syncDate);
+        }
         settings.putString(ServiceConfig.EXTRA_SERVER_URL, httpService.getServerURL());
         settings.putString(ServiceConfig.EXTRA_TENANT_CODE, httpService.getTenantCode());
         settings.putString(ServiceConfig.EXTRA_ORG_CODE, httpService.getOrgCode());

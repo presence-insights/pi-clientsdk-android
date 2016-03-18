@@ -71,10 +71,12 @@ public class LoginActivity extends Activity {
         });
         loginFormView = findViewById(R.id.login_form);
         progressView = findViewById(R.id.login_progress);
+        /*
         if (!dbDeleted) {
             dbDeleted = true;
             DemoUtils.deleteGeofenceDB(this);
         }
+        */
     }
 
     /**

@@ -90,13 +90,13 @@ public class GeofenceManager extends BroadcastReceiver {
         }
     }
 
-    void onLocationChanged(Location location, boolean initial) {
+    void onLocationChanged(Location location, boolean force) {
         double d = maxDistance + 1d;
         if (referenceLocation != null) {
             d = referenceLocation.distanceTo(location);
         }
         //log.debug(String.format("onLocationChanged(location=%s; d=%,.0f)", location, d));
-        if (d > maxDistance) {
+        if ((d > maxDistance) || force) {
             log.debug(String.format(Locale.US, "onLocationChanged() detected significant location change, distance to ref = %,.0f m, new location = %s", d, location));
             Intent intent = new Intent(context, SignificantLocationChangeService.class);
             config.newLocation = new LatLng(location.getLatitude(), location.getLongitude());
@@ -144,13 +144,18 @@ public class GeofenceManager extends BroadcastReceiver {
     }
 
     static List<PIGeofence> geofencesFromCodes(Collection<String> geofenceCodes) {
-        List<PIGeofence> geofences = new ArrayList<>(geofenceCodes.size());
-        for (String code: geofenceCodes) {
-            PIGeofence geofence = geofenceFromCode(code);
-            if (geofence != null) {
-                geofences.add(geofence);
+        int size = geofenceCodes.size(); // in case size() has a non-constant cost
+        List<PIGeofence> geofences = new ArrayList<>(size);
+        // build the "code in (?, ..., ?)" where clause
+        StringBuilder where = new StringBuilder("code in (");
+        for (int count=0; count<size; count++) {
+            if (count > 0) {
+                where.append(", ");
             }
+            where.append('?');
         }
+        where.append(')');
+        geofences.addAll(PIGeofence.find(PIGeofence.class, where.toString(), geofenceCodes.toArray(new String[size])));
         return geofences;
     }
 
@@ -168,5 +173,19 @@ public class GeofenceManager extends BroadcastReceiver {
             geofenceCodes.add(fence.getCode());
         }
         return geofenceCodes;
+    }
+
+    static int deleteGeofences(Collection<String> geofenceCodes) {
+        int size = geofenceCodes.size(); // in case size() has a non-constant cost
+        // build the "code in (?, ..., ?)" where clause
+        StringBuilder where = new StringBuilder("code in (");
+        for (int count = 0; count < size; count++) {
+            if (count > 0) {
+                where.append(", ");
+            }
+            where.append('?');
+        }
+        where.append(')');
+        return PIGeofence.deleteAll(PIGeofence.class, where.toString(), geofenceCodes.toArray(new String[size]));
     }
 }

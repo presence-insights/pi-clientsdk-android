@@ -123,7 +123,7 @@ public class MapsActivity extends FragmentActivity {
     private static boolean dbDeleted = false;
     Button addFenceButton = null;
     /**
-     *
+     * UI mode: MODE_NORMAL or MODE_EDIT when positioning a geofence.
      */
     int mapMode = MODE_NORMAL;
     private ImageView mapCrossHair;
@@ -229,6 +229,31 @@ public class MapsActivity extends FragmentActivity {
             log.error("error in startSimulation()", e);
         }
     }
+
+    /*
+    static boolean dialogOpenedOnce = false;
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        //-----------------------------------
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (!dialogOpenedOnce) {
+                    dialogOpenedOnce = true;
+                    mapMode = MODE_NORMAL;
+                    mapCrossHair.setAlpha(0.0f);
+                    addFenceButton.setCompoundDrawablesRelativeWithIntrinsicBounds(android.R.drawable.ic_input_add, 0, 0, 0);
+                    googleMap.setOnCameraChangeListener(null);
+                    EditGeofenceDialog dialog = new EditGeofenceDialog();
+                    dialog.customInit(MapsActivity.this, editedInfo == null ? EditGeofenceDialog.MODE_NEW : EditGeofenceDialog.MODE_UPDATE_DELETE, editedInfo);
+                    dialog.show(getFragmentManager(), "geofences");
+                }
+            }
+        });
+    }
+    */
 
     /**
      * Update the title in the action bar with the specified org code.

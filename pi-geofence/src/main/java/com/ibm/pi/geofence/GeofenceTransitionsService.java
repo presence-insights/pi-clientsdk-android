@@ -82,7 +82,6 @@ public class GeofenceTransitionsService extends IntentService {
                 ctx = service.context;
                 settings = service.settings;
             }
-            config.populateFromSettings(service.settings);
             // happens when the app is off
             if (config.callbackServiceName != null) {
                 clazz = config.loadCallbackServiceClass(ctx);
@@ -92,6 +91,7 @@ public class GeofenceTransitionsService extends IntentService {
                     config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
                 callback = service.geofenceCallback;
             }
+            config.populateFromSettings(service.settings);
             List<PIGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
             for (Geofence g : triggeringGeofences) {
                 String code = g.getRequestId();

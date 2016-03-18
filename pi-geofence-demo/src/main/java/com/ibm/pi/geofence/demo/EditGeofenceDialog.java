@@ -95,9 +95,6 @@ public class EditGeofenceDialog extends DialogFragment {
                     mapsActivity.service.registerGeofence(fence, new PIRequestCallback<PIGeofence>() {
                         @Override
                         public void onSuccess(PIGeofence fence) {
-                            fence.save();
-                            List<PIGeofence> list = new ArrayList<>();
-                            mapsActivity.service.monitorGeofences(list);
                             mapsActivity.refreshGeofenceInfo(fence, false);
                         }
 
@@ -117,32 +114,64 @@ public class EditGeofenceDialog extends DialogFragment {
                     fence.setRadius(radius);
                     fence.setLatitude(position.latitude);
                     fence.setLongitude(position.longitude);
-                    List<PIGeofence> list = new ArrayList<>();
-                    list.add(fence);
-                    mapsActivity.service.unmonitorGeofences(list);
-                    mapsActivity.service.monitorGeofences(list);
-                    mapsActivity.removeGeofence(fence);
-                    mapsActivity.refreshGeofenceInfo(fence, (fenceInfo != null) && fenceInfo.active);
-                    fence.save();
-                    mapsActivity.refreshGeofenceInfo(fence, (fenceInfo != null) && fenceInfo.active);
+                    /*
+                    mapsActivity.service.updateGeofence(fence, new PIRequestCallback<PIGeofence>() {
+                        @Override
+                        public void onSuccess(PIGeofence fence) {
+                            mapsActivity.refreshGeofenceInfo(fence, (fenceInfo != null) && fenceInfo.active);
+                        }
+
+                        @Override
+                        public void onError(PIRequestError error) {
+                        }
+                    });
+                    */
+                    mapsActivity.service.deleteGeofence(fence, new PIRequestCallback<PIGeofence>() {
+                        @Override
+                        public void onSuccess(PIGeofence fence) {
+                            mapsActivity.removeGeofence(fence);
+                        }
+
+                        @Override
+                        public void onError(PIRequestError error) {
+                        }
+                    });
+                    mapsActivity.service.registerGeofence(fence, new PIRequestCallback<PIGeofence>() {
+                        @Override
+                        public void onSuccess(PIGeofence fence) {
+                            mapsActivity.refreshGeofenceInfo(fence, false);
+                        }
+
+                        @Override
+                        public void onError(PIRequestError error) {
+                        }
+                    });
                     performCommonActions(dialog, null);
                 }
             });
             builder.setNeutralButton(R.string.delete_button, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int id) {
-                    fence.delete();
-                    List<PIGeofence> list = new ArrayList<>();
-                    list.add(fence);
-                    mapsActivity.service.deleteGeofences(list);
-                    mapsActivity.service.unmonitorGeofences(list);
-                    mapsActivity.removeGeofence(fence);
+                    mapsActivity.service.deleteGeofence(fence, new PIRequestCallback<PIGeofence>() {
+                        @Override
+                        public void onSuccess(PIGeofence fence) {
+                            mapsActivity.removeGeofence(fence);
+                        }
+
+                        @Override
+                        public void onError(PIRequestError error) {
+                        }
+                    });
                     performCommonActions(dialog, null);
                 }
             });
         }
         builder.setNegativeButton(R.string.cancel_button, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
+                /*
+                Intent intent = new Intent(getActivity(), LoginActivity.class);
+                getActivity().startActivity(intent);
+                */
                 performCommonActions(dialog, null);
             }
         });

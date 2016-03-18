@@ -38,6 +38,7 @@ class ServiceConfig implements Serializable {
     static final String EXTRA_LATITUDE =              PREFIX + "extra.latitude";
     static final String EXTRA_LONGITUDE =             PREFIX + "extra.longitude";
     static final String EXTRA_REBOOT_EVENT_FLAG =     PREFIX + "extra.reboot_event";
+    static final String EXTRA_LAST_SYNC_DATE =        PREFIX + "extra.last_sync_date";
 
     enum EventType {
         ENTER,

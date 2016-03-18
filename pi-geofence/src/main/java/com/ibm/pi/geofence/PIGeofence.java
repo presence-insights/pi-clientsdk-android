@@ -17,6 +17,7 @@
 package com.ibm.pi.geofence;
 
 import com.orm.SugarRecord;
+import com.orm.dsl.Unique;
 
 import java.io.Serializable;
 
@@ -24,6 +25,7 @@ import java.io.Serializable;
  * Instances of this class represent geofences.
  */
 public class PIGeofence extends SugarRecord implements Serializable {
+    @Unique
     private String code = "";
     private String name;
     private String description;

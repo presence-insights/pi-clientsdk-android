@@ -26,16 +26,18 @@ public class PIGeofenceList {
     private int pageNumber;
     private int pageSize;
     private int totalGeofences;
+    private String lastSyncDate;
 
     public PIGeofenceList(final List<PIGeofence> geofences) {
         this.geofences = geofences;
     }
 
-    public PIGeofenceList(final List<PIGeofence> geofences, int pageNumber, int pageSize, int totalGeofences) {
+    public PIGeofenceList(final List<PIGeofence> geofences, int pageNumber, int pageSize, int totalGeofences, String lastSyncDate) {
         this.geofences = geofences;
         this.pageNumber = pageNumber;
         this.pageSize = pageSize;
         this.totalGeofences = totalGeofences;
+        this.lastSyncDate = lastSyncDate;
     }
 
     public List<PIGeofence> getGeofences() {
@@ -52,5 +54,9 @@ public class PIGeofenceList {
 
     public int getTotalGeofences() {
         return totalGeofences;
+    }
+
+    public String getLastSyncDate() {
+        return lastSyncDate;
     }
 }

@@ -40,6 +40,16 @@
             </intent-filter>
         </activity>
         <service android:name="com.ibm.pi.geofence.demo.MyCallbackService" android:exported="true"/>
+        <!--
+        <activity
+            android:name="com.ibm.pi.geofence.demo.LoginActivity"
+            android:label="@string/title_activity_maps"
+            android:parentActivityName="com.ibm.pi.geofence.demo.MapsActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.ibm.pi.geofence.demo.MapsActivity"/>
+        </activity>
+        -->
     </application>
 
 </manifest>

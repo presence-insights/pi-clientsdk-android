@@ -55,7 +55,6 @@ public class FusedGeofenceManager extends IntentService {
 
     @Override
     public void onHandleIntent(Intent intent) {
-        //boolean shouldProcess = intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED) != null;
         intent.setExtrasClassLoader(LocationResult.class.getClassLoader());
         boolean shouldProcess = LocationResult.hasResult(intent);
         if (shouldProcess) {
@@ -64,9 +63,7 @@ public class FusedGeofenceManager extends IntentService {
             this.maxDistance = config.maxDistance;
             Settings settings = new Settings(context);
             this.referenceLocation = GeofenceManager.retrieveReferenceLocation(settings);
-            //Location location = (Location) intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED);
             Location location = LocationResult.extractResult(intent).getLastLocation();
-            //log.debug(String.format("onReceive() config=%s, settings=%s", config, settings));
             onLocationChanged(location);
         }
     }
@@ -76,7 +73,6 @@ public class FusedGeofenceManager extends IntentService {
         if (referenceLocation != null) {
             d = referenceLocation.distanceTo(location);
         }
-        //log.debug(String.format("onLocationChanged(location=%s; d=%,.0f)", location, d));
         // if signficant location change, handle the new region (bounded box) to monitor
         if (d > maxDistance) {
             log.debug(String.format(Locale.US, "onLocationChanged() detected significant location change, distance to ref = %,.0f m, new location = %s", d, location));

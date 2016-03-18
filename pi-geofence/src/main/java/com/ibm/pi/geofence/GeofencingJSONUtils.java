@@ -30,7 +30,7 @@ import java.util.UUID;
 /**
  * Utility methods to parse one or more geofences in geojson format.
  */
-public class GeofencingJSONUtils {
+class GeofencingJSONUtils {
     /**
      * Logger for this class.
      */
@@ -50,21 +50,31 @@ public class GeofencingJSONUtils {
      * @return a list of {@link PIGeofence} instances.
      * @throws Exception if a parsing error occurs.
      */
-    public static PIGeofenceList parseGeofences(JSONObject json) throws Exception {
+    static PIGeofenceList parseGeofences(JSONObject json) throws Exception {
         List<PIGeofence> result = new ArrayList<>();
-        //JSONObject geojson = json.getJSONObject("geojson");
         JSONArray features = json.getJSONArray("features");
-        for (int i = 0; i < features.length(); i++) {
+        for (int i=0; i<features.length(); i++) {
             JSONObject feature = features.getJSONObject(i);
             result.add(parseGeofence(feature));
         }
-        JSONObject properties = null;
         if (json.has("properties")) {
-            properties = json.getJSONObject("properties");
+            JSONObject properties = json.getJSONObject("properties");
+            if (properties.has("deleted")) {
+                JSONArray deletedCodes = properties.getJSONArray("deleted");
+                List<String> codes = new ArrayList<>(deletedCodes.length());
+                for (int i=0; i<deletedCodes.length(); i++) {
+                    codes.add(deletedCodes.getString(i));
+                }
+                if (!codes.isEmpty()) {
+                    int n = GeofenceManager.deleteGeofences(codes);
+                    log.debug(String.format("deleted %d geofences from local DB", n));
+                }
+            }
             int pageNumber = properties.has("page") ? properties.getInt("page") : -1;
             int pageSize = properties.has("pageSize") ? properties.getInt("pageSize") : -1;
             int totalGeofences = properties.has("totalFeatures") ? properties.getInt("totalFeatures") : -1;
-            return new PIGeofenceList(result, pageNumber, pageSize, totalGeofences);
+            String lastSyncDate = properties.has("lastSyncDate") ? properties.getString("lastSyncDate") : null;
+            return new PIGeofenceList(result, pageNumber, pageSize, totalGeofences, lastSyncDate);
         }
         return new PIGeofenceList(result);
     }
@@ -76,37 +86,32 @@ public class GeofencingJSONUtils {
      * @throws Exception if a parsing error occurs.
      */
     static PIGeofence parseGeofence(JSONObject feature) throws Exception {
-        JSONObject geometry = feature.getJSONObject("geometry");
-        JSONArray coord = geometry.getJSONArray("coordinates");
-        double lng = coord.getDouble(0);
-        double lat = coord.getDouble(1);
         JSONObject props = feature.getJSONObject("properties");
         String code = props.has("code") ? props.getString("code") : (props.has("@code") ? props.getString("@code") : null);
+        JSONObject updatedJSON = props.getJSONObject("@updated");
+        long updated = updatedJSON.getLong("timestamp");
+        JSONObject createdJSON = props.getJSONObject("@created");
+        long created = createdJSON.getLong("timestamp");
+        PIGeofence geofence = GeofenceManager.geofenceFromCode(code);
         String name = props.has("name") ? props.getString("name") : null;
         String description = props.has("description") ? props.getString("description") : null;
         double radius = props.has("radius") ? props.getDouble("radius") : -1d;
-        PIGeofence geofence = new PIGeofence(code, name, description, lat, lng, radius);
-        updateGeofenceTimestampsFromJSON(geofence, feature);
-        return geofence;
-    }
-
-    /**
-     * Parse a single geofence.
-     * @param feature json object representing the fence.
-     * @return a {@link PIGeofence} instance.
-     * @throws Exception if a parsing error occurs.
-     */
-    static PIGeofence parsePostGeofenceResponse(JSONObject feature) throws Exception {
         JSONObject geometry = feature.getJSONObject("geometry");
         JSONArray coord = geometry.getJSONArray("coordinates");
         double lng = coord.getDouble(0);
         double lat = coord.getDouble(1);
-        JSONObject props = feature.getJSONObject("properties");
-        String code = props.has("@code") ? props.getString("@code") : null;
-        String name = props.has("name") ? props.getString("name") : null;
-        String description = props.has("description") ? props.getString("description") : null;
-        double radius = props.has("radius") ? props.getDouble("radius") : -1d;
-        return  new PIGeofence(code, name, description, lat, lng, radius);
+        if (geofence == null) {
+            geofence = new PIGeofence(code, name, description, lat, lng, radius);
+        } else {
+            geofence.setName(name);
+            geofence.setDescription(description);
+            geofence.setLatitude(lat);
+            geofence.setLongitude(lng);
+            geofence.setRadius(radius);
+        }
+        geofence.setCreatedTimestamp(created);
+        geofence.setUpdatedTimestamp(updated);
+        return geofence;
     }
 
     /*
@@ -123,7 +128,7 @@ public class GeofencingJSONUtils {
       }
     }
     */
-    static JSONObject toJSONGeofence(PIGeofence fence) {
+    static JSONObject toJSONGeofence(PIGeofencingService service, PIGeofence fence, boolean isUpdate) {
         JSONObject json = new JSONObject();
         try {
             json.put("type", "Feature");
@@ -139,6 +144,12 @@ public class GeofencingJSONUtils {
             properties.put("name", fence.getName());
             properties.put("description", fence.getDescription() == null ? "" : fence.getDescription());
             properties.put("radius", fence.getRadius());
+            if (isUpdate) {
+                JSONObject updated = new JSONObject();
+                properties.put("@updated", updated);
+                updated.put("by", service.httpService.getUsername());
+                updated.put("timestamp", fence.getUpdatedTimestamp());
+            }
         } catch(JSONException e) {
             log.error("exception generating json for geofence " + fence, e);
         }
@@ -217,7 +228,7 @@ public class GeofencingJSONUtils {
             json.put("sdkVersion", sdkVersion == null ? "" : sdkVersion);
             JSONArray notifications = new JSONArray();
             json.put("notifications", notifications);
-            String date = new SimpleDateFormat(DATE_FORMAT).format(new Date());
+            String date = formatDate(new Date());
             for (PIGeofence fence: fences) {
                 notifications.put(toJSONGeofenceEvent(fence, deviceID, date, type));
             }
@@ -263,5 +274,9 @@ public class GeofencingJSONUtils {
             log.error("exception geofence timestamps for " + json, e);
         }
         return geofence;
+    }
+
+    static String formatDate(Date date) {
+        return new SimpleDateFormat(DATE_FORMAT).format(date);
     }
 }
