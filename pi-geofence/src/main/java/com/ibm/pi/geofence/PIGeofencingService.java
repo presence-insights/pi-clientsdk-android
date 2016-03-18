@@ -44,7 +44,6 @@ import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -547,6 +546,29 @@ public class PIGeofencingService {
     }
 
     /**
+     * Load a set of geofences from a reosurce file.
+     * @param resource the path to the resource to load the geofences from.
+     */
+    public void loadGeofencesFromResource(String resource) {
+        try {
+            byte[] bytes = GeofenceManager.loadResourceBytes(resource);
+            if (bytes != null) {
+                int fileSize = bytes.length;
+                JSONObject json = new JSONObject(new String(bytes, "UTF-8"));
+                bytes = null;
+                PIGeofenceList list = GeofencingJSONUtils.parseGeofences(json);
+                List<PIGeofence> geofences = list.getGeofences();
+                if ((geofences != null) && !geofences.isEmpty()) {
+                    PIGeofence.saveInTx(geofences);
+                    log.debug(String.format(Locale.US, "loaded %,d geofences from resource '%s' (%,d bytes)", geofences.size(), resource, fileSize));
+                }
+            }
+        } catch(Exception e) {
+            log.error(String.format("error loading resource %s", resource), e);
+        }
+    }
+
+    /**
      * Get a pending intent for the specified callback.
      * @param geofenceCallbackUuid the uuid of an internally mapped callback.
      * @return a <code>PendingIntent</code> instance.
@@ -581,7 +603,11 @@ public class PIGeofencingService {
      * Query the geofences from the server, based on the current anchor.
      */
     private void loadGeofencesFromServer() {
-        loadGeofencesFromServer(settings.getString(ServiceConfig.EXTRA_LAST_SYNC_DATE, null));
+        if (PIGeofence.count(PIGeofence.class) <= 0) {
+            loadGeofencesFromServer(null);
+        } else {
+            loadGeofencesFromServer(settings.getString(ServiceConfig.EXTRA_LAST_SYNC_DATE, null));
+        }
     }
 
     /**

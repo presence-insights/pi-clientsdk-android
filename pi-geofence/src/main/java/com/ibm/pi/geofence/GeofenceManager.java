@@ -26,6 +26,8 @@ import com.google.android.gms.maps.model.LatLng;
 
 import org.apache.log4j.Logger;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -187,5 +189,21 @@ public class GeofenceManager extends BroadcastReceiver {
         }
         where.append(')');
         return PIGeofence.deleteAll(PIGeofence.class, where.toString(), geofenceCodes.toArray(new String[size]));
+    }
+
+    static byte[] loadResourceBytes(String name) {
+        try {
+            InputStream is = GeofenceManager.class.getClassLoader().getResourceAsStream(name);
+            byte[] buffer = new byte[2048];
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            int n;
+            while ((n = is.read(buffer)) > 0) {
+                baos.write(buffer, 0, n);
+            }
+            return baos.toByteArray();
+        } catch (Exception e) {
+            log.debug(String.format("error while trying to read resource %s", name), e);
+        }
+        return null;
     }
 }
