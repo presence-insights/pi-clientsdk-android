@@ -92,7 +92,6 @@ class GeofencingJSONUtils {
         long updated = updatedJSON.getLong("timestamp");
         JSONObject createdJSON = props.getJSONObject("@created");
         long created = createdJSON.getLong("timestamp");
-        PIGeofence geofence = GeofenceManager.geofenceFromCode(code);
         String name = props.has("name") ? props.getString("name") : null;
         String description = props.has("description") ? props.getString("description") : null;
         double radius = props.has("radius") ? props.getDouble("radius") : -1d;
@@ -100,9 +99,12 @@ class GeofencingJSONUtils {
         JSONArray coord = geometry.getJSONArray("coordinates");
         double lng = coord.getDouble(0);
         double lat = coord.getDouble(1);
+        PIGeofence geofence = GeofenceManager.geofenceFromCode(code);
         if (geofence == null) {
+            // if not in local DB create a new one
             geofence = new PIGeofence(code, name, description, lat, lng, radius);
         } else {
+            // update existing geofence
             geofence.setName(name);
             geofence.setDescription(description);
             geofence.setLatitude(lat);

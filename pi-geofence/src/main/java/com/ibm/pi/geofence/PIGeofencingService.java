@@ -36,7 +36,6 @@ import com.ibm.pi.geofence.rest.PIJSONPayloadRequest;
 import com.ibm.pi.geofence.rest.PIRequest;
 import com.ibm.pi.geofence.rest.PIRequestCallback;
 import com.ibm.pi.geofence.rest.PIRequestError;
-import com.ibm.pi.geofence.rest.PISimpleRequest;
 import com.ibm.pisdk.doctypes.PIOrg;
 import com.ibm.pisdk.geofencing.BuildConfig;
 
@@ -44,7 +43,6 @@ import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -85,10 +83,6 @@ public class PIGeofencingService {
      * The Android application context.
      */
     Context context;
-    /**
-     * Handles the geofences that are currently monitored.
-     */
-    //final GeofenceManager geofenceManager;
     /**
      * Handles the geofences that are currently monitored.
      */
@@ -139,27 +133,17 @@ public class PIGeofencingService {
         this.maxDistance = maxDistance;
         if (callbackServiceClass != null) {
             this.callbackServiceName = callbackServiceClass.getName();
-        } else {
         }
         this.httpService = new PIHttpService(context, baseURL, tenantCode, orgCode, username, password);
         this.geofenceCallback = new DelegatingGeofenceCallback(this, null);
         callbackMap.put(INTENT_ID, this.geofenceCallback);
         this.context = context;
-        if (settings != null) {
-            this.settings = settings;
-        } else if (context != null) {
-            this.settings = new Settings(context);
-        }
-        if (settings != null) {
-            this.settings = new Settings(context);
-            log.debug("PIGeofencingService() settings = " + settings);
-            String desc = settings.getString("descriptor", null);
-            this.deviceDescriptor = (desc == null) ? new GeofencingDeviceInfo(context).getDescriptor() : desc;
-            int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
-            log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
-        } else {
-            this.deviceDescriptor = "";
-        }
+        this.settings = (settings != null) ? settings : new Settings(context);
+        log.debug("PIGeofencingService() settings = " + this.settings);
+        String desc = this.settings.getString("descriptor", null);
+        this.deviceDescriptor = (desc == null) ? new GeofencingDeviceInfo(context).getDescriptor() : desc;
+        int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
+        log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
     }
 
     private void connectGoogleAPI() {
@@ -247,9 +231,9 @@ public class PIGeofencingService {
         } else if (httpService.getOrgCode() == null) {
             log.warn("cannot send geofence notification because the org code is undefined");
         } else if (sendingGeofenceEvents) {
-            PIRequestCallback<Void> callback = new PIRequestCallback<Void>() {
+            PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
                 @Override
-                public void onSuccess(Void result) {
+                public void onSuccess(JSONObject result) {
                     log.debug("sucessfully notified connector for geofences " + fences);
                 }
 
@@ -259,7 +243,7 @@ public class PIGeofencingService {
                 }
             };
             JSONObject payload = GeofencingJSONUtils.toJSONGeofenceEvent(fences, type, deviceDescriptor, BuildConfig.VERSION_NAME);
-            PIRequest request = new PISimpleRequest(callback, HttpMethod.POST, payload.toString());
+            PIRequest<JSONObject> request = new PIJSONPayloadRequest(callback, HttpMethod.POST, payload.toString());
             String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s", GEOFENCE_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode());
             request.setPath(path);
             request.setBasicAuthRequired(true);
@@ -309,7 +293,7 @@ public class PIGeofencingService {
                 }
             };
             JSONObject json = GeofencingJSONUtils.toJSONPostOrg(name, description, publicKey);
-            PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.POST, json.toString());
+            PIRequest<JSONObject> request = new PIJSONPayloadRequest(callback, HttpMethod.POST, json.toString());
             request.setPath(String.format(Locale.US, "%s/tenants/%s/orgs", CONFIG_CONNECTOR_PATH, httpService.getTenantCode()));
             request.setBasicAuthRequired(true);
             httpService.executeRequest(request);
@@ -549,23 +533,51 @@ public class PIGeofencingService {
      * Load a set of geofences from a reosurce file.
      * @param resource the path to the resource to load the geofences from.
      */
-    public void loadGeofencesFromResource(String resource) {
-        try {
-            byte[] bytes = GeofenceManager.loadResourceBytes(resource);
-            if (bytes != null) {
-                int fileSize = bytes.length;
-                JSONObject json = new JSONObject(new String(bytes, "UTF-8"));
-                bytes = null;
-                PIGeofenceList list = GeofencingJSONUtils.parseGeofences(json);
-                List<PIGeofence> geofences = list.getGeofences();
-                if ((geofences != null) && !geofences.isEmpty()) {
-                    PIGeofence.saveInTx(geofences);
-                    log.debug(String.format(Locale.US, "loaded %,d geofences from resource '%s' (%,d bytes)", geofences.size(), resource, fileSize));
+    public void loadGeofencesFromResource(final String resource, final PIRequestCallback<PIGeofenceList> userCallback) {
+        AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
+            private PIGeofenceList geofenceList;
+            private PIRequestError error;
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    byte[] bytes = GeofenceManager.loadResourceBytes(resource);
+                    if (bytes != null) {
+                        int fileSize = bytes.length;
+                        JSONObject json = new JSONObject(new String(bytes, "UTF-8"));
+                        bytes = null;
+                        PIGeofenceList list = GeofencingJSONUtils.parseGeofences(json);
+                        List<PIGeofence> geofences = list.getGeofences();
+                        if ((geofences != null) && !geofences.isEmpty()) {
+                            PIGeofence.saveInTx(geofences);
+                            log.debug(String.format(Locale.US, "loaded %,d geofences from resource '%s' (%,d bytes)", geofences.size(), resource, fileSize));
+                        }
+                        if (list.getLastSyncDate() != null) {
+                            settings.putString(ServiceConfig.EXTRA_LAST_SYNC_DATE, list.getLastSyncDate()).commit();
+                        }
+                        this.geofenceList = list;
+                    }
+                    else {
+                        this.error = new PIRequestError(-1, null, String.format("the specified resoure '%s' is empty", resource));
+                    }
+                } catch(Exception e) {
+                    log.error(String.format("error loading resource %s", resource), e);
+                    this.error = new PIRequestError(-1, e, String.format("error loading resource '%s'", resource));
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                if (userCallback != null) {
+                    if (error != null) {
+                        userCallback.onError(error);
+                    } else {
+                        userCallback.onSuccess(geofenceList);
+                    }
                 }
             }
-        } catch(Exception e) {
-            log.error(String.format("error loading resource %s", resource), e);
-        }
+        };
     }
 
     /**
@@ -611,7 +623,7 @@ public class PIGeofencingService {
     }
 
     /**
-     * Query the geofences from the server, based on the current anchor.
+     * Query the geofences from the server, based on the current last sync date.
      */
     private void loadGeofencesFromServer(String lastSyncDate) {
         if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
@@ -684,10 +696,12 @@ public class PIGeofencingService {
     }
 
     private void updateSettings() {
+        /*
         if (settings.getString(ServiceConfig.EXTRA_LAST_SYNC_DATE, null) == null) {
             String syncDate = GeofencingJSONUtils.formatDate(new Date());
             settings.putString(ServiceConfig.EXTRA_LAST_SYNC_DATE, syncDate);
         }
+        */
         settings.putString(ServiceConfig.EXTRA_SERVER_URL, httpService.getServerURL());
         settings.putString(ServiceConfig.EXTRA_TENANT_CODE, httpService.getTenantCode());
         settings.putString(ServiceConfig.EXTRA_ORG_CODE, httpService.getOrgCode());

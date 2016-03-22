@@ -88,10 +88,6 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
             }
         } catch (ConnectException | SocketTimeoutException e) {
             log.debug("detected loss of connectivity with the server", e);
-            if (service.connectivityHandler.isEnabled()) {
-                service.connectivityHandler.onInactiveNetwork();
-                service.connectivityHandler.persistRequest(request);
-            }
         } catch (Exception e) {
             error = new PIRequestError(statusCode, e, e.getMessage());
         } finally {
@@ -163,8 +159,6 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
             result = request.resultFromResponse(body);
         }
         log.debug(String.format("status code for " + request.getMethod() + " request = %d, url = %s", statusCode, url));
-        // signal that network and server are on
-        service.connectivityHandler.onActiveNetwork();
         return true;
     }
 

@@ -55,11 +55,6 @@ public class PIHttpService {
      */
     ExecutorService executor = Executors.newSingleThreadExecutor();
     /**
-     * Detects whether network and/or server are online and sends notifications accordingly.
-     * This is used to determine when offline mode should be used.
-     */
-    NetworkConnectivityHandler connectivityHandler;
-    /**
      * The base server URL, for instance <code>http[s]://hostname[:port]</code>.
      */
     String serverURL;
@@ -136,7 +131,6 @@ public class PIHttpService {
     public PIHttpService(Context context, String serverURL, String tenantCode, String orgCode, String username, String password) {
         this.username = username;
         this.password = password;
-        this.connectivityHandler = new NetworkConnectivityHandler(context, this, false);
         this.serverURL = serverURL;
         this.tenantCode = tenantCode;
         this.orgCode = orgCode;
@@ -192,11 +186,7 @@ public class PIHttpService {
      */
     public <T> void executeRequest(final PIRequest<T> request) {
         log.debug("executeRequest()");
-        if (!connectivityHandler.isEnabled() || connectivityHandler.isNetworkActive()) {
-            executor.execute(new RequestTask<>(request));
-        } else {
-            connectivityHandler.persistRequest(request);
-        }
+        executor.execute(new RequestTask<>(request));
     }
 
     /**

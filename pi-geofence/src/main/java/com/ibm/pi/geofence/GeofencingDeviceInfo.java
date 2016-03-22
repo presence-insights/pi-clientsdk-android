@@ -23,7 +23,7 @@ import com.ibm.pisdk.PIDeviceInfo;
 /**
  *
  */
-public class GeofencingDeviceInfo extends PIDeviceInfo {
+class GeofencingDeviceInfo extends PIDeviceInfo {
     GeofencingDeviceInfo(Context context) {
         super(context);
     }
