@@ -519,7 +519,7 @@ public class MapsActivity extends FragmentActivity {
                 trackingEnabled = !trackingEnabled;
                 log.debug("tracking is now " + (trackingEnabled ? "enabled" : "disabled"));
                 settings.putBoolean(TRACKING_ENABLED_KEY, trackingEnabled).commit();
-                item.setIcon(trackingEnabled ? R.mipmap.tracking_on : R.mipmap.tracking_off);
+                item.setIcon(trackingEnabled ? R.mipmap.on : R.mipmap.off);
                 log.debug(String.format("onOptionsItemSelected() tracking is now %s", trackingEnabled ? "enabled" : "disabled"));
                 break;
             case R.id.action_mail_log:
@@ -582,7 +582,7 @@ public class MapsActivity extends FragmentActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu, menu);
         MenuItem item = menu.findItem(R.id.action_tracking);
-        item.setIcon(trackingEnabled ? R.mipmap.tracking_on : R.mipmap.tracking_off);
+        item.setIcon(trackingEnabled ? R.mipmap.on : R.mipmap.off);
         if ("6x07ykw".equals(settings.getString("orgCode", ""))) {
             log.debug("setting run_test item visible");
             item = menu.findItem(R.id.run_test);

@@ -9,12 +9,12 @@
         android:showAsAction="ifRoom"/>
     <item
         android:id="@+id/action_tracking"
-        android:icon="@mipmap/tracking_on"
+        android:icon="@mipmap/on"
         android:title=""
         android:showAsAction="ifRoom"/>
     <item
         android:id="@+id/action_mail_log"
-        android:icon="@android:drawable/ic_dialog_email"
+        android:icon="@android:drawable/sym_action_email"
         android:title=""
         android:showAsAction="ifRoom"/>
 
