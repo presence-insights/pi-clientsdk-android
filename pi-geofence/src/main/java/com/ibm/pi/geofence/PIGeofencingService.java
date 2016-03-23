@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -470,21 +471,38 @@ public class PIGeofencingService {
         log.debug("monitorGeofences(" + geofences + ")");
         if (!geofences.isEmpty()) {
             List<Geofence> list = new ArrayList<>(geofences.size());
+            List<Geofence> noTriggerList = new ArrayList<>(geofences.size());
+            Location last = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
             for (PIGeofence geofence : geofences) {
-                list.add(new Geofence.Builder().setRequestId(geofence.getCode())
-                        .setCircularRegion(geofence.getLatitude(), geofence.getLongitude(), (float) geofence.getRadius())
-                        .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                        .setNotificationResponsiveness(10_000)
-                        .setLoiteringDelay(300000)
-                        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)
-                        .build()
-                );
+                Geofence fence = new Geofence.Builder().setRequestId(geofence.getCode())
+                    .setCircularRegion(geofence.getLatitude(), geofence.getLongitude(), (float) geofence.getRadius())
+                    .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                    .setNotificationResponsiveness(10_000)
+                    .setLoiteringDelay(300000)
+                    .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)
+                    .build();
+
+                Location location = new Location(LocationManager.NETWORK_PROVIDER);
+                location.setLatitude(geofence.getLatitude());
+                location.setLongitude(geofence.getLongitude());
+                if ((mode != MODE_REBOOT) || (last == null) || (location.distanceTo(last) > geofence.getRadius())) {
+                    list.add(fence);
+                } else {
+                    // if already in geofence, do not trigger upon registration.
+                    noTriggerList.add(fence);
+                }
             }
+            registerFencesForMonitoring(list, GeofencingRequest.INITIAL_TRIGGER_ENTER);
+            registerFencesForMonitoring(noTriggerList, 0);
+            geofenceCallback.onGeofencesMonitored(geofences);
+        }
+    }
+
+    private void registerFencesForMonitoring(List<Geofence> fences, int initialTrigger) {
+        if (!fences.isEmpty()) {
             GeofencingRequest request = new GeofencingRequest.Builder()
-                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-                //.setInitialTrigger(0)
-                .addGeofences(list).build();
-            // used to keep track of the add request
+                .setInitialTrigger(initialTrigger)
+                .addGeofences(fences).build();
             PendingIntent pi = getPendingIntent(INTENT_ID);
             LocationServices.GeofencingApi.addGeofences(googleApiClient, request, pi).setResultCallback(new ResultCallback<Status>() {
                 @Override
@@ -492,7 +510,6 @@ public class PIGeofencingService {
                     log.debug("add geofence request status " + status);
                 }
             });
-            geofenceCallback.onGeofencesMonitored(geofences);
         }
     }
 
@@ -578,6 +595,7 @@ public class PIGeofencingService {
                 }
             }
         };
+        task.execute();
     }
 
     /**
