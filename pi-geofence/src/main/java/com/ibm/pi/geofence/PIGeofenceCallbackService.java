@@ -52,6 +52,11 @@ public abstract class PIGeofenceCallbackService extends IntentService implements
             case UNMONITOR:
                 onGeofencesUnmonitored(config.geofences);
                 break;
+            case SERVER_SYNC:
+                PIGeofenceList list = new PIGeofenceList(config.geofences);
+                list.deletedGeofenceCodes = config.deletedGeofences;
+                onGeofencesSync(list);
+                break;
         }
     }
 

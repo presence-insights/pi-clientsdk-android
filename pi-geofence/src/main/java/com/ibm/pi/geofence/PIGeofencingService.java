@@ -327,19 +327,6 @@ public class PIGeofencingService {
     }
 
     /**
-     * Register the specified geofences with the PI server.
-     * @param fences the geofences to register.
-     */
-    public void registerGeofences(final List<PIGeofence> fences, final PIRequestCallback<PIGeofence> userCallback) {
-        log.debug("registerGeofences(" + fences + ")");
-        if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
-            for (PIGeofence fence: fences) {
-                registerGeofence(fence, userCallback);
-            }
-        }
-    }
-
-    /**
      * Register the specified single geofence with the PI server.
      * @param fence the geofence to register.
      */
@@ -436,19 +423,6 @@ public class PIGeofencingService {
     }
 
     /**
-     * Unregister the specified geofences from the PI server.
-     * @param fences the geofences to unregister.
-     */
-    public void deleteGeofences(final List<PIGeofence> fences, final PIRequestCallback<PIGeofence> userCallback) {
-        log.debug("deleteGeofences(" + fences + ")");
-        if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
-            for (PIGeofence fence: fences) {
-                deleteGeofence(fence, userCallback);
-            }
-        }
-    }
-
-    /**
      * Unregister the specified single geofence from the PI server.
      * @param fence the geofence to unregister.
      */
@@ -492,7 +466,7 @@ public class PIGeofencingService {
      * Add the specified geofences to the monitored geofences.
      * @param geofences the geofences to add.
      */
-    public void monitorGeofences(List<PIGeofence> geofences) {
+    void monitorGeofences(List<PIGeofence> geofences) {
         log.debug("monitorGeofences(" + geofences + ")");
         if (!geofences.isEmpty()) {
             List<Geofence> list = new ArrayList<>(geofences.size());
@@ -526,7 +500,7 @@ public class PIGeofencingService {
      * Remove the specified geofences from the monitored geofences.
      * @param geofences the geofences to remove.
      */
-    public void unmonitorGeofences(List<PIGeofence> geofences) {
+    void unmonitorGeofences(List<PIGeofence> geofences) {
         log.debug("unmonitorGeofences(" + geofences + ")");
         if (!geofences.isEmpty()) {
             List<String> uuidsToRemove = new ArrayList<>(geofences.size());
@@ -627,7 +601,7 @@ public class PIGeofencingService {
     /**
      * Load geofences from the local database if they are present, or from the server if not.
      */
-    void loadGeofences() {
+    public void loadGeofences() {
         if (httpService.getServerURL() != null) {
             log.debug("loadGeofences() loading geofences from the server");
             loadGeofencesFromServer();
@@ -665,6 +639,16 @@ public class PIGeofencingService {
                         if (!geofences.isEmpty()) {
                             PIGeofence.saveInTx(geofences);
                             setInitialLocation();
+                        }
+                        if (!geofences.isEmpty() || !list.getDeletedGeofenceCodes().isEmpty()) {
+                            ServiceConfig config = new ServiceConfig().fromGeofencingService(PIGeofencingService.this);
+                            Class<? extends PIGeofenceCallbackService> clazz = config.loadCallbackServiceClass(context);
+                            Intent callbackIntent = new Intent(context, clazz);
+                            config.geofences = geofences;
+                            config.eventType = ServiceConfig.EventType.SERVER_SYNC;
+                            config.toIntent(callbackIntent);
+                            log.debug(String.format("sending config for server sync event: %s", config));
+                            context.startService(callbackIntent);
                         }
                         log.debug("loadGeofences() got " + list.getGeofences().size() + " geofences");
                     } catch (Exception e) {

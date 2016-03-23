@@ -25,6 +25,7 @@ import android.support.v4.app.NotificationCompat;
 
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofenceCallback;
+import com.ibm.pi.geofence.PIGeofenceList;
 
 import org.apache.log4j.Logger;
 
@@ -82,6 +83,10 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
             sendNotification(geofences, "exit");
             slackService.postGeofenceMessages(geofences, "exit", SLACK_CHANNEL);
         }
+    }
+
+    @Override
+    public void onGeofencesSync(PIGeofenceList geofencesList) {
     }
 
     void updateUI(final List<PIGeofence> geofences, final boolean isEntry) {

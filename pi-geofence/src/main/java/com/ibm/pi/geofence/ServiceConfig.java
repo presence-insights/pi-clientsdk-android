@@ -34,6 +34,7 @@ class ServiceConfig implements Serializable {
     static final String EXTRA_PACKAGE_NAME =          PREFIX + "extra.package";
     static final String EXTRA_CALLBACK_SERVICE_NAME = PREFIX + "extra.callback_service";
     static final String EXTRA_GEOFENCES =             PREFIX + "extra.geofences";
+    static final String EXTRA_DELETED_GEOFENCES =     PREFIX + "extra.deleted_geofences";
     static final String EXTRA_EVENT_TYPE =            PREFIX + "extra.event_type";
     static final String EXTRA_LATITUDE =              PREFIX + "extra.latitude";
     static final String EXTRA_LONGITUDE =             PREFIX + "extra.longitude";
@@ -44,7 +45,8 @@ class ServiceConfig implements Serializable {
         ENTER,
         EXIT,
         MONITOR,
-        UNMONITOR
+        UNMONITOR,
+        SERVER_SYNC
     }
 
     String serverUrl;
@@ -58,6 +60,7 @@ class ServiceConfig implements Serializable {
     List<PIGeofence> geofences;
     EventType eventType;
     LatLng newLocation;
+    List<String> deletedGeofences;
 
     /**
      * Create an application context based on the app's package name.
@@ -163,6 +166,13 @@ class ServiceConfig implements Serializable {
                 geofences = GeofenceManager.geofencesFromCodes(Arrays.asList(codes));
             }
         }
+        s = intent.getStringExtra(EXTRA_DELETED_GEOFENCES);
+        if (s != null) {
+            String[] codes = s.split("\\|");
+            if ((codes != null) && (codes.length > 0)) {
+                deletedGeofences = Arrays.asList(codes);
+            }
+        }
         s = intent.getStringExtra(EXTRA_EVENT_TYPE);
         if (s != null) {
             try {
@@ -203,6 +213,18 @@ class ServiceConfig implements Serializable {
                 count++;
             }
             intent.putExtra(EXTRA_GEOFENCES, sb.toString());
+        }
+        if (deletedGeofences != null) {
+            StringBuilder sb = new StringBuilder();
+            int count = 0;
+            for (String code: deletedGeofences) {
+                if (count > 0) {
+                    sb.append('|');
+                }
+                sb.append(code);
+                count++;
+            }
+            intent.putExtra(EXTRA_DELETED_GEOFENCES, sb.toString());
         }
         if( eventType != null) {
             intent.putExtra(EXTRA_EVENT_TYPE, eventType.name());

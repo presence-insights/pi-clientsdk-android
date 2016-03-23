@@ -16,6 +16,7 @@
 
 package com.ibm.pi.geofence;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -23,23 +24,30 @@ import java.util.List;
  */
 public class PIGeofenceList {
     private final List<PIGeofence> geofences;
-    private int pageNumber;
-    private int pageSize;
-    private int totalGeofences;
-    private String lastSyncDate;
+    int pageNumber;
+    int pageSize;
+    int totalGeofences;
+    String lastSyncDate;
+    List<String> deletedGeofenceCodes;
 
     public PIGeofenceList(final List<PIGeofence> geofences) {
-        this.geofences = geofences;
+        this.geofences = (geofences == null) ? Collections.<PIGeofence>emptyList() : geofences;
+        this.deletedGeofenceCodes = Collections.emptyList();
     }
 
-    public PIGeofenceList(final List<PIGeofence> geofences, int pageNumber, int pageSize, int totalGeofences, String lastSyncDate) {
-        this.geofences = geofences;
+    public PIGeofenceList(final List<PIGeofence> geofences, int pageNumber, int pageSize, int totalGeofences, String lastSyncDate, List<String> deletedGeofenceCodes) {
+        this.geofences = (geofences == null) ? Collections.<PIGeofence>emptyList() : geofences;
         this.pageNumber = pageNumber;
         this.pageSize = pageSize;
         this.totalGeofences = totalGeofences;
         this.lastSyncDate = lastSyncDate;
+        this.deletedGeofenceCodes = (deletedGeofenceCodes == null) ? Collections.<String>emptyList() : deletedGeofenceCodes;
     }
 
+    /**
+     * Get the list of geofences that were added or updated since the last sync and loaded from the PI server.
+     * @return a list of {@link PIGeofence} objects, possibly empty.
+     */
     public List<PIGeofence> getGeofences() {
         return geofences;
     }
@@ -58,5 +66,13 @@ public class PIGeofenceList {
 
     public String getLastSyncDate() {
         return lastSyncDate;
+    }
+
+    /**
+     * Get the list of codes for the geofences that were deleted since the last sync.
+     * @return a list of geofence codes, possibly empty.
+     */
+    public List<String> getDeletedGeofenceCodes() {
+        return deletedGeofenceCodes;
     }
 }

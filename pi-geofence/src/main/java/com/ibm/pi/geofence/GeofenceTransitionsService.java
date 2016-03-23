@@ -114,7 +114,7 @@ public class GeofenceTransitionsService extends IntentService {
                     config.geofences = geofences;
                     config.eventType = (transition == Geofence.GEOFENCE_TRANSITION_ENTER) ? ServiceConfig.EventType.ENTER : ServiceConfig.EventType.EXIT;
                     config.toIntent(callbackIntent);
-                    log.error(String.format("sending config=%s", config));
+                    log.debug(String.format("sending config=%s", config));
                     ctx.startService(callbackIntent);
                 } catch(Exception e) {
                     log.error(String.format("error starting callback service '%s'", config.callbackServiceName), e);
