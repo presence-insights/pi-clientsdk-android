@@ -12,38 +12,56 @@ This library contains classes that are useful for interfacing with Presence Insi
 
 ## Adding the library to your project
 
-1. Download or build the Presence Insights SDK library. See [Building the SDK](#building-the-sdk)
+### JCenter/MavenCentral
 
-2. Add the library to your project. You can do this using Android Studio, or manually:
+**This is the recommended approach to retrieving the library.**
 
-  **Using Android Studio:**
+*   [JCenter](http://jcenter.bintray.com/com/ibm/pi/pi-sdk/)
+*   [MavenCentral](https://repo1.maven.org/maven2/com/ibm/pi/pi-sdk/)
 
-  Do not use Android Studio to import the project until we are able to publish the SDK on Maven.
-  
-  **Manually:**
+In the project `build.gradle`,
 
-  1. Add library file to `/libs` directory. 
+    allprojects {
+        repositories {
+            // add for Maven Central repo
+            mavenCentral()
+            // add for JCenter repo
+            jcenter()
+        }
+    }
 
-  2. Add the following dependencies to `app/build.gradle` file:
+In the module `build.gradle`,
+
+    dependencies {
+        compile 'com.ibm.pi:pi-sdk:1.3.0'
+    }
+
+### Manually
+
+[Download](http://presenceinsights.ibmcloud.com/pidocs/mobileapps/mobile_android/) or build the Presence Insights SDK library from GitHub. See [Building the SDK](#building-the-sdk)
+
+1. Add library file to `/libs` directory. If the directory doesn't exist, create it.
+
+2. Add the following dependencies to the modules `build.gradle` file:
 
         dependencies {
-            compile 'org.altbeacon:android-beacon-library:2.1.4'
-            compile (name:'presence-insights-v1.1', ext:'aar')
+            compile 'org.altbeacon:android-beacon-library:2.7'
+            compile (name:'presence-insights-1.3.0', ext:'aar')
         }
 
-  3. You will also have to add teh `flatDir` attribute to the top level `build.gradle` file:
+3. You will also have to add the `flatDir` attribute to the project `build.gradle` file:
 
         allprojects {
             repositories {
-                jcenter()
                 flatDir {
                     dirs 'libs'
                 }
             }
         }
 
-3. Add the `altbeacon` library to the dependencies. We are working on resolving this issue. Edit the `/app/build.gradle` file and add:
-    compile 'org.altbeacon:android-beacon-library:2.1.4' to the `dependencies` object.
+4. Add the `altbeacon` library to the dependencies. This is a requirement if you are taking this manual approach. Edit the modules `build.gradle` file and add:
+
+        compile 'org.altbeacon:android-beacon-library:2.7'
 
 Sync your gradle project. You should now have access to all of the Presence Insights APIs!
 
@@ -65,38 +83,38 @@ At this point, you should have a `/pi-android-sdk/` folder that contains a **.aa
 
 ## Setting up PIAPIAdapter <a name="pi_adapter"></a>
 
-        PIAPIAdapter mAdapter = new PIAPIAdapter(context, "username", "password", "https://www.url.com", "TenantCode", "OrgCode");
+    PIAPIAdapter mAdapter = new PIAPIAdapter(context, "username", "password", "https://www.url.com", "TenantCode", "OrgCode");
 
 Note: We do not store your username and password, it is up to the developer using this library to properly secure the credentials.
 
 ## Making a call to the API
 
-        mAdapter.getOrg(new PIAPICompletionHandler() {
-            @Override
-            public void onComplete(PIAPIResult result) {
-                PIOrg myOrg = (PIOrg) result.getResult();
-            }
-        });
+    mAdapter.getOrg(new PIAPICompletionHandler() {
+        @Override
+        public void onComplete(PIAPIResult result) {
+            PIOrg myOrg = (PIOrg) result.getResult();
+        }
+    });
 
 Note: `PIAPICompletionHandler` is the callback interface for all asynchronous calls to the API. Please refer to the javadocs for how to cast the result.
 
 ## Setting up PIBeaconSensor
 
-        PIBeaconSensor mBeaconSensor = new PIBeaconSensor(context, mAdapter);
+    PIBeaconSensor mBeaconSensor = PIBeaconSensor.getInstance(context, mAdapter);
 
 ## Setting the beacon advertisement layout <a name="beacon_layout"></a>
 
 We use AltBeacon's Android library for monitoring and ranging for beacons.
 
-        // adding beacon layout for iBeacons
-        mBeaconSensor.addBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24");
+    // adding beacon layout for iBeacons
+    mBeaconSensor.addBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24");
 
 From AltBeacon's [Github](https://github.com/AltBeacon/android-beacon-library), "IMPORTANT: By default, this library will only detect beacons meeting the AltBeacon specification."
 
 ## Starting and stopping the beacon sensor
 
-        mBeaconSensor.start()
-        mBeaconSensor.stop()
+    mBeaconSensor.start()
+    mBeaconSensor.stop()
 
 It's that easy!
 
@@ -104,54 +122,58 @@ It's that easy!
 
 We have three callbacks that you can tie into when using the `PIBeaconSensor`.
 
-        beaconsInRange(ArrayList<Beacon> beacons)
-        didEnterRegion(Region region)
-        didExitRegion(Region region)
+    beaconsInRange(ArrayList<Beacon> beacons)
+    didEnterRegion(Region region)
+    didExitRegion(Region region)
 
 Set up a listener, and you are good to go.
 
-        mBeaconSensor.setDidEnterRegionListener(this);
+    mBeaconSensor.setDidEnterRegionListener(this);
 
 ## Device Registration
 
-1.  Create a PIDeviceInfo Object and set your values
+When registering a device, you have the option to use our default device descriptor, or your own.
 
-        PIDeviceInfo mDeviceInfo = new PIDeviceInfo(context);
-        mDeviceInfo.setName("My Nexus 5");
-        mDeviceInfo.setType("External");
-        mDeviceInfo.setRegistered(true);
+    // will create a registered device using the default descriptor
+    PIDeviceInfo mDeviceInfo = new PIDeviceInfo(context, "My Nexus 5", "External");
 
-2.  Adding personal data to PIDeviceInfo object (optional)
+    // will create a registered device using the custom descriptor
+    PIDeviceInfo mDeviceInfo = new PIDeviceInfo(context, "My Nexus 5", "External", "my_custom_unique_id");
 
-        JSONObject data = new JSONObject();
-        data.put("cellphone", "919-555-5555");
-        data.put("email", "android@us.ibm.com");
+If the user chooses not to register their device, we offer a way to register the device anonymously.
+    
+    // will create an anonymous device using the default descriptor
+    PIDeviceInfo mDeviceInfo = new PIDeviceInfo(context);
 
-        mDeviceInfo.setData(data);
+    // will create an anonymous device using the custom descriptor
+    PIDeviceInfo mDeviceInfo = new PIDeviceInfo(context, "my_custom_unique_id");
 
-3.  Adding non personal data to PIDeviceInfo object (optional). For example, linking push notification ID from another service to a device.
+Adding personal data to PIDeviceInfo object (optional).
 
-        JSONObject data = new JSONObject();
-        data.put("pushID", "PIisAwesome");
+    JSONObject data = new JSONObject();
+    data.put("cellphone", "919-555-5555");
+    data.put("email", "android@us.ibm.com");
+    mDeviceInfo.setData(data);
 
-        mDeviceInfo.setUnencryptedData(data);
+Adding non personal data to PIDeviceInfo object (optional). For example, linking push notification ID from another service to a device.
 
-4.  Blacklisting a device. For example, to ignore an employees device.
+    JSONObject data = new JSONObject();
+    data.put("pushID", "PIisAwesome");
+    mDeviceInfo.setUnencryptedData(data);
 
-        mDeviceInfo.setBlacklisted(true);
+Blacklisting a device. For example, to ignore an employees device.
 
-5.  Make the call to registerDevice from the PIAPIAdapter. Instantiate mAdapter as seen in section above, ['Setting up PIAPIAdapter'](#pi_adapter)
+    mDeviceInfo.setBlacklisted(true);
 
-        mAdapter.registerDevice(mDeviceInfo, new PIAPICompletionHandler() {
-            @Override
-            public void onComplete(PIAPIResult result) {
-                if (result.getResponseCode() == HttpStatus.SC_OK || result.getResponseCode() == HttpStatus.SC_CREATED) {
-                    PIDevice device = new PIDevice(result.getResultAsJson());
-                } else {
-                    Log.e(TAG, result.getResultAsString());
-                }
-            }
-        });
+Finally, once the PIDeviceInfo object is ready to register, make the call to registerDevice from the PIAPIAdapter. Instantiate mAdapter as seen in section above, ['Setting up PIAPIAdapter'](#pi_adapter)
+
+    mAdapter.registerDevice(mDeviceInfo, new PIAPICompletionHandler() {
+        @Override
+        public void onComplete(PIAPIResult result) {
+            // if result.getResponseCode() is OK or CREATED
+            PIDevice device = (PIDevice) result.getResult();
+        }
+    });
 
 ## Troubleshooting
 
@@ -167,11 +189,3 @@ Set up a listener, and you are good to go.
 *   I set up the callback for `beaconsInRange(ArrayList<Beacon>)`, but it is not being called. Make sure you set the listener for the callback you want.
 
         mBeaconSensor.setBeaconsInRangeListener(this);
-
-## Javadocs
-
-Jump over to the <a href="/pidocs/mobile/android/javadoc/" target="_blank">Javadocs</a> for more information.
-
-## Downloads
-
-<a href="/pidocs/sdk/pi-android-sdk.zip" target="_blank">Download the Android SDK</a>
