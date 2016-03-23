@@ -1,4 +1,3 @@
 <resources>
     <string name="app_name">PI Core</string>
-    <string name="pi_shared_pref">com.ibm.pisdk.shared_prefs</string>
 </resources>

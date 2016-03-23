@@ -27,10 +27,10 @@ import android.support.v4.content.LocalBroadcastManager;
 
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
+import com.ibm.pi.core.Constants;
 import com.ibm.pi.core.PIAPIAdapter;
 import com.ibm.pi.core.PIAPICompletionHandler;
 import com.ibm.pi.core.PIAPIResult;
-import com.ibm.pi.core.PIDeviceInfo;
 import com.ibm.pi.core.PILogger;
 
 import org.altbeacon.beacon.Beacon;
@@ -101,7 +101,7 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
     public void onCreate() {
         super.onCreate();
         mContext = this;
-        mPrefs = this.getSharedPreferences(getResources().getString(R.string.pi_shared_pref), Context.MODE_PRIVATE);
+        mPrefs = this.getSharedPreferences(Constants.PI_SHARED_PREFS, Context.MODE_PRIVATE);
 
         setupDescriptor();
         PILogger.enableDebugMode(true);
@@ -111,20 +111,20 @@ public class PIBeaconSensorService extends Service implements BeaconConsumer {
             SharedPreferences.OnSharedPreferenceChangeListener() {
                 @Override
                 public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                    if (key.equals(PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY)) {
+                    if (key.equals(Constants.PI_SHARED_PREFS_DESCRIPTOR_KEY)) {
                         mDeviceDescriptor = sharedPreferences.getString(key, "");
                     }
                 }
             };
 
     private void setupDescriptor() {
-        mDeviceDescriptor = mPrefs.getString(PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY, "");
+        mDeviceDescriptor = mPrefs.getString(Constants.PI_SHARED_PREFS_DESCRIPTOR_KEY, "");
         if ("".equals(mDeviceDescriptor)) {
             String android_id = Settings.Secure.getString(mContext.getContentResolver(),
                     Settings.Secure.ANDROID_ID);
             mDeviceDescriptor = android_id;
 
-            mPrefs.edit().putString(PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY, android_id).apply();
+            mPrefs.edit().putString(Constants.PI_SHARED_PREFS_DESCRIPTOR_KEY, android_id).apply();
         }
 
         mPrefs.registerOnSharedPreferenceChangeListener(sharedPreferenceChangeListener);

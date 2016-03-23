@@ -37,10 +37,6 @@ public class PIDeviceInfo {
     static final String JSON_REGISTERED = "registered";
     static final String JSON_BLACKLIST = "blacklist";
 
-    // shared prefs
-    public static final String PI_SHARED_PREF = "com.ibm.pisdk.shared_prefs";
-    public static final String PI_SHARED_PREF_DESCRIPTOR_KEY = "device_descriptor";
-
     private String mName;
     private String mDeviceDescriptor;
     private String mRegistrationType;
@@ -108,9 +104,9 @@ public class PIDeviceInfo {
     }
 
     private void updateDeviceDescriptor(Context context) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences(PI_SHARED_PREF, Context.MODE_PRIVATE);
+        SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.PI_SHARED_PREFS, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString(PI_SHARED_PREF_DESCRIPTOR_KEY, mDeviceDescriptor);
+        editor.putString(Constants.PI_SHARED_PREFS_DESCRIPTOR_KEY, mDeviceDescriptor);
         editor.apply();
     }
 

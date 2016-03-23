@@ -27,6 +27,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 
+import com.ibm.pi.core.Constants;
 import com.ibm.pi.core.PIAPIAdapter;
 import com.ibm.pi.core.PILogger;
 
@@ -139,7 +140,7 @@ public class PIBeaconSensor {
 
     private PIBeaconSensor(Context context, PIAPIAdapter adapter) {
         mContext = context;
-        mPrefs = context.getSharedPreferences(context.getResources().getString(R.string.pi_shared_pref), Context.MODE_PRIVATE);
+        mPrefs = context.getSharedPreferences(Constants.PI_SHARED_PREFS, Context.MODE_PRIVATE);
         mState = mPrefs.getString(SENSOR_STATE_KEY, STOPPED);
 
         // If the adapter is being passed in as null, this is a request from the BOOT_COMPLETED broadcast receiver.
