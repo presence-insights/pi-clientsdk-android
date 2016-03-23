@@ -27,7 +27,15 @@ import java.io.File;
 import de.mindpipe.android.logging.log4j.LogConfigurator;
 
 /**
- * .
+ * This class configures Log4j logging and provide factory methods for creating loggers
+ * while ensuring the configuration is properly done.
+ * <p>Example usage:
+ * <pre>
+ *     // with a logger name:
+ *     private static Logger logWithName = LoggingConfiguration.getLogger(MyClass.class.getSimpleName());
+ *     // with a class:
+ *     private static Logger logWithClass = LoggingConfiguration.getLogger(MyClass.class);
+ * </pre>
  */
 public class LoggingConfiguration {
     /**
@@ -64,15 +72,29 @@ public class LoggingConfiguration {
         }
     }
 
+    /**
+     * Get te path to the log file.
+     * @return the log file path on the device's file system.
+     */
     public static String getLogFile() {
         return logfile;
     }
 
+    /**
+     * Create a logger for the specified class.
+     * @param clazz the class from which the logger name is computed.
+     * @return a {@link Logger} instance.
+     */
     public static Logger getLogger(Class<?> clazz) {
         configure();
         return Logger.getLogger(clazz);
     }
 
+    /**
+     * Create a logger with the specified name.
+     * @param loggerName the logger name.
+     * @return a {@link Logger} instance.
+     */
     public static Logger getLogger(String loggerName) {
         configure();
         return Logger.getLogger(loggerName);

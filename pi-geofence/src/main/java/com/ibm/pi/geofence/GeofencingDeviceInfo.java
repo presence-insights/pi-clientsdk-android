@@ -21,9 +21,19 @@ import android.content.Context;
 import com.ibm.pisdk.PIDeviceInfo;
 
 /**
- *
+ * This extension of {@link PIDeviceInfo} serves solely to make the descriptor accessible
  */
 class GeofencingDeviceInfo extends PIDeviceInfo {
+    // shared prefs or settings
+    /**
+     * The name of the shared preferences file where the descriptor is stored.
+     */
+    static final String PI_SHARED_PREF = PIDeviceInfo.PI_SHARED_PREF;
+    /**
+     * The name of the descritpor key in the sghared preferences (also used in the settings).
+     */
+    static final String PI_DESCRIPTOR_KEY = PIDeviceInfo.PI_SHARED_PREF_DESCRIPTOR_KEY;
+
     GeofencingDeviceInfo(Context context) {
         super(context);
     }

@@ -92,6 +92,12 @@ public class GeofenceManager extends BroadcastReceiver {
         }
     }
 
+    /**
+     * Determine whether a significant location change occurred, based on the provided location.
+     * @param location the location to compare with the reference location stored in the {@link Settings}.
+     * @param force whether to force a reload of the fence in the bounding box regardless the current location,
+     *  which is needed after a sync of the fences with the server.
+     */
     void onLocationChanged(Location location, boolean force) {
         double d = maxDistance + 1d;
         if (referenceLocation != null) {
@@ -107,6 +113,11 @@ public class GeofenceManager extends BroadcastReceiver {
         }
     }
 
+    /**
+     * Retrieve the reference location provided in the {@link Settings}.
+     * @param settings the settings from which to retirive the reference location.
+     * @return a {@link Location} object.
+     */
     static Location retrieveReferenceLocation(Settings settings) {
         double lat = settings.getDouble(REFERENCE_LOCATION_LAT, -1d);
         double lng = settings.getDouble(REFERENCE_LOCATION_LNG, -1d);
@@ -116,6 +127,9 @@ public class GeofenceManager extends BroadcastReceiver {
         return location;
     }
 
+    /**
+     * Store the reference location into the {@link Settings}.
+     */
     static void storeReferenceLocation(Settings settings, Location location) {
         settings.putDouble(REFERENCE_LOCATION_LAT, location.getLatitude());
         settings.putDouble(REFERENCE_LOCATION_LNG, location.getLongitude());
@@ -145,6 +159,11 @@ public class GeofenceManager extends BroadcastReceiver {
         }
     }
 
+    /**
+     * Get a set of geofoences from their codes, via a lookup in the local DB.
+     * @param geofenceCodes the codes of the geofenes to retrieve.
+     * @return a list of {@link PIGeofence} objects.
+     */
     static List<PIGeofence> geofencesFromCodes(Collection<String> geofenceCodes) {
         int size = geofenceCodes.size(); // in case size() has a non-constant cost
         List<PIGeofence> geofences = new ArrayList<>(size);
@@ -177,6 +196,11 @@ public class GeofenceManager extends BroadcastReceiver {
         return geofenceCodes;
     }
 
+    /**
+     * Delete the specified geofences from the local DB.
+     * @param geofenceCodes the codes of the geofences to delete.
+     * @return the number of actually deleted geofences.
+     */
     static int deleteGeofences(Collection<String> geofenceCodes) {
         int size = geofenceCodes.size(); // in case size() has a non-constant cost
         // build the "code in (?, ..., ?)" where clause
@@ -191,6 +215,11 @@ public class GeofenceManager extends BroadcastReceiver {
         return PIGeofence.deleteAll(PIGeofence.class, where.toString(), geofenceCodes.toArray(new String[size]));
     }
 
+    /**
+     * Load a resource from its path in the classpath.
+     * @param name the path to the resource, must be accessible from the classpath root.
+     * @return the resource content as a byte array, or {code null} if the resource could not be loaded.
+     */
     static byte[] loadResourceBytes(String name) {
         try {
             InputStream is = GeofenceManager.class.getClassLoader().getResourceAsStream(name);

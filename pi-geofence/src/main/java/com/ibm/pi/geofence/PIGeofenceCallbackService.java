@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
 import java.util.List;
 
 /**
- *
+ * This is the superclass for all user-provided callback services.
  */
 public abstract class PIGeofenceCallbackService extends IntentService implements PIGeofenceCallback {
     /**
@@ -62,18 +62,4 @@ public abstract class PIGeofenceCallbackService extends IntentService implements
     @Override
     public void onGeofencesUnmonitored(List<PIGeofence> geofences) {
     }
-/*
-    @Override
-    public boolean equals(Object o) {
-        if (o != null) {
-            return o.getClass() == getClass();
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-    */
 }

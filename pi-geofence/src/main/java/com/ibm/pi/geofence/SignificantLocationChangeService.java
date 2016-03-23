@@ -90,6 +90,11 @@ public class SignificantLocationChangeService extends IntentService {
         }
     }
 
+    /**
+     * Computes a new bounding box based on the specified location and the {@code maxDistance} value.
+     * Retrieves from the local DB the first 100 geofences nearest to the location and registers them if needed for monitoring.
+     * @param location he center of the new bounding box.
+     */
     void processNewLocation(Location location) {
         // where clause to find all geofences whose distance to the new location is < maxDistance
         String where = createWhereClause(location.getLatitude(), location.getLongitude(), config.maxDistance / 2);

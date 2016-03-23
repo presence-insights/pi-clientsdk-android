@@ -19,7 +19,7 @@ package com.ibm.pi.geofence;
 import java.util.List;
 
 /**
- * {"type":"FeatureCollection","features":[],"properties":{"pageNumber":1,"pageSize":10,"totalFeatures":0}}
+ * Encapsulates a list of geofences a returned by the PI server upon a get or sync request.
  */
 public class PIGeofenceList {
     private final List<PIGeofence> geofences;

@@ -19,6 +19,7 @@ package com.ibm.pi.geofence;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.AsyncTask;
 
@@ -66,10 +67,21 @@ public class PIGeofencingService {
      * Part of a request path pointing to the pi conifg connector.
      */
     static final String CONFIG_CONNECTOR_PATH = "pi-config/v2";
-
+    /**
+     * Mode indicating this geofence manager is executed by the user-provided app.
+     */
     static final int MODE_APP = 1;
+    /**
+     * Mode indicating this geofence manager is executed by the geofence transition service.
+     */
     static final int MODE_GEOFENCE_EVENT = 2;
+    /**
+     * Mode indicating this geofence manager is executed by the significant location change service.
+     */
     static final int MODE_MONITORING_REQUEST = 3;
+    /**
+     * Mode indicating this geofence manager is executed by the reboot handler service.
+     */
     static final int MODE_REBOOT = 4;
     /**
      * The restful service which connects to and communicates with the Adaptive Experience server.
@@ -107,12 +119,22 @@ public class PIGeofencingService {
      * Whether geofence events are posted to the PI geofence connector.
      */
     private boolean sendingGeofenceEvents = true;
+    /**
+     * Fully qualified class name of the user-provided callback service.
+     */
     String callbackServiceName;
     /**
-     *
+     * The settings of the application.
      */
     Settings settings;
+    /**
+     * The execution mode for this gefoence manager;
+     * one of {@link #MODE_APP}, {@link #MODE_GEOFENCE_EVENT}, {@link #MODE_MONITORING_REQUEST} or {@link #MODE_REBOOT}.
+     */
     final int mode;
+    /**
+     * A callback that immplements the Google API connection callback interfaces.
+     */
     GoogleLocationAPICallback googleAPICallback;
 
     /**
@@ -141,11 +163,14 @@ public class PIGeofencingService {
         this.settings = (settings != null) ? settings : new Settings(context);
         log.debug("PIGeofencingService() settings = " + this.settings);
         String desc = this.settings.getString("descriptor", null);
-        this.deviceDescriptor = (desc == null) ? new GeofencingDeviceInfo(context).getDescriptor() : desc;
+        this.deviceDescriptor = retrieveDeviceDescriptor();
         int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
         log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
     }
 
+    /**
+     * Connect the Google API client. The synchronous / asynchronous mode depends on the {@link #mode} of this geofence manager.
+     */
     private void connectGoogleAPI() {
         if ((context != null) && (mode != MODE_GEOFENCE_EVENT)) {
             googleAPICallback = new GoogleLocationAPICallback(this);
@@ -175,7 +200,8 @@ public class PIGeofencingService {
     }
 
     /**
-     * Initialize this service.
+     * This is the public factory method to create a geofence manager.
+     * @param callbackServiceClass the cllass object for an optional user-provided callback service.
      * @param context the Android application context.
      * @param baseURL base URL of the PI server.
      * @param tenantCode PI tenant code.
@@ -696,12 +722,6 @@ public class PIGeofencingService {
     }
 
     private void updateSettings() {
-        /*
-        if (settings.getString(ServiceConfig.EXTRA_LAST_SYNC_DATE, null) == null) {
-            String syncDate = GeofencingJSONUtils.formatDate(new Date());
-            settings.putString(ServiceConfig.EXTRA_LAST_SYNC_DATE, syncDate);
-        }
-        */
         settings.putString(ServiceConfig.EXTRA_SERVER_URL, httpService.getServerURL());
         settings.putString(ServiceConfig.EXTRA_TENANT_CODE, httpService.getTenantCode());
         settings.putString(ServiceConfig.EXTRA_ORG_CODE, httpService.getOrgCode());
@@ -710,5 +730,24 @@ public class PIGeofencingService {
         settings.putString(ServiceConfig.EXTRA_CALLBACK_SERVICE_NAME, callbackServiceName);
         settings.putInt(ServiceConfig.EXTRA_MAX_DISTANCE, maxDistance);
         settings.commit();
+    }
+
+    /**
+     * Retrieve the last used device descritpor, if any. If none exist, one is created from the {@link com.ibm.pisdk.PIDeviceInfo PIDeviceInfo} API.
+     * @return the device descriptor.
+     */
+    String retrieveDeviceDescriptor() {
+        String result = settings.getString(GeofencingDeviceInfo.PI_DESCRIPTOR_KEY, null);
+        if (result == null) {
+            SharedPreferences prefs = context.getSharedPreferences(GeofencingDeviceInfo.PI_SHARED_PREF, Context.MODE_PRIVATE);
+            result = prefs.getString(GeofencingDeviceInfo.PI_DESCRIPTOR_KEY, null);
+            if (result == null) {
+                GeofencingDeviceInfo info = new GeofencingDeviceInfo(context);
+                result = info.getDescriptor();
+                prefs.edit().putString(GeofencingDeviceInfo.PI_DESCRIPTOR_KEY, result).apply();
+            }
+            settings.putString(GeofencingDeviceInfo.PI_DESCRIPTOR_KEY, result).commit();
+        }
+        return result;
     }
 }
