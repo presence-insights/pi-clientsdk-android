@@ -68,8 +68,8 @@ public class GeofenceTransitionsService extends IntentService {
             // Get the geofences that were triggered. A single event can trigger multiple geofences.
             List<Geofence> triggeringGeofences = event.getTriggeringGeofences();
             log.debug("geofence transition: " + triggeringGeofences);
-            PIGeofenceCallback callback = PIGeofencingService.callbackMap.get(intent.getStringExtra(PIGeofencingService.INTENT_ID));
-            PIGeofencingService service = null;
+            PIGeofenceCallback callback = PIGeofencingManager.callbackMap.get(intent.getStringExtra(PIGeofencingManager.INTENT_ID));
+            PIGeofencingManager service = null;
             Context ctx = null;
             Settings settings = null;
             Class<? extends PIGeofenceCallbackService> clazz = null;
@@ -87,7 +87,7 @@ public class GeofenceTransitionsService extends IntentService {
                 clazz = config.loadCallbackServiceClass(ctx);
             }
             if (callback == null) {
-                service = PIGeofencingService.newInstance(settings, PIGeofencingService.MODE_GEOFENCE_EVENT, clazz, ctx,
+                service = PIGeofencingManager.newInstance(settings, PIGeofencingManager.MODE_GEOFENCE_EVENT, clazz, ctx,
                     config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
                 callback = service.geofenceCallback;
             }
@@ -95,7 +95,7 @@ public class GeofenceTransitionsService extends IntentService {
             List<PIGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
             for (Geofence g : triggeringGeofences) {
                 String code = g.getRequestId();
-                PIGeofence geofence = GeofenceManager.geofenceFromCode(code);
+                PIGeofence geofence = GeofencingUtils.geofenceFromCode(code);
                 if (geofence != null) {
                     geofences.add(geofence);
                 }

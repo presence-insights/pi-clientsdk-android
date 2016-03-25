@@ -33,8 +33,6 @@ import com.ibm.pi.geofence.rest.PIRequestCallback;
 import com.ibm.pi.geofence.rest.PIRequestError;
 import com.ibm.pisdk.geofencing.demo.R;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -92,7 +90,7 @@ public class EditGeofenceDialog extends DialogFragment {
                     String name = nameView.getText().toString();
                     String desc = descView.getText().toString();
                     PIGeofence fence = new PIGeofence(UUID.randomUUID().toString(), name, desc, position.latitude, position.longitude, radius);
-                    mapsActivity.service.registerGeofence(fence, new PIRequestCallback<PIGeofence>() {
+                    mapsActivity.service.addGeofence(fence, new PIRequestCallback<PIGeofence>() {
                         @Override
                         public void onSuccess(PIGeofence fence) {
                             mapsActivity.refreshGeofenceInfo(fence, false);
@@ -126,7 +124,7 @@ public class EditGeofenceDialog extends DialogFragment {
                         }
                     });
                     */
-                    mapsActivity.service.deleteGeofence(fence, new PIRequestCallback<PIGeofence>() {
+                    mapsActivity.service.removeGeofence(fence, new PIRequestCallback<PIGeofence>() {
                         @Override
                         public void onSuccess(PIGeofence fence) {
                             mapsActivity.removeGeofence(fence);
@@ -136,7 +134,7 @@ public class EditGeofenceDialog extends DialogFragment {
                         public void onError(PIRequestError error) {
                         }
                     });
-                    mapsActivity.service.registerGeofence(fence, new PIRequestCallback<PIGeofence>() {
+                    mapsActivity.service.addGeofence(fence, new PIRequestCallback<PIGeofence>() {
                         @Override
                         public void onSuccess(PIGeofence fence) {
                             mapsActivity.refreshGeofenceInfo(fence, false);
@@ -152,7 +150,7 @@ public class EditGeofenceDialog extends DialogFragment {
             builder.setNeutralButton(R.string.delete_button, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int id) {
-                    mapsActivity.service.deleteGeofence(fence, new PIRequestCallback<PIGeofence>() {
+                    mapsActivity.service.removeGeofence(fence, new PIRequestCallback<PIGeofence>() {
                         @Override
                         public void onSuccess(PIGeofence fence) {
                             mapsActivity.removeGeofence(fence);
@@ -168,10 +166,6 @@ public class EditGeofenceDialog extends DialogFragment {
         }
         builder.setNegativeButton(R.string.cancel_button, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                /*
-                Intent intent = new Intent(getActivity(), LoginActivity.class);
-                getActivity().startActivity(intent);
-                */
                 performCommonActions(dialog, null);
             }
         });

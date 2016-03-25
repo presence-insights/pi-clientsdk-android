@@ -43,7 +43,7 @@ public class SignificantLocationChangeService extends IntentService {
      * Logger for this class.
      */
     private static final Logger log = LoggingConfiguration.getLogger(SignificantLocationChangeService.class.getSimpleName());
-    private PIGeofencingService geofencingService;
+    private PIGeofencingManager geofencingService;
     private Settings settings;
     private ServiceConfig config;
 
@@ -64,7 +64,7 @@ public class SignificantLocationChangeService extends IntentService {
             if (geofencingService == null) {
                 Context ctx = config.createContext(this);
                 this.settings = new Settings(ctx);
-                this.geofencingService = PIGeofencingService.newInstance(settings, PIGeofencingService.MODE_MONITORING_REQUEST, config.loadCallbackServiceClass(ctx), ctx,
+                this.geofencingService = PIGeofencingManager.newInstance(settings, PIGeofencingManager.MODE_MONITORING_REQUEST, config.loadCallbackServiceClass(ctx), ctx,
                     config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
                 log.debug("onHandleIntent() settings=" + settings);
             }
@@ -80,9 +80,9 @@ public class SignificantLocationChangeService extends IntentService {
                 Context context = config.createContext(this);
                 Settings settings = new Settings(context);
                 config.populateFromSettings(settings);
-                PIGeofencingService geofencingService = PIGeofencingService.newInstance(settings, PIGeofencingService.MODE_REBOOT, null, context,
+                PIGeofencingManager geofencingService = PIGeofencingManager.newInstance(settings, PIGeofencingManager.MODE_REBOOT, null, context,
                     config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-                List<PIGeofence> geofences = GeofenceManager.extractGeofences(settings);
+                List<PIGeofence> geofences = GeofencingUtils.extractGeofences(settings);
                 geofencingService.monitorGeofences(geofences);
             } catch(Exception e) {
                 log.error("error handling post-reboot remonitoring", e);
@@ -117,7 +117,7 @@ public class SignificantLocationChangeService extends IntentService {
             count++;
             if (count >= 100) break;
         }
-        List<PIGeofence> monitoredFences = GeofenceManager.extractGeofences(settings);
+        List<PIGeofence> monitoredFences = GeofencingUtils.extractGeofences(settings);
         List<PIGeofence> toAdd = new ArrayList<>();
         List<PIGeofence> toRemove = new ArrayList<>();
         for (PIGeofence fence: bboxFences) {
@@ -132,8 +132,8 @@ public class SignificantLocationChangeService extends IntentService {
         }
         geofencingService.unmonitorGeofences(toRemove);
         geofencingService.monitorGeofences(toAdd);
-        GeofenceManager.updateGeofences(settings, bboxFences);
-        GeofenceManager.storeReferenceLocation(settings, location);
+        GeofencingUtils.updateGeofences(settings, bboxFences);
+        GeofencingUtils.storeReferenceLocation(settings, location);
         log.debug("committing settings=" + settings);
         settings.commit();
     }

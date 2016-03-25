@@ -54,11 +54,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * Provides an API to load geofences from, and send entry/exit to, the server.
  */
-public class PIGeofencingService {
+public class PIGeofencingManager {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(PIGeofencingService.class.getSimpleName());
+    private static final Logger log = LoggingConfiguration.getLogger(PIGeofencingManager.class.getSimpleName());
     static final String INTENT_ID = "PIGeofencingService";
     /**
      * Part of a request path pointing to the geofence connector.
@@ -149,8 +149,8 @@ public class PIGeofencingService {
      * @param maxDistance distance threshold for sigificant location changes.
      * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
      */
-    PIGeofencingService(Settings settings, int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
-        String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
+    PIGeofencingManager(Settings settings, int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
+                        String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
         log.debug("pi-geofence version " + BuildConfig.VERSION_NAME);
         this.mode = mode;
         this.maxDistance = maxDistance;
@@ -212,7 +212,7 @@ public class PIGeofencingService {
      * @param maxDistance distance threshold for sigificant location changes.
      * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
      */
-    public static PIGeofencingService newInstance(Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
+    public static PIGeofencingManager newInstance(Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
         String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
         return newInstance(null, MODE_APP, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
     }
@@ -228,9 +228,9 @@ public class PIGeofencingService {
      * @param maxDistance distance threshold for sigificant location changes.
      * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
      */
-    static PIGeofencingService newInstance(Settings settings, int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
+    static PIGeofencingManager newInstance(Settings settings, int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
                                            String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
-        PIGeofencingService geofencingService = new PIGeofencingService(
+        PIGeofencingManager geofencingService = new PIGeofencingManager(
             settings, mode, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
         if (geofencingService.mode == MODE_APP) {
             geofencingService.updateSettings();
@@ -331,14 +331,13 @@ public class PIGeofencingService {
      * Register the specified single geofence with the PI server.
      * @param fence the geofence to register.
      */
-    public void registerGeofence(final PIGeofence fence, final PIRequestCallback<PIGeofence> userCallback) {
-        log.debug("registerGeofence(" + fence + ")");
+    public void addGeofence(final PIGeofence fence, final PIRequestCallback<PIGeofence> userCallback) {
+        log.debug("addGeofence(" + fence + ")");
         if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
             PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
                 @Override
                 public void onSuccess(JSONObject result) {
                     log.debug("sucessfully posted geofence " + fence);
-                    //PIGeofence updated = GeofencingJSONUtils.updateGeofenceTimestampsFromJSON(fence, result);
                     PIGeofence updated = null;
                     try {
                         updated = GeofencingJSONUtils.parseGeofence(result);
@@ -380,7 +379,7 @@ public class PIGeofencingService {
      * @param fence the geofence to register.
      */
     public void updateGeofence(final PIGeofence fence, final PIRequestCallback<PIGeofence> userCallback) {
-        log.debug("registerGeofence(" + fence + ")");
+        log.debug("addGeofence(" + fence + ")");
         if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
             PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
                 @Override
@@ -427,8 +426,8 @@ public class PIGeofencingService {
      * Unregister the specified single geofence from the PI server.
      * @param fence the geofence to unregister.
      */
-    public void deleteGeofence(final PIGeofence fence, final PIRequestCallback<PIGeofence> userCallback) {
-        log.debug("deleteGeofence(" + fence + ")");
+    public void removeGeofence(final PIGeofence fence, final PIRequestCallback<PIGeofence> userCallback) {
+        log.debug("removeGeofence(" + fence + ")");
         if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
             PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
                 @Override
@@ -454,7 +453,6 @@ public class PIGeofencingService {
                 }
             };
             PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.DELETE, null);
-            //PIRequest<Void> request = new PISimpleRequest(callback, HttpMethod.DELETE, callback);
             String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s/geofences/%s",
                 CONFIG_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode(), fence.getCode());
             request.setPath(path);
@@ -558,7 +556,7 @@ public class PIGeofencingService {
             @Override
             protected Void doInBackground(Void... params) {
                 try {
-                    byte[] bytes = GeofenceManager.loadResourceBytes(resource);
+                    byte[] bytes = GeofencingUtils.loadResourceBytes(resource);
                     if (bytes != null) {
                         int fileSize = bytes.length;
                         JSONObject json = new JSONObject(new String(bytes, "UTF-8"));
@@ -606,7 +604,7 @@ public class PIGeofencingService {
     private PendingIntent getPendingIntent(String geofenceCallbackUuid) {
         if (pendingIntent == null) {
             Intent intent = new Intent(context, GeofenceTransitionsService.class);
-            ServiceConfig config = new ServiceConfig().fromGeofencingService(this);
+            ServiceConfig config = new ServiceConfig().fromGeofencingManager(this);
             config.populateFromSettings(settings);
             config.toIntent(intent);
             intent.putExtra(INTENT_ID, geofenceCallbackUuid);
@@ -659,7 +657,7 @@ public class PIGeofencingService {
                             setInitialLocation();
                         }
                         if (!geofences.isEmpty() || !list.getDeletedGeofenceCodes().isEmpty()) {
-                            ServiceConfig config = new ServiceConfig().fromGeofencingService(PIGeofencingService.this);
+                            ServiceConfig config = new ServiceConfig().fromGeofencingManager(PIGeofencingManager.this);
                             Class<? extends PIGeofenceCallbackService> clazz = config.loadCallbackServiceClass(context);
                             Intent callbackIntent = new Intent(context, clazz);
                             config.geofences = geofences;
@@ -699,7 +697,7 @@ public class PIGeofencingService {
                 Location last = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
                 log.debug("setInitialLocation() last location = " + last);
                 if (last != null) {
-                    new GeofenceManager(PIGeofencingService.this).onLocationChanged(last, true);
+                    new LocationRequestReceiver(PIGeofencingManager.this).onLocationChanged(last, true);
                 }
             }
         };

@@ -34,7 +34,7 @@ class GeofencingJSONUtils {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(PIGeofencingService.class.getSimpleName());
+    private static final Logger log = LoggingConfiguration.getLogger(PIGeofencingManager.class.getSimpleName());
     /**
      * Date format used to convert dates from/to UTC format such as "2015-08-24T09:00:00-05:00".
      */
@@ -67,7 +67,7 @@ class GeofencingJSONUtils {
                     deletedCodes.add(deletedCodesJson.getString(i));
                 }
                 if (!deletedCodes.isEmpty()) {
-                    int n = GeofenceManager.deleteGeofences(deletedCodes);
+                    int n = GeofencingUtils.deleteGeofences(deletedCodes);
                     log.debug(String.format("deleted %d geofences from local DB", n));
                 }
             }
@@ -100,7 +100,7 @@ class GeofencingJSONUtils {
         JSONArray coord = geometry.getJSONArray("coordinates");
         double lng = coord.getDouble(0);
         double lat = coord.getDouble(1);
-        PIGeofence geofence = GeofenceManager.geofenceFromCode(code);
+        PIGeofence geofence = GeofencingUtils.geofenceFromCode(code);
         if (geofence == null) {
             // if not in local DB create a new one
             geofence = new PIGeofence(code, name, description, lat, lng, radius);
@@ -131,7 +131,7 @@ class GeofencingJSONUtils {
       }
     }
     */
-    static JSONObject toJSONGeofence(PIGeofencingService service, PIGeofence fence, boolean isUpdate) {
+    static JSONObject toJSONGeofence(PIGeofencingManager service, PIGeofence fence, boolean isUpdate) {
         JSONObject json = new JSONObject();
         try {
             json.put("type", "Feature");

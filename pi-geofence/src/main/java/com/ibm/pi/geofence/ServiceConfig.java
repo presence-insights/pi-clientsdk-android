@@ -10,7 +10,6 @@ import com.ibm.pi.geofence.rest.PIHttpService;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -44,8 +43,6 @@ class ServiceConfig implements Serializable {
     enum EventType {
         ENTER,
         EXIT,
-        MONITOR,
-        UNMONITOR,
         SERVER_SYNC
     }
 
@@ -111,7 +108,7 @@ class ServiceConfig implements Serializable {
     /**
      * Set the values of the fields in this class from extras stored in the specified geofencing service.
      */
-    ServiceConfig fromGeofencingService(PIGeofencingService service) {
+    ServiceConfig fromGeofencingManager(PIGeofencingManager service) {
         PIHttpService httpService = service.httpService;
         serverUrl = httpService.getServerURL();
         tenantCode = httpService.getTenantCode();
@@ -163,7 +160,7 @@ class ServiceConfig implements Serializable {
         if (s != null) {
             String[] codes = s.split("\\|");
             if ((codes != null) && (codes.length > 0)) {
-                geofences = GeofenceManager.geofencesFromCodes(Arrays.asList(codes));
+                geofences = GeofencingUtils.geofencesFromCodes(Arrays.asList(codes));
             }
         }
         s = intent.getStringExtra(EXTRA_DELETED_GEOFENCES);

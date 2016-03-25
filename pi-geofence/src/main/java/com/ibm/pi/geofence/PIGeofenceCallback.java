@@ -36,18 +36,6 @@ public interface PIGeofenceCallback extends Serializable {
     void onGeofencesExit(List<PIGeofence> geofences);
 
     /**
-     * Called when a new set of geofences are registered for monitoring.
-     * @param geofences the list of monitored geofences.
-     */
-    void onGeofencesMonitored(List<PIGeofence> geofences);
-
-    /**
-     * Called when a set of geofences are unregistered from monitoring.
-     * @param geofences the list of unmonitored geofences.
-     */
-    void onGeofencesUnmonitored(List<PIGeofence> geofences);
-
-    /**
      * Called when local geofences are synchronized with, or loaded from, the PI server.
      * @param geofencesList encapsulates the set of geofences that were add, updated or deleted.
      */

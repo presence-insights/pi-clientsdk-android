@@ -16,13 +16,8 @@
 
 package com.ibm.pi.geofence;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
 import android.location.Location;
 import android.location.LocationManager;
-
-import com.google.android.gms.maps.model.LatLng;
 
 import org.apache.log4j.Logger;
 
@@ -33,18 +28,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 /**
- * Receives location change events and determines whether they are significant changes, that is,
- * whether the new location is outside the current bounding box.
+ * A collection of utility methods for manipulating geofences and locations.
  */
-public class GeofenceManager extends BroadcastReceiver {
+class GeofencingUtils {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(GeofenceManager.class.getSimpleName());
+    private static final Logger log = LoggingConfiguration.getLogger(GeofencingUtils.class.getSimpleName());
     /**
      * Key for the shared preferences that stores the uuids of the registered fences.
      */
@@ -54,63 +47,12 @@ public class GeofenceManager extends BroadcastReceiver {
      */
     private static final Set<String> GEOFENCES_PREF_DEFAULT = Collections.emptySet();
     /**
-     * Settings key for the last reference location.
+     * Settings keys for the last reference location.
      */
     private static final String REFERENCE_LOCATION_LAT = "com.ibm.pi.ref_lat";
     private static final String REFERENCE_LOCATION_LNG = "com.ibm.pi.ref_lng";
-    private Context context;
-    private Location referenceLocation = null;
-    private double maxDistance;
-    private Settings settings;
-    private ServiceConfig config;
 
-    public GeofenceManager() {
-    }
-
-    public GeofenceManager(PIGeofencingService geofencingService) {
-        this();
-        this.context = geofencingService.context;
-        this.settings = geofencingService.settings;
-        this.maxDistance = geofencingService.maxDistance;
-        this.referenceLocation = retrieveReferenceLocation(settings);
-        this.config = new ServiceConfig().fromGeofencingService(geofencingService);
-        //log.debug(String.format("GeofenceManager() config=%s, settings=%s", config, settings));
-    }
-
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        boolean shouldProcess = intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED) != null;
-        if (shouldProcess) {
-            this.config = new ServiceConfig().fromIntent(intent);
-            this.context = context;
-            this.maxDistance = config.maxDistance;
-            this.settings = new Settings(context);
-            this.referenceLocation = retrieveReferenceLocation(settings);
-            Location location = (Location) intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED);
-            //log.debug(String.format("onReceive() config=%s, settings=%s", config, settings));
-            onLocationChanged(location, false);
-        }
-    }
-
-    /**
-     * Determine whether a significant location change occurred, based on the provided location.
-     * @param location the location to compare with the reference location stored in the {@link Settings}.
-     * @param force whether to force a reload of the fence in the bounding box regardless the current location,
-     *  which is needed after a sync of the fences with the server.
-     */
-    void onLocationChanged(Location location, boolean force) {
-        double d = maxDistance + 1d;
-        if (referenceLocation != null) {
-            d = referenceLocation.distanceTo(location);
-        }
-        //log.debug(String.format("onLocationChanged(location=%s; d=%,.0f)", location, d));
-        if ((d > maxDistance) || force) {
-            log.debug(String.format(Locale.US, "onLocationChanged() detected significant location change, distance to ref = %,.0f m, new location = %s", d, location));
-            Intent intent = new Intent(context, SignificantLocationChangeService.class);
-            config.newLocation = new LatLng(location.getLatitude(), location.getLongitude());
-            config.toIntent(intent);
-            context.startService(intent);
-        }
+    private GeofencingUtils() {
     }
 
     /**
@@ -222,7 +164,7 @@ public class GeofenceManager extends BroadcastReceiver {
      */
     static byte[] loadResourceBytes(String name) {
         try {
-            InputStream is = GeofenceManager.class.getClassLoader().getResourceAsStream(name);
+            InputStream is = LocationRequestReceiver.class.getClassLoader().getResourceAsStream(name);
             byte[] buffer = new byte[2048];
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             int n;

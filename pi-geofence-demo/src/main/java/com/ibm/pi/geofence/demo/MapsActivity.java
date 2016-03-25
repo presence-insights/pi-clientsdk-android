@@ -16,6 +16,7 @@
 
 package com.ibm.pi.geofence.demo;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -23,6 +24,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -44,7 +46,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.ui.IconGenerator;
 import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
-import com.ibm.pi.geofence.PIGeofencingService;
+import com.ibm.pi.geofence.PIGeofenceCallback;
+import com.ibm.pi.geofence.PIGeofenceCallbackServiceConnection;
+import com.ibm.pi.geofence.PIGeofenceList;
+import com.ibm.pi.geofence.PIGeofencingManager;
 import com.ibm.pi.geofence.Settings;
 import com.ibm.pi.geofence.rest.PIRequestCallback;
 import com.ibm.pi.geofence.rest.PIRequestError;
@@ -116,7 +121,7 @@ public class MapsActivity extends FragmentActivity {
     /**
      * Reference to the geofencing service used in this demo.
      */
-    PIGeofencingService service;
+    PIGeofencingManager service;
     /**
      * Whether the db has already been deleted once.
      */
@@ -198,8 +203,8 @@ public class MapsActivity extends FragmentActivity {
         */
         String orgCode = settings.getString("orgCode", null);
         log.debug(String.format("found orgCode = %s from settings", orgCode));
-        service = PIGeofencingService.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
-        service.setSendingGeofenceEvents(false);
+        service = PIGeofencingManager.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        service.setSendingGeofenceEvents(true);
         if (orgCode == null) {
             //String orgName = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
             String orgName = "android-" + UUID.randomUUID().toString();
@@ -230,30 +235,36 @@ public class MapsActivity extends FragmentActivity {
         }
     }
 
-    /*
-    static boolean dialogOpenedOnce = false;
+    final PIGeofenceCallbackServiceConnection<MyCallbackService> serviceConnection =
+        new PIGeofenceCallbackServiceConnection<>(new PIGeofenceCallback() {
+            @Override
+            public void onGeofencesEnter(List<PIGeofence> geofences) {
+                log.debug("entering geofences: " + geofences);
+            }
+
+            @Override
+            public void onGeofencesExit(List<PIGeofence> geofences) {
+                log.debug("exiting geofences: " + geofences);
+            }
+
+            @Override
+            public void onGeofencesSync(PIGeofenceList geofencesList) {
+                log.debug(String.format("sync of geofences: added/updated %s, deleted: %s", geofencesList.getGeofences(), geofencesList.getDeletedGeofenceCodes()));
+            }
+        });
+
     @Override
     protected void onStart() {
         super.onStart();
-
-        //-----------------------------------
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (!dialogOpenedOnce) {
-                    dialogOpenedOnce = true;
-                    mapMode = MODE_NORMAL;
-                    mapCrossHair.setAlpha(0.0f);
-                    addFenceButton.setCompoundDrawablesRelativeWithIntrinsicBounds(android.R.drawable.ic_input_add, 0, 0, 0);
-                    googleMap.setOnCameraChangeListener(null);
-                    EditGeofenceDialog dialog = new EditGeofenceDialog();
-                    dialog.customInit(MapsActivity.this, editedInfo == null ? EditGeofenceDialog.MODE_NEW : EditGeofenceDialog.MODE_UPDATE_DELETE, editedInfo);
-                    dialog.show(getFragmentManager(), "geofences");
-                }
-            }
-        });
+        Intent intent = new Intent(this, MyCallbackService.class);
+        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
-    */
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unbindService(serviceConnection);
+    }
 
     /**
      * Update the title in the action bar with the specified org code.

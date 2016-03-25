@@ -62,7 +62,7 @@ public class FusedGeofenceManager extends IntentService {
             this.context = config.createContext(this);
             this.maxDistance = config.maxDistance;
             Settings settings = new Settings(context);
-            this.referenceLocation = GeofenceManager.retrieveReferenceLocation(settings);
+            this.referenceLocation = GeofencingUtils.retrieveReferenceLocation(settings);
             Location location = LocationResult.extractResult(intent).getLastLocation();
             onLocationChanged(location);
         }

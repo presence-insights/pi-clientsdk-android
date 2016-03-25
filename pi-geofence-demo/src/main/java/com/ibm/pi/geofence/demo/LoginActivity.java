@@ -36,10 +36,6 @@ import com.ibm.pisdk.geofencing.demo.R;
  * A login screen that offers login via username/password.
  */
 public class LoginActivity extends Activity {
-    /**
-     * Whether the db has already been deleted once.
-     */
-    private static boolean dbDeleted = false;
     // UI references.
     AutoCompleteTextView serverView;
     AutoCompleteTextView tenantView;
@@ -71,12 +67,6 @@ public class LoginActivity extends Activity {
         });
         loginFormView = findViewById(R.id.login_form);
         progressView = findViewById(R.id.login_progress);
-        /*
-        if (!dbDeleted) {
-            dbDeleted = true;
-            DemoUtils.deleteGeofenceDB(this);
-        }
-        */
     }
 
     /**

@@ -35,20 +35,20 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
      * Logger for this class.
      */
     private static final Logger log = LoggingConfiguration.getLogger(GoogleLocationAPICallback.class.getSimpleName());
-    private final PIGeofencingService geofencingService;
+    private final PIGeofencingManager geofencingService;
     private PendingIntent pendingIntent = null;
 
-    public GoogleLocationAPICallback(PIGeofencingService geofencingService) {
+    public GoogleLocationAPICallback(PIGeofencingManager geofencingService) {
         this.geofencingService = geofencingService;
     }
 
     @Override
     public void onConnected(Bundle bundle) {
         log.debug("connected to google API");
-        if (geofencingService.mode == PIGeofencingService.MODE_APP) {
+        if (geofencingService.mode == PIGeofencingManager.MODE_APP) {
             geofencingService.loadGeofences();
         }
-        if (geofencingService.mode != PIGeofencingService.MODE_REBOOT) {
+        if (geofencingService.mode != PIGeofencingManager.MODE_REBOOT) {
             // register a location change listener
             /*
             // doesn't work due to android issue https://code.google.com/p/android/issues/detail?id=197296
@@ -82,10 +82,10 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
      */
     private PendingIntent getPendingIntent() {
         if (pendingIntent == null) {
-            Class<?> clazz = GeofenceManager.class;
+            Class<?> clazz = LocationRequestReceiver.class;
             //Class<?> clazz = FusedGeofenceManager.class;
             Intent intent = new Intent(geofencingService.context, clazz);
-            new ServiceConfig().fromGeofencingService(geofencingService).toIntent(intent);
+            new ServiceConfig().fromGeofencingManager(geofencingService).toIntent(intent);
             intent.setClass(geofencingService.context, clazz);
             pendingIntent = PendingIntent.getBroadcast(geofencingService.context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         }

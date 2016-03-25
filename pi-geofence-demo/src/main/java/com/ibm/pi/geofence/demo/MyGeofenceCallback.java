@@ -51,14 +51,12 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
         this.slackService = new SlackHTTPService(activity);
     }
 
-    @Override
     public void onGeofencesMonitored(final List<PIGeofence> geofences) {
         log.debug("onGeofencesMonitored() geofences = " + geofences);
         activity.initGeofences();
         updateUI(geofences, false);
     }
 
-    @Override
     public void onGeofencesUnmonitored(List<PIGeofence> geofences) {
         log.debug("onGeofencesUnmonitored() geofences = " + geofences);
         activity.initGeofences();
