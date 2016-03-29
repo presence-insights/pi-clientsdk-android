@@ -1,1 +1,1 @@
-include ':app', ':pi-sdk'
+include ':pi-beacon', ':pi-geofence', ':pi-core'
