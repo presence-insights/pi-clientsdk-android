@@ -56,7 +56,6 @@ public class LoggingConfiguration {
             final LogConfigurator configurator = new LogConfigurator();
             configurator.setUseFileAppender(true);
 
-            //logfile = new File(context.getFilesDir(), File.separator + "pi-sdk.log").getAbsolutePath();
             logfile = new File(Environment.getExternalStorageDirectory(), File.separator + "pi-sdk.log").getAbsolutePath();
             configurator.setFileName(logfile);
             Log.v("LoggingConfiguration", "configure() log file=" + logfile);

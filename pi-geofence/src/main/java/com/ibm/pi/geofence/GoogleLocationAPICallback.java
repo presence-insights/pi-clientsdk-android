@@ -82,7 +82,7 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
      */
     private PendingIntent getPendingIntent() {
         if (pendingIntent == null) {
-            Class<?> clazz = LocationRequestReceiver.class;
+            Class<?> clazz = LocationUpdateReceiver.class;
             //Class<?> clazz = FusedGeofenceManager.class;
             Intent intent = new Intent(geofencingService.context, clazz);
             new ServiceConfig().fromGeofencingManager(geofencingService).toIntent(intent);

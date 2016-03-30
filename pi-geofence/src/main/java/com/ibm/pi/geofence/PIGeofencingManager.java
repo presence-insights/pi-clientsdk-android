@@ -117,10 +117,6 @@ public class PIGeofencingManager {
      */
     private final String deviceDescriptor;
     /**
-     * Whether geofence events are posted to the PI geofence connector.
-     */
-    private boolean sendingGeofenceEvents = true;
-    /**
      * Fully qualified class name of the user-provided callback service.
      */
     String callbackServiceName;
@@ -257,7 +253,7 @@ public class PIGeofencingManager {
             log.warn("cannot send geofence notification because the tenant code is undefined");
         } else if (httpService.getOrgCode() == null) {
             log.warn("cannot send geofence notification because the org code is undefined");
-        } else if (sendingGeofenceEvents) {
+        } else {
             PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
                 @Override
                 public void onSuccess(JSONObject result) {
@@ -338,7 +334,7 @@ public class PIGeofencingManager {
                 @Override
                 public void onSuccess(JSONObject result) {
                     log.debug("sucessfully posted geofence " + fence);
-                    PIGeofence updated = null;
+                    PersistentGeofence updated = null;
                     try {
                         updated = GeofencingJSONUtils.parseGeofence(result);
                     } catch(Exception e) {
@@ -350,7 +346,7 @@ public class PIGeofencingManager {
                     }
                     if (userCallback != null) {
                         try {
-                            userCallback.onSuccess(updated);
+                            userCallback.onSuccess(updated.toPIGeofence());
                         } catch(Exception e) {
                             userCallback.onError(new PIRequestError(-1, e, "error parsing response for registration of fence " + fence));
                         }
@@ -365,7 +361,7 @@ public class PIGeofencingManager {
                     }
                 }
             };
-            JSONObject payload = GeofencingJSONUtils.toJSONGeofence(this, fence, false);
+            JSONObject payload = GeofencingJSONUtils.toJSONGeofence(this, PersistentGeofence.fromPIGeofence(fence), false);
             PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.POST, payload.toString());
             String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s/geofences", CONFIG_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode());
             request.setPath(path);
@@ -385,7 +381,7 @@ public class PIGeofencingManager {
                 @Override
                 public void onSuccess(JSONObject result) {
                     log.debug("sucessfully updated geofence " + fence);
-                    PIGeofence updated = null;
+                    PersistentGeofence updated = null;
                     try {
                         updated = GeofencingJSONUtils.parseGeofence(result);
                     } catch(Exception e) {
@@ -397,7 +393,7 @@ public class PIGeofencingManager {
                     }
                     if (userCallback != null) {
                         try {
-                            userCallback.onSuccess(updated);
+                            userCallback.onSuccess(updated.toPIGeofence());
                         } catch(Exception e) {
                             userCallback.onError(new PIRequestError(-1, e, "error parsing response for registration of fence " + fence));
                         }
@@ -412,7 +408,7 @@ public class PIGeofencingManager {
                     }
                 }
             };
-            JSONObject payload = GeofencingJSONUtils.toJSONGeofence(this, fence, true);
+            JSONObject payload = GeofencingJSONUtils.toJSONGeofence(this, PersistentGeofence.fromPIGeofence(fence), true);
             PIJSONPayloadRequest request = new PIJSONPayloadRequest(callback, HttpMethod.PUT, payload.toString());
             String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s/geofences/%s",
                 CONFIG_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode(), fence.getCode());
@@ -433,7 +429,8 @@ public class PIGeofencingManager {
                 @Override
                 public void onSuccess(JSONObject result) {
                     log.debug("sucessfully deleted geofence " + fence);
-                    fence.delete();
+                    PersistentGeofence pg = GeofencingUtils.geofenceFromCode(fence.getCode());
+                    pg.delete();
                     setInitialLocation();
                     if (userCallback != null) {
                         try {
@@ -465,13 +462,13 @@ public class PIGeofencingManager {
      * Add the specified geofences to the monitored geofences.
      * @param geofences the geofences to add.
      */
-    void monitorGeofences(List<PIGeofence> geofences) {
+    void monitorGeofences(List<PersistentGeofence> geofences) {
         log.debug("monitorGeofences(" + geofences + ")");
         if (!geofences.isEmpty()) {
             List<Geofence> list = new ArrayList<>(geofences.size());
             List<Geofence> noTriggerList = new ArrayList<>(geofences.size());
             Location last = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
-            for (PIGeofence geofence : geofences) {
+            for (PersistentGeofence geofence : geofences) {
                 Geofence fence = new Geofence.Builder().setRequestId(geofence.getCode())
                     .setCircularRegion(geofence.getLatitude(), geofence.getLongitude(), (float) geofence.getRadius())
                     .setExpirationDuration(Geofence.NEVER_EXPIRE)
@@ -492,7 +489,7 @@ public class PIGeofencingManager {
             }
             registerFencesForMonitoring(list, GeofencingRequest.INITIAL_TRIGGER_ENTER);
             registerFencesForMonitoring(noTriggerList, 0);
-            geofenceCallback.onGeofencesMonitored(geofences);
+            geofenceCallback.onGeofencesMonitored(PersistentGeofence.toPIGeofences(geofences));
         }
     }
 
@@ -515,42 +512,25 @@ public class PIGeofencingManager {
      * Remove the specified geofences from the monitored geofences.
      * @param geofences the geofences to remove.
      */
-    void unmonitorGeofences(List<PIGeofence> geofences) {
+    void unmonitorGeofences(List<PersistentGeofence> geofences) {
         log.debug("unmonitorGeofences(" + geofences + ")");
         if (!geofences.isEmpty()) {
             List<String> uuidsToRemove = new ArrayList<>(geofences.size());
-            for (PIGeofence g : geofences) {
+            for (PersistentGeofence g : geofences) {
                 uuidsToRemove.add(g.getCode());
             }
             LocationServices.GeofencingApi.removeGeofences(googleApiClient, uuidsToRemove);
-            geofenceCallback.onGeofencesUnmonitored(geofences);
+            geofenceCallback.onGeofencesUnmonitored(PersistentGeofence.toPIGeofences(geofences));
         }
-    }
-
-    /**
-     * Determine whether geofence events are posted to the PI geofence connector.
-     * @return {@code true} if geofence events are posted, {@code false} otherwise.
-     */
-    public boolean isSendingGeofenceEvents() {
-        return sendingGeofenceEvents;
-    }
-
-    /**
-     * Specify whether geofence events should be posted to the PI geofence connector.
-     * By default, events are posted, i.e. {@link #isSendingGeofenceEvents()} will return {@code true}.
-     * @param sendingGeofenceEvents {@code true}  to enable geofence events posting, {@code false} otherwise.
-     */
-    public void setSendingGeofenceEvents(boolean sendingGeofenceEvents) {
-        this.sendingGeofenceEvents = sendingGeofenceEvents;
     }
 
     /**
      * Load a set of geofences from a reosurce file.
      * @param resource the path to the resource to load the geofences from.
      */
-    public void loadGeofencesFromResource(final String resource, final PIRequestCallback<PIGeofenceList> userCallback) {
+    public void loadGeofencesFromResource(final String resource, final PIRequestCallback<GeofenceList> userCallback) {
         AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
-            private PIGeofenceList geofenceList;
+            private GeofenceList geofenceList;
             private PIRequestError error;
 
             @Override
@@ -561,10 +541,10 @@ public class PIGeofencingManager {
                         int fileSize = bytes.length;
                         JSONObject json = new JSONObject(new String(bytes, "UTF-8"));
                         bytes = null;
-                        PIGeofenceList list = GeofencingJSONUtils.parseGeofences(json);
-                        List<PIGeofence> geofences = list.getGeofences();
+                        GeofenceList list = GeofencingJSONUtils.parseGeofences(json);
+                        List<PersistentGeofence> geofences = list.getGeofences();
                         if ((geofences != null) && !geofences.isEmpty()) {
-                            PIGeofence.saveInTx(geofences);
+                            PersistentGeofence.saveInTx(geofences);
                             log.debug(String.format(Locale.US, "loaded %,d geofences from resource '%s' (%,d bytes)", geofences.size(), resource, fileSize));
                         }
                         if (list.getLastSyncDate() != null) {
@@ -631,7 +611,7 @@ public class PIGeofencingManager {
      * Query the geofences from the server, based on the current anchor.
      */
     private void loadGeofencesFromServer() {
-        if (PIGeofence.count(PIGeofence.class) <= 0) {
+        if (PersistentGeofence.count(PersistentGeofence.class) <= 0) {
             loadGeofencesFromServer(null);
         } else {
             loadGeofencesFromServer(settings.getString(ServiceConfig.EXTRA_LAST_SYNC_DATE, null));
@@ -647,13 +627,13 @@ public class PIGeofencingManager {
                 @Override
                 public void onSuccess(JSONObject result) {
                     try {
-                        PIGeofenceList list = GeofencingJSONUtils.parseGeofences(result);
+                        GeofenceList list = GeofencingJSONUtils.parseGeofences(result);
                         if (list.getLastSyncDate() != null) {
                             settings.putString(ServiceConfig.EXTRA_LAST_SYNC_DATE, list.getLastSyncDate()).commit();
                         }
-                        List<PIGeofence> geofences = list.getGeofences();
+                        List<PersistentGeofence> geofences = list.getGeofences();
                         if (!geofences.isEmpty()) {
-                            PIGeofence.saveInTx(geofences);
+                            PersistentGeofence.saveInTx(geofences);
                             setInitialLocation();
                         }
                         if (!geofences.isEmpty() || !list.getDeletedGeofenceCodes().isEmpty()) {
@@ -697,7 +677,7 @@ public class PIGeofencingManager {
                 Location last = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
                 log.debug("setInitialLocation() last location = " + last);
                 if (last != null) {
-                    new LocationRequestReceiver(PIGeofencingManager.this).onLocationChanged(last, true);
+                    new LocationUpdateReceiver(PIGeofencingManager.this).onLocationChanged(last, true);
                 }
             }
         };

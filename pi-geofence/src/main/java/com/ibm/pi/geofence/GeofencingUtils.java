@@ -91,11 +91,11 @@ class GeofencingUtils {
     /**
      * Extract the monitored geofences from the settings.
      */
-    static List<PIGeofence> extractGeofences(Settings settings) {
+    static List<PersistentGeofence> extractGeofences(Settings settings) {
         return geofencesFromCodes(geofenceCodesFromPrefs(settings));
     }
 
-    static void updateGeofences(Settings settings, Collection<PIGeofence> fences) {
+    static void updateGeofences(Settings settings, Collection<PersistentGeofence> fences) {
         if (fences != null) {
             settings.putStrings(GEOFENCES_PREF_KEY, geofencesToCodes(fences));
         }
@@ -106,9 +106,9 @@ class GeofencingUtils {
      * @param geofenceCodes the codes of the geofenes to retrieve.
      * @return a list of {@link PIGeofence} objects.
      */
-    static List<PIGeofence> geofencesFromCodes(Collection<String> geofenceCodes) {
+    static List<PersistentGeofence> geofencesFromCodes(Collection<String> geofenceCodes) {
         int size = geofenceCodes.size(); // in case size() has a non-constant cost
-        List<PIGeofence> geofences = new ArrayList<>(size);
+        List<PersistentGeofence> geofences = new ArrayList<>(size);
         // build the "code in (?, ..., ?)" where clause
         StringBuilder where = new StringBuilder("code in (");
         for (int count=0; count<size; count++) {
@@ -118,21 +118,21 @@ class GeofencingUtils {
             where.append('?');
         }
         where.append(')');
-        geofences.addAll(PIGeofence.find(PIGeofence.class, where.toString(), geofenceCodes.toArray(new String[size])));
+        geofences.addAll(PersistentGeofence.find(PersistentGeofence.class, where.toString(), geofenceCodes.toArray(new String[size])));
         return geofences;
     }
 
-    static PIGeofence geofenceFromCode(String geofenceCode) {
-        List<PIGeofence> list = PIGeofence.find(PIGeofence.class, "code = ?", geofenceCode);
+    static PersistentGeofence geofenceFromCode(String geofenceCode) {
+        List<PersistentGeofence> list = PersistentGeofence.find(PersistentGeofence.class, "code = ?", geofenceCode);
         if (!list.isEmpty()) {
             return list.get(0);
         }
         return null;
     }
 
-    static List<String> geofencesToCodes(Collection<PIGeofence> geofences) {
+    static List<String> geofencesToCodes(Collection<PersistentGeofence> geofences) {
         List<String> geofenceCodes = new ArrayList<>(geofences.size());
-        for (PIGeofence fence: geofences) {
+        for (PersistentGeofence fence: geofences) {
             geofenceCodes.add(fence.getCode());
         }
         return geofenceCodes;
@@ -154,7 +154,7 @@ class GeofencingUtils {
             where.append('?');
         }
         where.append(')');
-        return PIGeofence.deleteAll(PIGeofence.class, where.toString(), geofenceCodes.toArray(new String[size]));
+        return PersistentGeofence.deleteAll(PersistentGeofence.class, where.toString(), geofenceCodes.toArray(new String[size]));
     }
 
     /**
@@ -164,7 +164,7 @@ class GeofencingUtils {
      */
     static byte[] loadResourceBytes(String name) {
         try {
-            InputStream is = LocationRequestReceiver.class.getClassLoader().getResourceAsStream(name);
+            InputStream is = LocationUpdateReceiver.class.getClassLoader().getResourceAsStream(name);
             byte[] buffer = new byte[2048];
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             int n;

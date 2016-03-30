@@ -37,7 +37,7 @@ public interface PIGeofenceCallback extends Serializable {
 
     /**
      * Called when local geofences are synchronized with, or loaded from, the PI server.
-     * @param geofencesList encapsulates the set of geofences that were add, updated or deleted.
+     * @param geofences encapsulates the set of geofences that were add, updated or deleted.
      */
-    void onGeofencesSync(PIGeofenceList geofencesList);
+    void onGeofencesSync(List<PIGeofence> geofences, List<String> deletedGeofenceCodes);
 }

@@ -16,7 +16,6 @@
 
 package com.ibm.pi.geofence.demo;
 
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -24,7 +23,6 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -48,8 +46,9 @@ import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofenceCallback;
 import com.ibm.pi.geofence.PIGeofenceCallbackServiceConnection;
-import com.ibm.pi.geofence.PIGeofenceList;
+import com.ibm.pi.geofence.GeofenceList;
 import com.ibm.pi.geofence.PIGeofencingManager;
+import com.ibm.pi.geofence.PersistentGeofence;
 import com.ibm.pi.geofence.Settings;
 import com.ibm.pi.geofence.rest.PIRequestCallback;
 import com.ibm.pi.geofence.rest.PIRequestError;
@@ -59,6 +58,7 @@ import com.ibm.pisdk.geofencing.demo.R;
 import org.apache.log4j.Logger;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -204,7 +204,6 @@ public class MapsActivity extends FragmentActivity {
         String orgCode = settings.getString("orgCode", null);
         log.debug(String.format("found orgCode = %s from settings", orgCode));
         service = PIGeofencingManager.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
-        service.setSendingGeofenceEvents(true);
         if (orgCode == null) {
             //String orgName = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
             String orgName = "android-" + UUID.randomUUID().toString();
@@ -248,8 +247,8 @@ public class MapsActivity extends FragmentActivity {
             }
 
             @Override
-            public void onGeofencesSync(PIGeofenceList geofencesList) {
-                log.debug(String.format("sync of geofences: added/updated %s, deleted: %s", geofencesList.getGeofences(), geofencesList.getDeletedGeofenceCodes()));
+            public void onGeofencesSync(List<PIGeofence> geofencesList, List<String> deletedGeofenceCodes) {
+                log.debug(String.format("sync of geofences: added/updated %s, deleted: %s", geofencesList, deletedGeofenceCodes));
             }
         });
 
@@ -492,7 +491,11 @@ public class MapsActivity extends FragmentActivity {
 
     void initGeofences() {
         try {
-            final List<PIGeofence> fences = PIGeofence.listAll(PIGeofence.class);
+            List<PersistentGeofence> pgList = PersistentGeofence.listAll(PersistentGeofence.class);
+            final List<PIGeofence> fences = new ArrayList<>(pgList.size());
+            for (PersistentGeofence pg: pgList) {
+                fences.add(new PIGeofence(pg.getCode(), pg.getName(), pg.getDescription(), pg.getLatitude(), pg.getLongitude(), pg.getRadius()));
+            }
             log.debug("initGeofences() " + (fences == null ? 0 : fences.size()) + " fences in local DB");
             geofenceManager.clearFences();
             geofenceManager.addFences(fences);
@@ -554,39 +557,8 @@ public class MapsActivity extends FragmentActivity {
                     log.debug(e.getMessage(), e);
                 }
                 break;
-            case R.id.run_test:
-                if ("6x07ykw".equals(settings.getString("orgCode", ""))) {
-                    if (simulationStarted.compareAndSet(false, true)) {
-                        item.setVisible(false);
-                        try {
-                            List<PIGeofence> list = new ArrayList<>(PIGeofence.listAll(PIGeofence.class));
-                            Collections.sort(list, new Comparator<PIGeofence>() {
-                                @Override
-                                public int compare(PIGeofence lhs, PIGeofence rhs) {
-                                    return ((Double) rhs.getLatitude()).compareTo(lhs.getLatitude());
-                                }
-                            });
-                            TravelSimulator ts = new TravelSimulator(this, list, 2, 20_000L, new TravelSimulator.Callback() {
-                                @Override
-                                public void onSimulationEnded() {
-                                    simulationStarted.set(false);
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            item.setVisible(true);
-                                        }
-                                    });
-                                }
-                            });
-                            new Thread(ts, "TravelSimulator").start();
-                        } catch(Exception e) {
-                            log.debug(e.getMessage(), e);
-                        }
-                    }
-                }
-                break;
         }
-       return super.onOptionsItemSelected(item);
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -594,11 +566,6 @@ public class MapsActivity extends FragmentActivity {
         getMenuInflater().inflate(R.menu.menu, menu);
         MenuItem item = menu.findItem(R.id.action_tracking);
         item.setIcon(trackingEnabled ? R.mipmap.on : R.mipmap.off);
-        if ("6x07ykw".equals(settings.getString("orgCode", ""))) {
-            log.debug("setting run_test item visible");
-            item = menu.findItem(R.id.run_test);
-            item.setVisible(true);
-        }
         return true;
     }
 

@@ -54,7 +54,7 @@ class ServiceConfig implements Serializable {
     double maxDistance;
     String packageName;
     String callbackServiceName;
-    List<PIGeofence> geofences;
+    List<PersistentGeofence> geofences;
     EventType eventType;
     LatLng newLocation;
     List<String> deletedGeofences;
@@ -202,7 +202,7 @@ class ServiceConfig implements Serializable {
         if (geofences != null) {
             StringBuilder sb = new StringBuilder();
             int count = 0;
-            for (PIGeofence fence: geofences) {
+            for (PersistentGeofence fence: geofences) {
                 if (count > 0) {
                     sb.append('|');
                 }

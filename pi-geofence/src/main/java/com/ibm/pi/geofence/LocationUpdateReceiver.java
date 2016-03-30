@@ -32,21 +32,21 @@ import java.util.Locale;
  * Receives location change events and determines whether they are significant changes, that is,
  * whether the new location is outside the current bounding box.
  */
-public class LocationRequestReceiver extends BroadcastReceiver {
+public class LocationUpdateReceiver extends BroadcastReceiver {
     /**
      * Logger for this class.
      */
-    private static final Logger log = LoggingConfiguration.getLogger(LocationRequestReceiver.class.getSimpleName());
+    private static final Logger log = LoggingConfiguration.getLogger(LocationUpdateReceiver.class.getSimpleName());
     private Context context;
     private Location referenceLocation = null;
     private double maxDistance;
     private Settings settings;
     private ServiceConfig config;
 
-    public LocationRequestReceiver() {
+    public LocationUpdateReceiver() {
     }
 
-    public LocationRequestReceiver(PIGeofencingManager geofencingService) {
+    public LocationUpdateReceiver(PIGeofencingManager geofencingService) {
         this();
         this.context = geofencingService.context;
         this.settings = geofencingService.settings;

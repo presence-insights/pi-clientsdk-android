@@ -22,21 +22,21 @@ import java.util.List;
 /**
  * Encapsulates a list of geofences a returned by the PI server upon a get or sync request.
  */
-public class PIGeofenceList {
-    private final List<PIGeofence> geofences;
+public class GeofenceList {
+    private final List<PersistentGeofence> geofences;
     int pageNumber;
     int pageSize;
     int totalGeofences;
     String lastSyncDate;
     List<String> deletedGeofenceCodes;
 
-    public PIGeofenceList(final List<PIGeofence> geofences) {
-        this.geofences = (geofences == null) ? Collections.<PIGeofence>emptyList() : geofences;
+    public GeofenceList(final List<PersistentGeofence> geofences) {
+        this.geofences = (geofences == null) ? Collections.<PersistentGeofence>emptyList() : geofences;
         this.deletedGeofenceCodes = Collections.emptyList();
     }
 
-    public PIGeofenceList(final List<PIGeofence> geofences, int pageNumber, int pageSize, int totalGeofences, String lastSyncDate, List<String> deletedGeofenceCodes) {
-        this.geofences = (geofences == null) ? Collections.<PIGeofence>emptyList() : geofences;
+    public GeofenceList(final List<PersistentGeofence> geofences, int pageNumber, int pageSize, int totalGeofences, String lastSyncDate, List<String> deletedGeofenceCodes) {
+        this.geofences = (geofences == null) ? Collections.<PersistentGeofence>emptyList() : geofences;
         this.pageNumber = pageNumber;
         this.pageSize = pageSize;
         this.totalGeofences = totalGeofences;
@@ -48,7 +48,7 @@ public class PIGeofenceList {
      * Get the list of geofences that were added or updated since the last sync and loaded from the PI server.
      * @return a list of {@link PIGeofence} objects, possibly empty.
      */
-    public List<PIGeofence> getGeofences() {
+    public List<PersistentGeofence> getGeofences() {
         return geofences;
     }
 

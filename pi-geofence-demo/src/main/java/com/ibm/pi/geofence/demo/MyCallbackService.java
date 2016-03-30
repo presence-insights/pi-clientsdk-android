@@ -10,7 +10,7 @@ import android.support.v4.app.NotificationCompat;
 import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofenceCallbackService;
-import com.ibm.pi.geofence.PIGeofenceList;
+import com.ibm.pi.geofence.GeofenceList;
 import com.ibm.pi.geofence.Settings;
 
 import org.apache.log4j.Logger;
@@ -62,8 +62,8 @@ public class MyCallbackService extends PIGeofenceCallbackService {
     }
 
     @Override
-    public void onGeofencesSync(PIGeofenceList geofencesList) {
-        log.debug(String.format("got new/updated geofences: %s - deleted: %s", geofencesList.getGeofences(), geofencesList.getDeletedGeofenceCodes()));
+    public void onGeofencesSync(List<PIGeofence> geofencesList, List<String> deletedGeofenceCodes) {
+        log.debug(String.format("got new/updated geofences: %s - deleted: %s", geofencesList, deletedGeofenceCodes));
     }
 
     /*

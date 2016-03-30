@@ -107,11 +107,8 @@ public class EditGeofenceDialog extends DialogFragment {
             builder.setPositiveButton(R.string.update_button, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int id) {
-                    fence.setName(nameView.getText().toString());
-                    fence.setDescription(descView.getText().toString());
-                    fence.setRadius(radius);
-                    fence.setLatitude(position.latitude);
-                    fence.setLongitude(position.longitude);
+                    fence = new PIGeofence(fence.getCode(), nameView.getText().toString(), descView.getText().toString(),
+                        position.latitude, position.longitude, radius);
                     /*
                     mapsActivity.service.updateGeofence(fence, new PIRequestCallback<PIGeofence>() {
                         @Override

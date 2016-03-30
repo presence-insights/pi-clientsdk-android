@@ -92,10 +92,10 @@ public class GeofenceTransitionsService extends IntentService {
                 callback = service.geofenceCallback;
             }
             config.populateFromSettings(service.settings);
-            List<PIGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
+            List<PersistentGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
             for (Geofence g : triggeringGeofences) {
                 String code = g.getRequestId();
-                PIGeofence geofence = GeofencingUtils.geofenceFromCode(code);
+                PersistentGeofence geofence = GeofencingUtils.geofenceFromCode(code);
                 if (geofence != null) {
                     geofences.add(geofence);
                 }
@@ -103,9 +103,9 @@ public class GeofenceTransitionsService extends IntentService {
             log.debug(String.format("callback = %s, clazz=%s, triggered geofences = %s", callback, clazz, geofences));
             if (callback != null) {
                 if (transition == Geofence.GEOFENCE_TRANSITION_ENTER) {
-                    callback.onGeofencesEnter(geofences);
+                    callback.onGeofencesEnter(PersistentGeofence.toPIGeofences(geofences));
                 } else {
-                    callback.onGeofencesExit(geofences);
+                    callback.onGeofencesExit(PersistentGeofence.toPIGeofences(geofences));
                 }
             }
             if (clazz != null) {

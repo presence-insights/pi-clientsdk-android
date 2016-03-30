@@ -1,3 +1,19 @@
+/**
+ * Copyright (c) 2015-2016 IBM Corporation. All rights reserved.
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.ibm.pi.geofence;
 
 import android.app.IntentService;
@@ -47,26 +63,28 @@ public abstract class PIGeofenceCallbackService extends IntentService implements
         ServiceConfig config = new ServiceConfig().fromIntent(intent);
         log.debug("onHandleIntent() config=" + config);
         context = config.createContext(this);
+        List<PIGeofence> geofences = null;
         switch(config.eventType) {
             case ENTER:
+                geofences = PersistentGeofence.toPIGeofences(config.geofences);
                 for (PIGeofenceCallback callback: callbacks) {
-                    callback.onGeofencesEnter(config.geofences);
+                    callback.onGeofencesEnter(geofences);
                 }
-                onGeofencesEnter(config.geofences);
+                onGeofencesEnter(geofences);
                 break;
             case EXIT:
+                geofences = PersistentGeofence.toPIGeofences(config.geofences);
                 for (PIGeofenceCallback callback: callbacks) {
-                    callback.onGeofencesExit(config.geofences);
+                    callback.onGeofencesExit(geofences);
                 }
-                onGeofencesExit(config.geofences);
+                onGeofencesExit(geofences);
                 break;
             case SERVER_SYNC:
-                PIGeofenceList list = new PIGeofenceList(config.geofences);
-                list.deletedGeofenceCodes = config.deletedGeofences;
+                geofences = PersistentGeofence.toPIGeofences(config.geofences);
                 for (PIGeofenceCallback callback: callbacks) {
-                    callback.onGeofencesSync(list);
+                    callback.onGeofencesSync(geofences, config.deletedGeofences);
                 }
-                onGeofencesSync(list);
+                onGeofencesSync(geofences, config.deletedGeofences);
                 break;
         }
     }

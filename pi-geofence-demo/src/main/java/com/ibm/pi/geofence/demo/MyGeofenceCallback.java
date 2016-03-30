@@ -25,7 +25,7 @@ import android.support.v4.app.NotificationCompat;
 
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofenceCallback;
-import com.ibm.pi.geofence.PIGeofenceList;
+import com.ibm.pi.geofence.GeofenceList;
 
 import org.apache.log4j.Logger;
 
@@ -84,7 +84,7 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
     }
 
     @Override
-    public void onGeofencesSync(PIGeofenceList geofencesList) {
+    public void onGeofencesSync(List<PIGeofence> geofences, List<String> deletedGeofenceCodes) {
     }
 
     void updateUI(final List<PIGeofence> geofences, final boolean isEntry) {

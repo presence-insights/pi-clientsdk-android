@@ -56,10 +56,10 @@ class DelegatingGeofenceCallback implements PIGeofenceCallback {
     }
 
     @Override
-    public void onGeofencesSync(PIGeofenceList geofencesList) {
+    public void onGeofencesSync(List<PIGeofence> geofencesList, List<String> deletedGeofenceCodes) {
         PIGeofenceCallback cb = delegate.get();
         if (cb != null) {
-            cb.onGeofencesSync(geofencesList);
+            cb.onGeofencesSync(geofencesList, deletedGeofenceCodes);
         }
     }
 

@@ -50,12 +50,16 @@ class GeofencingJSONUtils {
      * @return a list of {@link PIGeofence} instances.
      * @throws Exception if a parsing error occurs.
      */
-    static PIGeofenceList parseGeofences(JSONObject json) throws Exception {
-        List<PIGeofence> result = new ArrayList<>();
+    static GeofenceList parseGeofences(JSONObject json) throws Exception {
+        List<PersistentGeofence> result = new ArrayList<>();
         JSONArray features = json.getJSONArray("features");
         for (int i=0; i<features.length(); i++) {
             JSONObject feature = features.getJSONObject(i);
             result.add(parseGeofence(feature));
+        }
+        List<PIGeofence> piGeofences = new ArrayList<>(result.size());
+        for (PersistentGeofence pg: result) {
+            piGeofences.add(pg.toPIGeofence());
         }
         if (json.has("properties")) {
             JSONObject properties = json.getJSONObject("properties");
@@ -75,9 +79,9 @@ class GeofencingJSONUtils {
             int pageSize = properties.has("pageSize") ? properties.getInt("pageSize") : -1;
             int totalGeofences = properties.has("totalFeatures") ? properties.getInt("totalFeatures") : -1;
             String lastSyncDate = properties.has("lastSyncDate") ? properties.getString("lastSyncDate") : null;
-            return new PIGeofenceList(result, pageNumber, pageSize, totalGeofences, lastSyncDate, deletedCodes);
+            return new GeofenceList(result, pageNumber, pageSize, totalGeofences, lastSyncDate, deletedCodes);
         }
-        return new PIGeofenceList(result);
+        return new GeofenceList(result);
     }
 
     /**
@@ -86,7 +90,7 @@ class GeofencingJSONUtils {
      * @return a {@link PIGeofence} instance.
      * @throws Exception if a parsing error occurs.
      */
-    static PIGeofence parseGeofence(JSONObject feature) throws Exception {
+    static PersistentGeofence parseGeofence(JSONObject feature) throws Exception {
         JSONObject props = feature.getJSONObject("properties");
         String code = props.has("code") ? props.getString("code") : (props.has("@code") ? props.getString("@code") : null);
         JSONObject updatedJSON = props.getJSONObject("@updated");
@@ -100,10 +104,10 @@ class GeofencingJSONUtils {
         JSONArray coord = geometry.getJSONArray("coordinates");
         double lng = coord.getDouble(0);
         double lat = coord.getDouble(1);
-        PIGeofence geofence = GeofencingUtils.geofenceFromCode(code);
+        PersistentGeofence geofence = GeofencingUtils.geofenceFromCode(code);
         if (geofence == null) {
             // if not in local DB create a new one
-            geofence = new PIGeofence(code, name, description, lat, lng, radius);
+            geofence = new PersistentGeofence(code, name, description, lat, lng, radius);
         } else {
             // update existing geofence
             geofence.setName(name);
@@ -131,7 +135,7 @@ class GeofencingJSONUtils {
       }
     }
     */
-    static JSONObject toJSONGeofence(PIGeofencingManager service, PIGeofence fence, boolean isUpdate) {
+    static JSONObject toJSONGeofence(PIGeofencingManager service, PersistentGeofence fence, boolean isUpdate) {
         JSONObject json = new JSONObject();
         try {
             json.put("type", "Feature");
@@ -258,7 +262,7 @@ class GeofencingJSONUtils {
         return json;
     }
 
-    static PIGeofence updateGeofenceTimestampsFromJSON(PIGeofence geofence, JSONObject json) {
+    static PersistentGeofence updateGeofenceTimestampsFromJSON(PersistentGeofence geofence, JSONObject json) {
         try {
             JSONObject properties = json.getJSONObject("properties");
             JSONObject created = properties.getJSONObject("@created");
