@@ -71,11 +71,7 @@ task androidJavadocs(type: Javadoc) {
         linksOffline "http://d.android.com/reference", androidRefPath
     }
     include "**/PI*.java"
-    exclude "**/PIGeofenceList.java"
-    exclude "**/PIErrorCallback.java"
-    exclude "**/PIHttpService.java"
-    exclude "**/PIJSONPayloadRequest.java"
-    exclude "**/PIRequest.java"
+    exclude "**/rest/*.java"
     exclude '**/BuildConfig.java'
     exclude '**/R.java'
 }

@@ -29,7 +29,7 @@ import java.util.Set;
 /**
  * .
  */
-public class GeofenceManager {
+public class GeofenceHolder {
     /**
      * Mapping of registered geofences to their uuids.
      */

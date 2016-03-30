@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * Encapsulates a list of geofences a returned by the PI server upon a get or sync request.
  */
-public class GeofenceList {
+class GeofenceList {
     private final List<PersistentGeofence> geofences;
     int pageNumber;
     int pageSize;

@@ -25,7 +25,6 @@ import android.support.v4.app.NotificationCompat;
 
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofenceCallback;
-import com.ibm.pi.geofence.GeofenceList;
 
 import org.apache.log4j.Logger;
 
@@ -92,7 +91,7 @@ public class MyGeofenceCallback implements PIGeofenceCallback {
             activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    PIGeofence g = activity.getGeofenceManager().getGeofence(geofence.getCode());
+                    PIGeofence g = activity.getGeofenceHolder().getGeofence(geofence.getCode());
                     log.debug("Geofence " + (isEntry ? "entry" : "exit") + " for " + g + " (uuid=" + geofence + ")");
                     if (g != null) {
                         activity.refreshGeofenceInfo(g, isEntry);

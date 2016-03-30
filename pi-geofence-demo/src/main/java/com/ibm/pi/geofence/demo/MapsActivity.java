@@ -46,7 +46,6 @@ import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofenceCallback;
 import com.ibm.pi.geofence.PIGeofenceCallbackServiceConnection;
-import com.ibm.pi.geofence.GeofenceList;
 import com.ibm.pi.geofence.PIGeofencingManager;
 import com.ibm.pi.geofence.PersistentGeofence;
 import com.ibm.pi.geofence.Settings;
@@ -58,10 +57,7 @@ import com.ibm.pisdk.geofencing.demo.R;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +109,7 @@ public class MapsActivity extends FragmentActivity {
     /**
      *
      */
-    private final GeofenceManager geofenceManager = new GeofenceManager();
+    private final GeofenceHolder geofenceHolder = new GeofenceHolder();
     /**
      * Mapping of geofence uuids to the corresponding objects (marker, circle etc.) displayed on the map.
      */
@@ -121,7 +117,8 @@ public class MapsActivity extends FragmentActivity {
     /**
      * Reference to the geofencing service used in this demo.
      */
-    PIGeofencingManager service;
+    PIGeofencingManager manager;
+    CustomPIHttpService customHttpService;
     /**
      * Whether the db has already been deleted once.
      */
@@ -203,12 +200,13 @@ public class MapsActivity extends FragmentActivity {
         */
         String orgCode = settings.getString("orgCode", null);
         log.debug(String.format("found orgCode = %s from settings", orgCode));
-        service = PIGeofencingManager.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        manager = PIGeofencingManager.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        customHttpService = new CustomPIHttpService(manager, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh");
         if (orgCode == null) {
             //String orgName = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
             String orgName = "android-" + UUID.randomUUID().toString();
             log.debug("org name = " + orgName);
-            service.createOrg(orgName, "org for id " + orgName, null, true, new PIRequestCallback<PIOrg>() {
+            customHttpService.createOrg(orgName, "org for id " + orgName, null, true, new PIRequestCallback<PIOrg>() {
                 @Override
                 public void onSuccess(PIOrg result) {
                     String orgCode = result.getCode();
@@ -228,7 +226,7 @@ public class MapsActivity extends FragmentActivity {
             }
         }
         try {
-            startSimulation(geofenceManager.getFences());
+            startSimulation(geofenceHolder.getFences());
         } catch(Exception e) {
             log.error("error in startSimulation()", e);
         }
@@ -282,7 +280,7 @@ public class MapsActivity extends FragmentActivity {
      */
     void startSimulation(final List<PIGeofence> fences) {
         for (PIGeofence g : fences) {
-            geofenceManager.updateGeofence(g);
+            geofenceHolder.updateGeofence(g);
         }
         runOnUiThread(new Runnable() {
             @Override
@@ -331,7 +329,7 @@ public class MapsActivity extends FragmentActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                List<PIGeofence> fences = geofenceManager.getFences();
+                                List<PIGeofence> fences = geofenceHolder.getFences();
                                 LatLng latlng = currentLocation != null
                                     ? new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude())
                                     : googleMap.getCameraPosition().target;
@@ -399,7 +397,7 @@ public class MapsActivity extends FragmentActivity {
      */
     void updateCurrentMarker() {
         if (currentMarker != null) {
-            BitmapDescriptor btDesc = BitmapDescriptorFactory.defaultMarker(geofenceManager.hasActiveFence() ? BitmapDescriptorFactory.HUE_AZURE : BitmapDescriptorFactory.HUE_RED);
+            BitmapDescriptor btDesc = BitmapDescriptorFactory.defaultMarker(geofenceHolder.hasActiveFence() ? BitmapDescriptorFactory.HUE_AZURE : BitmapDescriptorFactory.HUE_RED);
             currentMarker.setIcon(btDesc);
         }
     }
@@ -411,13 +409,13 @@ public class MapsActivity extends FragmentActivity {
      */
     void refreshGeofenceInfo(PIGeofence fence, boolean active) {
         String uuid = fence.getCode();
-        if (geofenceManager.getGeofence(uuid) == null) {
-            geofenceManager.updateGeofence(fence);
+        if (geofenceHolder.getGeofence(uuid) == null) {
+            geofenceHolder.updateGeofence(fence);
         }
         if (active) {
-            geofenceManager.addActiveFence(uuid);
+            geofenceHolder.addActiveFence(uuid);
         } else {
-            geofenceManager.removeActiveFence(uuid);
+            geofenceHolder.removeActiveFence(uuid);
         }
         GeofenceInfo info = geofenceInfoMap.get(uuid);
         if (info == null) {
@@ -452,7 +450,7 @@ public class MapsActivity extends FragmentActivity {
             info.marker.remove();
             info.circle.remove();
             geofenceInfoMap.remove(uuid);
-            geofenceManager.removeGeofence(fence);
+            geofenceHolder.removeGeofence(fence);
         }
     }
 
@@ -475,8 +473,8 @@ public class MapsActivity extends FragmentActivity {
         return bitmap;
     }
 
-    public GeofenceManager getGeofenceManager() {
-        return geofenceManager;
+    public GeofenceHolder getGeofenceHolder() {
+        return geofenceHolder;
     }
 
     GeofenceInfo getGeofenceInfoForMarker(Marker marker) {
@@ -497,8 +495,8 @@ public class MapsActivity extends FragmentActivity {
                 fences.add(new PIGeofence(pg.getCode(), pg.getName(), pg.getDescription(), pg.getLatitude(), pg.getLongitude(), pg.getRadius()));
             }
             log.debug("initGeofences() " + (fences == null ? 0 : fences.size()) + " fences in local DB");
-            geofenceManager.clearFences();
-            geofenceManager.addFences(fences);
+            geofenceHolder.clearFences();
+            geofenceHolder.addFences(fences);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

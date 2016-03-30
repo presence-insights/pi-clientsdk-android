@@ -10,7 +10,6 @@ import android.support.v4.app.NotificationCompat;
 import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofenceCallbackService;
-import com.ibm.pi.geofence.GeofenceList;
 import com.ibm.pi.geofence.Settings;
 
 import org.apache.log4j.Logger;
