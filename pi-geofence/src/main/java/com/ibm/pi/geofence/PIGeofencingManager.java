@@ -43,12 +43,16 @@ import com.ibm.pisdk.geofencing.BuildConfig;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * Provides an API to load geofences from, and send entry/exit to, the server.
@@ -335,36 +339,65 @@ public class PIGeofencingManager {
      * Load a set of geofences from a reosurce file.
      * @param resource the path to the resource to load the geofences from.
      */
-    public void loadGeofencesFromResource(final String resource, final PIRequestCallback<GeofenceList> userCallback) {
+    public void loadGeofencesFromResource(final String resource, final PIRequestCallback<List<PIGeofence>> userCallback) {
         AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
             private GeofenceList geofenceList;
             private PIRequestError error;
 
             @Override
             protected Void doInBackground(Void... params) {
+                ZipInputStream zis = null;
                 try {
-                    byte[] bytes = GeofencingUtils.loadResourceBytes(resource);
-                    if (bytes != null) {
-                        int fileSize = bytes.length;
-                        JSONObject json = new JSONObject(new String(bytes, "UTF-8"));
-                        bytes = null;
-                        GeofenceList list = GeofencingJSONUtils.parseGeofences(json);
-                        List<PersistentGeofence> geofences = list.getGeofences();
-                        if ((geofences != null) && !geofences.isEmpty()) {
-                            PersistentGeofence.saveInTx(geofences);
-                            log.debug(String.format(Locale.US, "loaded %,d geofences from resource '%s' (%,d bytes)", geofences.size(), resource, fileSize));
+                    InputStream is = getClass().getClassLoader().getResourceAsStream(resource);
+                    zis = new ZipInputStream(is);
+                    ZipEntry entry;
+                    Map<String, PersistentGeofence> allGeofences = new HashMap<>();
+                    String maxSyncDate = null;
+                    while ((entry = zis.getNextEntry()) != null) {
+                        byte[] bytes = GeofencingUtils.loadBytes(zis);
+                        if (bytes != null) {
+                            int fileSize = bytes.length;
+                            JSONObject json = new JSONObject(new String(bytes, "UTF-8"));
+                            bytes = null; // the byte[] may be large, we make sure it can be GC-ed ASAP
+                            GeofenceList list = GeofencingJSONUtils.parseGeofences(json);
+                            List<PersistentGeofence> geofences = list.getGeofences();
+                            if ((geofences != null) && !geofences.isEmpty()) {
+                                PersistentGeofence.saveInTx(geofences);
+                                log.debug(String.format(Locale.US, "loaded %,d geofences from resource '[%s]/%s' (%,d bytes)",
+                                    geofences.size(), resource, entry.getName(), fileSize));
+                            }
+
+                            if (list.getLastSyncDate() != null) {
+                                if ((maxSyncDate == null) || (list.getLastSyncDate().compareTo(maxSyncDate) > 0)) {
+                                    maxSyncDate = list.getLastSyncDate();
+                                }
+                            }
+                            for (PersistentGeofence pg: list.getGeofences()) {
+                                allGeofences.put(pg.getCode(), pg);
+                            }
                         }
-                        if (list.getLastSyncDate() != null) {
-                            settings.putString(ServiceConfig.EXTRA_LAST_SYNC_DATE, list.getLastSyncDate()).commit();
+                        else {
+                            log.debug(String.format("the zip entry [%s]/%s is empty", resource, entry.getName()));
                         }
-                        this.geofenceList = list;
                     }
-                    else {
-                        this.error = new PIRequestError(-1, null, String.format("the specified resoure '%s' is empty", resource));
+                    if (maxSyncDate != null) {
+                        settings.putString(ServiceConfig.EXTRA_LAST_SYNC_DATE, maxSyncDate).commit();
                     }
+                    geofenceList = new GeofenceList(new ArrayList<>(allGeofences.values()));
+                    log.debug(String.format(Locale.US, "loaded %,d geofences from resource '[%s]', maxSyncDate=%s",
+                        allGeofences.size(), resource, maxSyncDate));
                 } catch(Exception e) {
                     log.error(String.format("error loading resource %s", resource), e);
-                    this.error = new PIRequestError(-1, e, String.format("error loading resource '%s'", resource));
+                    error = new PIRequestError(-1, e, String.format("error loading resource '%s'", resource));
+                } finally {
+                    try {
+                        zis.close();
+                    } catch(Exception e) {
+                        log.error(String.format("error closing zip input stream for resource %s", resource), e);
+                        if (error == null) {
+                            error = new PIRequestError(-1, e, String.format("error loading resource '%s'", resource));
+                        }
+                    }
                 }
                 return null;
             }
@@ -375,7 +408,11 @@ public class PIGeofencingManager {
                     if (error != null) {
                         userCallback.onError(error);
                     } else {
-                        userCallback.onSuccess(geofenceList);
+                        List<PIGeofence> geofences = new ArrayList<>(geofenceList.getGeofences().size());
+                        for (PersistentGeofence pg: geofenceList.getGeofences()) {
+                            geofences.add(pg.toPIGeofence());
+                        }
+                        userCallback.onSuccess(geofences);
                     }
                 }
             }

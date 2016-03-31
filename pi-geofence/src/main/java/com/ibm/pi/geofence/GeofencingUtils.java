@@ -163,8 +163,16 @@ class GeofencingUtils {
      * @return the resource content as a byte array, or {code null} if the resource could not be loaded.
      */
     static byte[] loadResourceBytes(String name) {
+        return loadBytes(GeofencingUtils.class.getClassLoader().getResourceAsStream(name));
+    }
+
+    /**
+     * Load the ocntent of a resource from an input stream.
+     * @param is the input stream to read from.
+     * @return the resource content as a byte array, or {code null} if the resource could not be loaded.
+     */
+    static byte[] loadBytes(InputStream is) {
         try {
-            InputStream is = LocationUpdateReceiver.class.getClassLoader().getResourceAsStream(name);
             byte[] buffer = new byte[2048];
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             int n;
@@ -173,7 +181,7 @@ class GeofencingUtils {
             }
             return baos.toByteArray();
         } catch (Exception e) {
-            log.debug(String.format("error while trying to read resource %s", name), e);
+            log.debug(String.format("error while trying to read input stream %s", is), e);
         }
         return null;
     }

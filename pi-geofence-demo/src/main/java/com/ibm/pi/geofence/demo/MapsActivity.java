@@ -201,6 +201,20 @@ public class MapsActivity extends FragmentActivity {
         String orgCode = settings.getString("orgCode", null);
         log.debug(String.format("found orgCode = %s from settings", orgCode));
         manager = PIGeofencingManager.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        /*
+        // testing the loading from a zip resource
+        manager.loadGeofencesFromResource("com/ibm/pisdk/geofencing/geofence_2016-03-18_14_38_04.zip", new PIRequestCallback<List<PIGeofence>>() {
+            @Override
+            public void onSuccess(List<PIGeofence> result) {
+                log.debug("successfully loaded geofences from resource: " + result);
+            }
+
+            @Override
+            public void onError(PIRequestError error) {
+                log.debug("error loading geofences from resource: " + error);
+            }
+        });
+        */
         customHttpService = new CustomPIHttpService(manager, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh");
         if (orgCode == null) {
             //String orgName = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
