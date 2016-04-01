@@ -24,21 +24,17 @@ import java.util.List;
  */
 class GeofenceList {
     private final List<PersistentGeofence> geofences;
-    int pageNumber;
-    int pageSize;
     int totalGeofences;
     String lastSyncDate;
     List<String> deletedGeofenceCodes;
 
-    public GeofenceList(final List<PersistentGeofence> geofences) {
+    GeofenceList(final List<PersistentGeofence> geofences) {
         this.geofences = (geofences == null) ? Collections.<PersistentGeofence>emptyList() : geofences;
         this.deletedGeofenceCodes = Collections.emptyList();
     }
 
-    public GeofenceList(final List<PersistentGeofence> geofences, int pageNumber, int pageSize, int totalGeofences, String lastSyncDate, List<String> deletedGeofenceCodes) {
+    GeofenceList(final List<PersistentGeofence> geofences, int totalGeofences, String lastSyncDate, List<String> deletedGeofenceCodes) {
         this.geofences = (geofences == null) ? Collections.<PersistentGeofence>emptyList() : geofences;
-        this.pageNumber = pageNumber;
-        this.pageSize = pageSize;
         this.totalGeofences = totalGeofences;
         this.lastSyncDate = lastSyncDate;
         this.deletedGeofenceCodes = (deletedGeofenceCodes == null) ? Collections.<String>emptyList() : deletedGeofenceCodes;
@@ -48,23 +44,15 @@ class GeofenceList {
      * Get the list of geofences that were added or updated since the last sync and loaded from the PI server.
      * @return a list of {@link PIGeofence} objects, possibly empty.
      */
-    public List<PersistentGeofence> getGeofences() {
+    List<PersistentGeofence> getGeofences() {
         return geofences;
     }
 
-    public int getPageNumber() {
-        return pageNumber;
-    }
-
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    public int getTotalGeofences() {
+    int getTotalGeofences() {
         return totalGeofences;
     }
 
-    public String getLastSyncDate() {
+    String getLastSyncDate() {
         return lastSyncDate;
     }
 
@@ -72,7 +60,7 @@ class GeofenceList {
      * Get the list of codes for the geofences that were deleted since the last sync.
      * @return a list of geofence codes, possibly empty.
      */
-    public List<String> getDeletedGeofenceCodes() {
+    List<String> getDeletedGeofenceCodes() {
         return deletedGeofenceCodes;
     }
 }

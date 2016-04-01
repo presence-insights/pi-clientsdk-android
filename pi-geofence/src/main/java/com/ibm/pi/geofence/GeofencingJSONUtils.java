@@ -57,10 +57,6 @@ class GeofencingJSONUtils {
             JSONObject feature = features.getJSONObject(i);
             result.add(parseGeofence(feature));
         }
-        List<PIGeofence> piGeofences = new ArrayList<>(result.size());
-        for (PersistentGeofence pg: result) {
-            piGeofences.add(pg.toPIGeofence());
-        }
         if (json.has("properties")) {
             JSONObject properties = json.getJSONObject("properties");
             List<String> deletedCodes = null;
@@ -75,11 +71,9 @@ class GeofencingJSONUtils {
                     log.debug(String.format("deleted %d geofences from local DB", n));
                 }
             }
-            int pageNumber = properties.has("page") ? properties.getInt("page") : -1;
-            int pageSize = properties.has("pageSize") ? properties.getInt("pageSize") : -1;
             int totalGeofences = properties.has("totalFeatures") ? properties.getInt("totalFeatures") : -1;
             String lastSyncDate = properties.has("lastSyncDate") ? properties.getString("lastSyncDate") : null;
-            return new GeofenceList(result, pageNumber, pageSize, totalGeofences, lastSyncDate, deletedCodes);
+            return new GeofenceList(result, totalGeofences, lastSyncDate, deletedCodes);
         }
         return new GeofenceList(result);
     }

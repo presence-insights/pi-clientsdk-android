@@ -49,10 +49,10 @@ class DelegatingGeofenceCallback implements PIGeofenceCallback {
         }
     }
 
-    public void onGeofencesMonitored(List<PIGeofence> geofences) {
+    void onGeofencesMonitored(List<PIGeofence> geofences) {
     }
 
-    public void onGeofencesUnmonitored(List<PIGeofence> geofences) {
+    void onGeofencesUnmonitored(List<PIGeofence> geofences) {
     }
 
     @Override

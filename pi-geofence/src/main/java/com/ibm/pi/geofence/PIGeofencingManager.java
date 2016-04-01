@@ -557,7 +557,7 @@ public class PIGeofencingManager {
     }
 
     /**
-     * Retrieve the last used device descritpor, if any. If none exist, one is created from the {@link com.ibm.pisdk.PIDeviceInfo PIDeviceInfo} API.
+     * Retrieve the last used device descritpor, if any. If none exist, one is created from the {@link com.ibm.pi.core.PIDeviceInfo PIDeviceInfo} API.
      * @return the device descriptor.
      */
     String retrieveDeviceDescriptor() {
