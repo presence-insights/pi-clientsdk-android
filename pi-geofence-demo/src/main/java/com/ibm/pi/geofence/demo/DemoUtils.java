@@ -38,6 +38,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -240,5 +241,24 @@ public class DemoUtils {
             }
         }
         return null;
+    }
+
+    static List<PIGeofence> getAllGeofencesFromDB() {
+        List<PIGeofence> result = new ArrayList<>();
+        try {
+            Class<?> pgClass = Class.forName("com.ibm.pi.geofence.PersistentGeofence");
+            Method listAllMethod = pgClass.getMethod("listAll", Class.class);
+            listAllMethod.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            List<?> list = (List<?>) listAllMethod.invoke(null, pgClass);
+            Method toPIGeofenceMethod = pgClass.getDeclaredMethod("toPIGeofence");
+            toPIGeofenceMethod.setAccessible(true);
+            for (Object o: list) {
+                result.add((PIGeofence) toPIGeofenceMethod.invoke(o));
+            }
+        } catch(Exception e) {
+            log.debug("error getting list of geofences: ", e);
+        }
+        return result;
     }
 }

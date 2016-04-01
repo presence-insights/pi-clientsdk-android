@@ -40,7 +40,7 @@ public class PersistentGeofence extends SugarRecord implements Serializable {
     public PersistentGeofence() {
     }
 
-    public PersistentGeofence(String code, String name, String description, double latitude, double longitude, double radius) {
+    PersistentGeofence(String code, String name, String description, double latitude, double longitude, double radius) {
         this.code = code;
         this.name = name;
         this.description = description;
@@ -49,7 +49,7 @@ public class PersistentGeofence extends SugarRecord implements Serializable {
         this.radius = radius;
     }
 
-    public String getCode() {
+    String getCode() {
         return code;
     }
 
@@ -57,59 +57,59 @@ public class PersistentGeofence extends SugarRecord implements Serializable {
         this.code = code;
     }
 
-    public String getName() {
+    String getName() {
         return name;
     }
 
-    public void setName(String name) {
+    void setName(String name) {
         this.name = name;
     }
 
-    public String getDescription() {
+    String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    void setDescription(String description) {
         this.description = description;
     }
 
-    public double getLatitude() {
+    double getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(double latitude) {
+    void setLatitude(double latitude) {
         this.latitude = latitude;
     }
 
-    public double getLongitude() {
+    double getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(double longitude) {
+    void setLongitude(double longitude) {
         this.longitude = longitude;
     }
 
-    public double getRadius() {
+    double getRadius() {
         return radius;
     }
 
-    public void setRadius(double radius) {
+    void setRadius(double radius) {
         this.radius = radius;
     }
 
-    public long getCreatedTimestamp() {
+    long getCreatedTimestamp() {
         return createdTimestamp;
     }
 
-    public void setCreatedTimestamp(long createdTimestamp) {
+    void setCreatedTimestamp(long createdTimestamp) {
         this.createdTimestamp = createdTimestamp;
     }
 
-    public long getUpdatedTimestamp() {
+    long getUpdatedTimestamp() {
         return updatedTimestamp;
     }
 
-    public void setUpdatedTimestamp(long updatedTimestamp) {
+    void setUpdatedTimestamp(long updatedTimestamp) {
         this.updatedTimestamp = updatedTimestamp;
     }
 
