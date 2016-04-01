@@ -148,6 +148,22 @@ public class PIGeofencingManager {
      * @param maxDistance distance threshold for sigificant location changes.
      * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
      */
+    public PIGeofencingManager(Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
+                        String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
+        this(null, MODE_APP, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
+    }
+
+    /**
+     * Initialize this service.
+     * @param context the Android application context.
+     * @param baseURL base URL of the PI server.
+     * @param tenantCode PI tenant code.
+     * @param orgCode PI org code.
+     * @param username PI username.
+     * @param password PI password.
+     * @param maxDistance distance threshold for sigificant location changes.
+     * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
+     */
     PIGeofencingManager(Settings settings, int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
                         String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
         log.debug("pi-geofence version " + BuildConfig.VERSION_NAME);
@@ -162,10 +178,13 @@ public class PIGeofencingManager {
         this.context = context;
         this.settings = (settings != null) ? settings : new Settings(context);
         log.debug("PIGeofencingService() settings = " + this.settings);
-        String desc = this.settings.getString("descriptor", null);
         this.deviceDescriptor = retrieveDeviceDescriptor();
         int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
         log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
+        if (this.mode == MODE_APP) {
+            updateSettings();
+        }
+        connectGoogleAPI();
     }
 
     /**
@@ -197,45 +216,6 @@ public class PIGeofencingManager {
                 googleApiClient.connect();
             }
         }
-    }
-
-    /**
-     * This is the public factory method to create a geofence manager.
-     * @param callbackServiceClass the cllass object for an optional user-provided callback service.
-     * @param context the Android application context.
-     * @param baseURL base URL of the PI server.
-     * @param tenantCode PI tenant code.
-     * @param orgCode PI org code.
-     * @param username PI username.
-     * @param password PI password.
-     * @param maxDistance distance threshold for sigificant location changes.
-     * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
-     */
-    public static PIGeofencingManager newInstance(Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
-        String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
-        return newInstance(null, MODE_APP, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
-    }
-
-    /**
-     * Initialize this service.
-     * @param context the Android application context.
-     * @param baseURL base URL of the PI server.
-     * @param tenantCode PI tenant code.
-     * @param orgCode PI org code.
-     * @param username PI username.
-     * @param password PI password.
-     * @param maxDistance distance threshold for sigificant location changes.
-     * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
-     */
-    static PIGeofencingManager newInstance(Settings settings, int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
-                                           String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
-        PIGeofencingManager geofencingService = new PIGeofencingManager(
-            settings, mode, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
-        if (geofencingService.mode == MODE_APP) {
-            geofencingService.updateSettings();
-        }
-        geofencingService.connectGoogleAPI();
-        return geofencingService;
     }
 
     /**

@@ -64,7 +64,11 @@ public class SignificantLocationChangeService extends IntentService {
             if (geofencingService == null) {
                 Context ctx = config.createContext(this);
                 this.settings = new Settings(ctx);
+                /*
                 this.geofencingService = PIGeofencingManager.newInstance(settings, PIGeofencingManager.MODE_MONITORING_REQUEST, config.loadCallbackServiceClass(ctx), ctx,
+                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
+                */
+                this.geofencingService = new PIGeofencingManager(settings, PIGeofencingManager.MODE_MONITORING_REQUEST, config.loadCallbackServiceClass(ctx), ctx,
                     config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
                 log.debug("onHandleIntent() settings=" + settings);
             }
@@ -80,7 +84,11 @@ public class SignificantLocationChangeService extends IntentService {
                 Context context = config.createContext(this);
                 Settings settings = new Settings(context);
                 config.populateFromSettings(settings);
+                /*
                 PIGeofencingManager geofencingService = PIGeofencingManager.newInstance(settings, PIGeofencingManager.MODE_REBOOT, null, context,
+                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
+                */
+                PIGeofencingManager geofencingService = new PIGeofencingManager(settings, PIGeofencingManager.MODE_REBOOT, null, context,
                     config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
                 List<PersistentGeofence> geofences = GeofencingUtils.extractGeofences(settings);
                 geofencingService.monitorGeofences(geofences);

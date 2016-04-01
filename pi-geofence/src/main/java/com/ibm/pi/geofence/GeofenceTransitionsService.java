@@ -87,7 +87,11 @@ public class GeofenceTransitionsService extends IntentService {
                 clazz = config.loadCallbackServiceClass(ctx);
             }
             if (callback == null) {
+                /*
                 service = PIGeofencingManager.newInstance(settings, PIGeofencingManager.MODE_GEOFENCE_EVENT, clazz, ctx,
+                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
+                */
+                service = new PIGeofencingManager(settings, PIGeofencingManager.MODE_GEOFENCE_EVENT, clazz, ctx,
                     config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
                 callback = service.geofenceCallback;
             }

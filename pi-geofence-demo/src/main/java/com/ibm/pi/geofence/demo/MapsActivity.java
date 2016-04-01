@@ -42,22 +42,20 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.ui.IconGenerator;
+import com.ibm.pi.core.doctypes.PIOrg;
 import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofenceCallback;
 import com.ibm.pi.geofence.PIGeofenceCallbackServiceConnection;
 import com.ibm.pi.geofence.PIGeofencingManager;
-import com.ibm.pi.geofence.PersistentGeofence;
 import com.ibm.pi.geofence.Settings;
 import com.ibm.pi.geofence.rest.PIRequestCallback;
 import com.ibm.pi.geofence.rest.PIRequestError;
-import com.ibm.pi.core.doctypes.PIOrg;
 import com.ibm.pisdk.geofencing.demo.R;
 
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -200,7 +198,8 @@ public class MapsActivity extends FragmentActivity {
         */
         String orgCode = settings.getString("orgCode", null);
         log.debug(String.format("found orgCode = %s from settings", orgCode));
-        manager = PIGeofencingManager.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        //manager = PIGeofencingManager.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        manager = new PIGeofencingManager(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
         /*
         // testing the loading from a zip resource
         manager.loadGeofencesFromResource("com/ibm/pisdk/geofencing/geofence_2016-03-18_14_38_04.zip", new PIRequestCallback<List<PIGeofence>>() {
@@ -511,11 +510,7 @@ public class MapsActivity extends FragmentActivity {
 
     void initGeofences() {
         try {
-            List<PersistentGeofence> pgList = PersistentGeofence.listAll(PersistentGeofence.class);
-            final List<PIGeofence> fences = new ArrayList<>(pgList.size());
-            for (PersistentGeofence pg: pgList) {
-                fences.add(new PIGeofence(pg.getCode(), pg.getName(), pg.getDescription(), pg.getLatitude(), pg.getLongitude(), pg.getRadius()));
-            }
+            final List<PIGeofence> fences = DemoUtils.getAllGeofencesFromDB();
             log.debug("initGeofences() " + (fences == null ? 0 : fences.size()) + " fences in local DB");
             geofenceHolder.clearFences();
             geofenceHolder.addFences(fences);
