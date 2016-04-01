@@ -11,7 +11,7 @@ import com.ibm.pi.geofence.rest.PIJSONPayloadRequest;
 import com.ibm.pi.geofence.rest.PIRequest;
 import com.ibm.pi.geofence.rest.PIRequestCallback;
 import com.ibm.pi.geofence.rest.PIRequestError;
-import com.ibm.pisdk.doctypes.PIOrg;
+import com.ibm.pi.core.doctypes.PIOrg;
 
 import org.apache.log4j.Logger;
 import org.json.JSONArray;

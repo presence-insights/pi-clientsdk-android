@@ -60,9 +60,14 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
             log.debug("registering location listener service");
             LocationManager lm = (LocationManager) geofencingService.context.getSystemService(Context.LOCATION_SERVICE);
             PendingIntent pi = getPendingIntent();
-            lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10_000L, 50f, pi);
-            // taking advantage of location updates emitted by other apps, to no cost for our own
-            lm.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 10_000L, 50f, pi);
+            String[] providers = { LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER };
+            for (String provider: providers) {
+                try {
+                    lm.requestLocationUpdates(provider, 10_000L, 50f, pi);
+                } catch(SecurityException e) {
+                    log.debug("missing permission to request locations from " + provider +  "provider");
+                }
+            }
         }
     }
 

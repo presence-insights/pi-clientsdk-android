@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 18
-    buildToolsVersion "22.0.1"
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
 
     defaultConfig {
         applicationId "com.ibm.pisdk.geofencing.demo"
         minSdkVersion 18
-        targetSdkVersion 22
+        targetSdkVersion 23
         versionCode 1
         versionName "1.0.1"
     }
@@ -31,6 +31,7 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile project(':pi-core')
     compile project(':pi-geofence')
     //compile 'com.android.support:appcompat-v7:22.1.1'
     compile 'com.google.android.gms:play-services-maps:7.5.0'

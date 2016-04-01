@@ -1,14 +1,14 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 17
-    buildToolsVersion "22.0.1"
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
 
     defaultConfig {
         minSdkVersion 18
-        targetSdkVersion 19
+        targetSdkVersion 23
         versionCode 1
-        versionName "1.0.17"
+        versionName "1.0.18"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -30,7 +30,8 @@ android {
 }
 
 dependencies {
-    compile project(':pi-sdk')
+    compile project(':pi-core')
+
     // Google Play Services location API
     compile 'com.google.android.gms:play-services-location:8.1.0'
 

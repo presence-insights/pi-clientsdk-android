@@ -51,7 +51,7 @@ import com.ibm.pi.geofence.PersistentGeofence;
 import com.ibm.pi.geofence.Settings;
 import com.ibm.pi.geofence.rest.PIRequestCallback;
 import com.ibm.pi.geofence.rest.PIRequestError;
-import com.ibm.pisdk.doctypes.PIOrg;
+import com.ibm.pi.core.doctypes.PIOrg;
 import com.ibm.pisdk.geofencing.demo.R;
 
 import org.apache.log4j.Logger;
@@ -320,22 +320,30 @@ public class MapsActivity extends FragmentActivity {
             log.debug("setUpMapIfNeeded() : googleMap = " + googleMap);
             if (googleMap != null) {
                 LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-                if (currentLocation == null)  currentLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                try {
+                    if (currentLocation == null)  currentLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                } catch(SecurityException e) {
+                    log.debug("missing permission to request get last location from NETWORK_PROVIDER");
+                }
                 initGeofences();
                 // receive updates for th ecurrent location
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 10f, new android.location.LocationListener() {
-                    @Override
-                    public void onLocationChanged(Location location) {
-                        currentLocation = location;
-                        refreshCurrentLocation();
-                    }
-                    @Override
-                    public void onStatusChanged(String provider, int status, Bundle extras) { }
-                    @Override
-                    public void onProviderEnabled(String provider) { }
-                    @Override
-                    public void onProviderDisabled(String provider) { }
-                 });
+                try {
+                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 10f, new android.location.LocationListener() {
+                        @Override
+                        public void onLocationChanged(Location location) {
+                            currentLocation = location;
+                            refreshCurrentLocation();
+                        }
+                        @Override
+                        public void onStatusChanged(String provider, int status, Bundle extras) { }
+                        @Override
+                        public void onProviderEnabled(String provider) { }
+                        @Override
+                        public void onProviderDisabled(String provider) { }
+                    });
+                } catch(SecurityException e) {
+                    log.debug("missing permission to request locations from NETWORK_PROVIDER");
+                }
                 // set the map center and zoom level/bounds once it is loaded
                 googleMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
                     @Override
