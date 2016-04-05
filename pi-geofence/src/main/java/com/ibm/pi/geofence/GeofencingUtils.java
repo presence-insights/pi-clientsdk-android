@@ -107,7 +107,16 @@ class GeofencingUtils {
      * @return a list of {@link PIGeofence} objects.
      */
     static List<PersistentGeofence> geofencesFromCodes(Collection<String> geofenceCodes) {
-        int size = geofenceCodes.size(); // in case size() has a non-constant cost
+        return geofencesFromCodes(geofenceCodes.toArray(new String[geofenceCodes.size()]));
+    }
+
+    /**
+     * Get a set of geofoences from their codes, via a lookup in the local DB.
+     * @param geofenceCodes the codes of the geofenes to retrieve.
+     * @return a list of {@link PIGeofence} objects.
+     */
+    static List<PersistentGeofence> geofencesFromCodes(String[] geofenceCodes) {
+        int size = geofenceCodes.length;
         List<PersistentGeofence> geofences = new ArrayList<>(size);
         // build the "code in (?, ..., ?)" where clause
         StringBuilder where = new StringBuilder("code in (");
@@ -118,7 +127,7 @@ class GeofencingUtils {
             where.append('?');
         }
         where.append(')');
-        geofences.addAll(PersistentGeofence.find(PersistentGeofence.class, where.toString(), geofenceCodes.toArray(new String[size])));
+        geofences.addAll(PersistentGeofence.find(PersistentGeofence.class, where.toString(), geofenceCodes));
         return geofences;
     }
 

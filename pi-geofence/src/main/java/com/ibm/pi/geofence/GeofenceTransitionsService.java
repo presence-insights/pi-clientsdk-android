@@ -68,33 +68,11 @@ public class GeofenceTransitionsService extends IntentService {
             // Get the geofences that were triggered. A single event can trigger multiple geofences.
             List<Geofence> triggeringGeofences = event.getTriggeringGeofences();
             log.debug("geofence transition: " + triggeringGeofences);
-            PIGeofenceCallback callback = PIGeofencingManager.callbackMap.get(intent.getStringExtra(PIGeofencingManager.INTENT_ID));
-            PIGeofencingManager service = null;
-            Context ctx = null;
-            Settings settings = null;
-            Class<? extends PIGeofenceCallbackService> clazz = null;
-            if (callback == null) {
-                ctx = config.createContext(this);
-                settings = new Settings(ctx);
-                config.populateFromSettings(settings);
-            } else {
-                service = ((DelegatingGeofenceCallback) callback).service;
-                ctx = service.context;
-                settings = service.settings;
-            }
-            // happens when the app is off
-            if (config.callbackServiceName != null) {
-                clazz = config.loadCallbackServiceClass(ctx);
-            }
-            if (callback == null) {
-                /*
-                service = PIGeofencingManager.newInstance(settings, PIGeofencingManager.MODE_GEOFENCE_EVENT, clazz, ctx,
-                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-                */
-                service = new PIGeofencingManager(settings, PIGeofencingManager.MODE_GEOFENCE_EVENT, clazz, ctx,
-                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-                callback = service.geofenceCallback;
-            }
+            Context ctx = config.createContext(this);
+            Settings settings = new Settings(ctx);
+            config.populateFromSettings(settings);
+            PIGeofencingManager service = new PIGeofencingManager(settings, PIGeofencingManager.MODE_GEOFENCE_EVENT, ctx,
+                config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
             config.populateFromSettings(service.settings);
             List<PersistentGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
             for (Geofence g : triggeringGeofences) {
@@ -104,25 +82,22 @@ public class GeofenceTransitionsService extends IntentService {
                     geofences.add(geofence);
                 }
             }
-            log.debug(String.format("callback = %s, clazz=%s, triggered geofences = %s", callback, clazz, geofences));
-            if (callback != null) {
-                if (transition == Geofence.GEOFENCE_TRANSITION_ENTER) {
-                    callback.onGeofencesEnter(PersistentGeofence.toPIGeofences(geofences));
-                } else {
-                    callback.onGeofencesExit(PersistentGeofence.toPIGeofences(geofences));
-                }
+            log.debug(String.format("triggered geofences = %s", geofences));
+            if (transition == Geofence.GEOFENCE_TRANSITION_ENTER) {
+                service.postGeofenceEvent(geofences, GeofenceNotificationType.IN);
+            } else {
+                service.postGeofenceEvent(geofences, GeofenceNotificationType.OUT);
             }
-            if (clazz != null) {
-                try {
-                    Intent callbackIntent = new Intent(ctx, clazz);
-                    config.geofences = geofences;
-                    config.eventType = (transition == Geofence.GEOFENCE_TRANSITION_ENTER) ? ServiceConfig.EventType.ENTER : ServiceConfig.EventType.EXIT;
-                    config.toIntent(callbackIntent);
-                    log.debug(String.format("sending config=%s", config));
-                    ctx.startService(callbackIntent);
-                } catch(Exception e) {
-                    log.error(String.format("error starting callback service '%s'", config.callbackServiceName), e);
-                }
+            try {
+                Intent broadcastIntent = new Intent(PIGeofenceEvent.ACTION_GEOFENCE_EVENT);
+                broadcastIntent.setPackage(ctx.getPackageName());
+                PIGeofenceEvent.toIntent(broadcastIntent,
+                    transition == Geofence.GEOFENCE_TRANSITION_ENTER ? PIGeofenceEvent.Type.ENTER : PIGeofenceEvent.Type.EXIT,
+                    geofences, null);
+                log.debug(String.format("sending config=%s", config));
+                ctx.sendBroadcast(broadcastIntent);
+            } catch(Exception e) {
+                log.error("error sending broadcast event", e);
             }
         } else {
             log.error("invalid transition type: " + transition);

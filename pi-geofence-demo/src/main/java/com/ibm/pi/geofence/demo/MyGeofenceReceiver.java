@@ -1,15 +1,32 @@
+/**
+ * Copyright (c) 2015-2016 IBM Corporation. All rights reserved.
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.ibm.pi.geofence.demo;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
 
 import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
-import com.ibm.pi.geofence.PIGeofenceCallbackService;
+import com.ibm.pi.geofence.PIGeofenceEvent;
 import com.ibm.pi.geofence.Settings;
 
 import org.apache.log4j.Logger;
@@ -20,71 +37,48 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  *
  */
-public class MyCallbackService extends PIGeofenceCallbackService {
-    /**
-     * Logger for this class.
-     */
-    private static final Logger log = LoggingConfiguration.getLogger(MyCallbackService.class.getSimpleName());
+public class MyGeofenceReceiver extends BroadcastReceiver {
+    private static final Logger log = LoggingConfiguration.getLogger(MyGeofenceReceiver.class.getSimpleName());
     private static final String SLACK_CHANNEL = "#geo-spam";
     private static final AtomicInteger notifId = new AtomicInteger(0);
     //#private static final String SLACK_CHANNEL = "@lolo4j";
     private final SlackHTTPService slackService;
     private Settings settings;
 
-    public MyCallbackService() {
-        this("callback service");
-    }
-
-    public MyCallbackService(String name) {
-        super(name);
+    public MyGeofenceReceiver() {
         this.slackService = new SlackHTTPService(null);
     }
 
     @Override
-    public void onGeofencesEnter(final List<PIGeofence> geofences) {
-        log.debug("entering geofence(s) " + geofences);
-        if (getSettings().getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
-            //updateUI(geofences, true);
-            sendNotification(geofences, "enter");
-            slackService.postGeofenceMessages(geofences, "enter", SLACK_CHANNEL);
-        }
-    }
-
-    @Override
-    public void onGeofencesExit(final List<PIGeofence> geofences) {
-        log.debug("exiting geofence(s) " + geofences);
-        if (getSettings().getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
-            //updateUI(geofences, false);
-            sendNotification(geofences, "exit");
-            slackService.postGeofenceMessages(geofences, "exit", SLACK_CHANNEL);
-        }
-    }
-
-    @Override
-    public void onGeofencesSync(List<PIGeofence> geofencesList, List<String> deletedGeofenceCodes) {
-        log.debug(String.format("got new/updated geofences: %s - deleted: %s", geofencesList, deletedGeofenceCodes));
-    }
-
-    /*
-    void updateUI(final List<PIGeofence> geofences, final boolean isEntry) {
-        for (final PIGeofence geofence : geofences) {
-            context.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    PIGeofence g = context.getGeofenceManager().getGeofence(geofence.getCode());
-                    log.debug("Geofence " + (isEntry ? "entry" : "exit") + " for " + g + " (uuid=" + geofence + ")");
-                    if (g != null) {
-                        context.refreshGeofenceInfo(g, isEntry);
-                        context.updateCurrentMarker();
-                    }
+    public void onReceive(Context context, Intent intent) {
+        //intent.add
+        PIGeofenceEvent event = PIGeofenceEvent.fromIntent(intent);
+        List<PIGeofence> geofences = event.getGeofences();
+        switch(event.getEventType()) {
+            case ENTER:
+                log.debug("entering geofence(s) " + geofences);
+                if (getSettings(context).getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
+                    //updateUI(geofences, true);
+                    sendNotification(context, geofences, "enter");
+                    slackService.postGeofenceMessages(geofences, "enter", SLACK_CHANNEL);
                 }
-            });
+                break;
+            case EXIT:
+                log.debug("exiting geofence(s) " + geofences);
+                if (getSettings(context).getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
+                    //updateUI(geofences, false);
+                    sendNotification(context, geofences, "exit");
+                    slackService.postGeofenceMessages(geofences, "exit", SLACK_CHANNEL);
+                }
+                break;
+            case SERVER_SYNC:
+                log.debug(String.format("got new/updated geofences: %s - deleted: %s", geofences, event.getDeletedGeofenceCodes()));
+                break;
         }
     }
-    */
 
-    private void sendNotification(List<PIGeofence> fences, String type) {
-        Context context = getContext();
+
+    private void sendNotification(Context context, List<PIGeofence> fences, String type) {
         String title = "Geofence: " + type;
         StringBuilder sb = new StringBuilder();
         int count = 0;
@@ -114,9 +108,9 @@ public class MyCallbackService extends PIGeofenceCallbackService {
         mNotificationManager.notify(notifId.incrementAndGet(), mBuilder.build());
     }
 
-    public Settings getSettings() {
+    public Settings getSettings(Context context) {
         if (settings == null) {
-            settings = new Settings(getContext());
+            settings = new Settings(context);
         }
         return settings;
     }

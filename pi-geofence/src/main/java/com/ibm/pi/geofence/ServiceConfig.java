@@ -31,7 +31,6 @@ class ServiceConfig implements Serializable {
     static final String EXTRA_PASSWORD =              PREFIX + "extra.password";
     static final String EXTRA_MAX_DISTANCE =          PREFIX + "extra.max_distance";
     static final String EXTRA_PACKAGE_NAME =          PREFIX + "extra.package";
-    static final String EXTRA_CALLBACK_SERVICE_NAME = PREFIX + "extra.callback_service";
     static final String EXTRA_GEOFENCES =             PREFIX + "extra.geofences";
     static final String EXTRA_DELETED_GEOFENCES =     PREFIX + "extra.deleted_geofences";
     static final String EXTRA_EVENT_TYPE =            PREFIX + "extra.event_type";
@@ -40,12 +39,6 @@ class ServiceConfig implements Serializable {
     static final String EXTRA_REBOOT_EVENT_FLAG =     PREFIX + "extra.reboot_event";
     static final String EXTRA_LAST_SYNC_DATE =        PREFIX + "extra.last_sync_date";
 
-    enum EventType {
-        ENTER,
-        EXIT,
-        SERVER_SYNC
-    }
-
     String serverUrl;
     String tenantCode;
     String orgCode;
@@ -53,9 +46,8 @@ class ServiceConfig implements Serializable {
     String password;
     double maxDistance;
     String packageName;
-    String callbackServiceName;
     List<PersistentGeofence> geofences;
-    EventType eventType;
+    PIGeofenceEvent.Type eventType;
     LatLng newLocation;
     List<String> deletedGeofences;
 
@@ -74,38 +66,6 @@ class ServiceConfig implements Serializable {
     }
 
     /**
-     * Attempt to load the class of the user-specified callback service,
-     * so the service can be invoked as:
-     * <pre>
-     * ServiceConfig config = ...;
-     * Context context = ...;
-     * Class<? extends PIGeofenceCallbackService> clazz =
-     *   config.loadCallbackServiceClass(context);
-     * Intent intent = new Intent(context, clazz);
-     * ...
-     * context.startService(intent)
-     * </pre>
-     * @param context the context whose class loader loads the desired class.
-     * @return a class that extends {@link PIGeofenceCallbackService}.
-     */
-    @SuppressWarnings("unchecked")
-    Class<? extends PIGeofenceCallbackService> loadCallbackServiceClass(Context context) {
-        Class<? extends PIGeofenceCallbackService> clazz = null;
-        if (callbackServiceName != null) {
-            try {
-                ClassLoader cl = context.getClassLoader();
-                clazz = (Class<? extends PIGeofenceCallbackService>) Class.forName(callbackServiceName, true, cl);
-            } catch(Exception e) {
-                log.error(String.format("exeption loading callback service class '%s'", callbackServiceName), e);
-            } catch(Error e) {
-                log.error(String.format("error loading callback service class '%s'", callbackServiceName), e);
-                throw e;
-            }
-        }
-        return clazz;
-    }
-
-    /**
      * Set the values of the fields in this class from extras stored in the specified geofencing service.
      */
     ServiceConfig fromGeofencingManager(PIGeofencingManager service) {
@@ -117,9 +77,6 @@ class ServiceConfig implements Serializable {
         password = httpService.getPassword();
         maxDistance = service.maxDistance;
         packageName = service.context.getPackageName();
-        if (service.callbackServiceName != null) {
-            callbackServiceName = service.callbackServiceName;
-        }
         debugCheck();
         return this;
     }
@@ -134,7 +91,6 @@ class ServiceConfig implements Serializable {
             .append(", passord=********") // never print the password!
             .append(", maxDistance=").append(maxDistance)
             .append(", packageName=").append(packageName)
-            .append(", callbackServiceName=").append(callbackServiceName)
             .append(", geofences=").append(geofences)
             .append(", eventType=").append(eventType)
             .append(", newLocation=").append(newLocation)
@@ -151,7 +107,6 @@ class ServiceConfig implements Serializable {
         username = intent.getStringExtra(EXTRA_USERNAME);
         password = intent.getStringExtra(EXTRA_PASSWORD);
         packageName = intent.getStringExtra(EXTRA_PACKAGE_NAME);
-        callbackServiceName = intent.getStringExtra(EXTRA_CALLBACK_SERVICE_NAME);
         maxDistance = intent.getDoubleExtra(EXTRA_MAX_DISTANCE, 10_000d);
         if (intent.getBooleanExtra(EXTRA_LOCATION_UPDATE_FLAG, false)) {
             newLocation = new LatLng(intent.getDoubleExtra(EXTRA_LATITUDE, 0d), intent.getDoubleExtra(EXTRA_LONGITUDE, 0d));
@@ -173,7 +128,7 @@ class ServiceConfig implements Serializable {
         s = intent.getStringExtra(EXTRA_EVENT_TYPE);
         if (s != null) {
             try {
-                eventType = EventType.valueOf(s);
+                eventType = PIGeofenceEvent.Type.valueOf(s);
             } catch(Exception ignore) {
             }
         }
@@ -192,7 +147,6 @@ class ServiceConfig implements Serializable {
         intent.putExtra(EXTRA_USERNAME, username);
         intent.putExtra(EXTRA_PASSWORD, password);
         intent.putExtra(EXTRA_PACKAGE_NAME, packageName);
-        intent.putExtra(EXTRA_CALLBACK_SERVICE_NAME, callbackServiceName);
         intent.putExtra(EXTRA_MAX_DISTANCE, maxDistance);
         if (newLocation != null) {
             intent.putExtra(EXTRA_LOCATION_UPDATE_FLAG, true);
@@ -246,6 +200,5 @@ class ServiceConfig implements Serializable {
         orgCode = settings.getString(EXTRA_ORG_CODE, null);
         username = settings.getString(EXTRA_USERNAME, null);
         password = settings.getString(EXTRA_PASSWORD, null);
-        callbackServiceName = settings.getString(EXTRA_CALLBACK_SERVICE_NAME, null);
     }
 }

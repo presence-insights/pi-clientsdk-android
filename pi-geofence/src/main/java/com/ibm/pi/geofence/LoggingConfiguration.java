@@ -51,23 +51,27 @@ public class LoggingConfiguration {
      * Configure log4j.
      */
     private synchronized static void configure() {
-        if (!configured) {
-            configured = true;
-            final LogConfigurator configurator = new LogConfigurator();
-            configurator.setUseFileAppender(true);
+        try {
+            if (!configured) {
+                configured = true;
+                final LogConfigurator configurator = new LogConfigurator();
+                configurator.setUseFileAppender(true);
 
-            logfile = new File(Environment.getExternalStorageDirectory(), File.separator + "pi-sdk.log").getAbsolutePath();
-            configurator.setFileName(logfile);
-            Log.v("LoggingConfiguration", "configure() log file=" + logfile);
-            configurator.setImmediateFlush(true);
-            configurator.setMaxFileSize(1024 * 1024);
-            configurator.setMaxBackupSize(0);
-            configurator.setFilePattern("%d [%-5p][%c.%M(%L)] %m%n");
-            configurator.setUseLogCatAppender(true);
-            configurator.setRootLevel(Level.DEBUG);
-            configurator.setLevel("com.ibm.pisdk", Level.DEBUG);
-            configurator.setLevel("com.orm", Level.WARN);
-            configurator.configure();
+                logfile = new File(Environment.getExternalStorageDirectory(), File.separator + "pi-sdk.log").getAbsolutePath();
+                configurator.setFileName(logfile);
+                Log.v("LoggingConfiguration", "configure() log file=" + logfile);
+                configurator.setImmediateFlush(true);
+                configurator.setMaxFileSize(1024 * 1024);
+                configurator.setMaxBackupSize(0);
+                configurator.setFilePattern("%d [%-5p][%c.%M(%L)] %m%n");
+                configurator.setUseLogCatAppender(true);
+                configurator.setRootLevel(Level.DEBUG);
+                configurator.setLevel("com.ibm.pisdk", Level.DEBUG);
+                configurator.setLevel("com.orm", Level.WARN);
+                configurator.configure();
+            }
+        } catch(Exception e) {
+            Log.e("LoggingConfiguration", "error in logging configuration: ", e);
         }
     }
 

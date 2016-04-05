@@ -18,6 +18,7 @@ package com.ibm.pi.geofence.demo;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationManager;
@@ -45,8 +46,7 @@ import com.google.maps.android.ui.IconGenerator;
 import com.ibm.pi.core.doctypes.PIOrg;
 import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
-import com.ibm.pi.geofence.PIGeofenceCallback;
-import com.ibm.pi.geofence.PIGeofenceCallbackServiceConnection;
+import com.ibm.pi.geofence.PIGeofenceEvent;
 import com.ibm.pi.geofence.PIGeofencingManager;
 import com.ibm.pi.geofence.Settings;
 import com.ibm.pi.geofence.rest.PIRequestCallback;
@@ -72,6 +72,7 @@ public class MapsActivity extends FragmentActivity {
      * Logger for this class.
      */
     private static final Logger log = LoggingConfiguration.getLogger(MapsActivity.class.getSimpleName());
+    //private static Logger log;
     /**
      * Color for fences active on the map.
      */
@@ -131,6 +132,7 @@ public class MapsActivity extends FragmentActivity {
      * Whether to send Slack and local notifications upon geofence events.
      */
     boolean trackingEnabled = true;
+    private MyGeofenceReceiver receiver;
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -141,7 +143,7 @@ public class MapsActivity extends FragmentActivity {
         if (googleMap != null) {
             outState.putFloat("zoom", googleMap.getCameraPosition().zoom);
         }
-        log.debug("onSaveInstanceState()");
+        //log.debug("onSaveInstanceState()");
     }
 
     @Override
@@ -156,8 +158,30 @@ public class MapsActivity extends FragmentActivity {
                 currentLocation.setTime(System.currentTimeMillis());
             }
             currentZoom = savedInstanceState.getFloat("zoom", -1f);
-            log.debug(String.format("restored currentLocation=%s; currentZoom=%f", currentLocation, currentZoom));
+            //log.debug(String.format("restored currentLocation=%s; currentZoom=%f", currentLocation, currentZoom));
         }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        /*
+        if (receiver == null) {
+            receiver = new MyGeofenceReceiver();
+        }
+        IntentFilter filter = new IntentFilter(PIGeofenceEvent.ACTION_GEOFENCE_EVENT);
+        registerReceiver(receiver, filter);
+        */
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        /*
+        if (receiver != null) {
+            unregisterReceiver(receiver);
+        }
+        */
     }
 
     @Override
@@ -199,7 +223,7 @@ public class MapsActivity extends FragmentActivity {
         String orgCode = settings.getString("orgCode", null);
         log.debug(String.format("found orgCode = %s from settings", orgCode));
         //manager = PIGeofencingManager.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
-        manager = new PIGeofencingManager(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        manager = new PIGeofencingManager(this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
         /*
         // testing the loading from a zip resource
         manager.loadGeofencesFromResource("com/ibm/pisdk/geofencing/geofence_2016-03-18_14_38_04.zip", new PIRequestCallback<List<PIGeofence>>() {
@@ -234,46 +258,12 @@ public class MapsActivity extends FragmentActivity {
             });
         } else {
             updateTitle(orgCode);
-            if ("6x07ykw".equals(orgCode)) {
-
-            }
         }
         try {
             startSimulation(geofenceHolder.getFences());
         } catch(Exception e) {
             log.error("error in startSimulation()", e);
         }
-    }
-
-    final PIGeofenceCallbackServiceConnection<MyCallbackService> serviceConnection =
-        new PIGeofenceCallbackServiceConnection<>(new PIGeofenceCallback() {
-            @Override
-            public void onGeofencesEnter(List<PIGeofence> geofences) {
-                log.debug("entering geofences: " + geofences);
-            }
-
-            @Override
-            public void onGeofencesExit(List<PIGeofence> geofences) {
-                log.debug("exiting geofences: " + geofences);
-            }
-
-            @Override
-            public void onGeofencesSync(List<PIGeofence> geofencesList, List<String> deletedGeofenceCodes) {
-                log.debug(String.format("sync of geofences: added/updated %s, deleted: %s", geofencesList, deletedGeofenceCodes));
-            }
-        });
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Intent intent = new Intent(this, MyCallbackService.class);
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        unbindService(serviceConnection);
     }
 
     /**

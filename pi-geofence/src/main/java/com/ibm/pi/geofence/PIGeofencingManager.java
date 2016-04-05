@@ -49,7 +49,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -104,14 +103,6 @@ public class PIGeofencingManager {
      */
     final int maxDistance;
     /**
-     * The callback used to notify the app of geofence events.
-     */
-    final DelegatingGeofenceCallback geofenceCallback;
-    /**
-     * An internal cache of the "add geofences" requests, so the geofence transition service knows which callback to invoke.
-     */
-    static final Map<String, PIGeofenceCallback> callbackMap = new ConcurrentHashMap<>();
-    /**
      * Pending intent used to register a set of geofences.
      */
     private PendingIntent pendingIntent;
@@ -119,10 +110,6 @@ public class PIGeofencingManager {
      * Provides uniquely identifying information for the device.
      */
     private final String deviceDescriptor;
-    /**
-     * Fully qualified class name of the user-provided callback service.
-     */
-    String callbackServiceName;
     /**
      * The settings of the application.
      */
@@ -148,9 +135,8 @@ public class PIGeofencingManager {
      * @param maxDistance distance threshold for sigificant location changes.
      * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
      */
-    public PIGeofencingManager(Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
-                        String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
-        this(null, MODE_APP, callbackServiceClass, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
+    public PIGeofencingManager(Context context, String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
+        this(null, MODE_APP, context, baseURL, tenantCode, orgCode, username, password, maxDistance);
     }
 
     /**
@@ -164,17 +150,11 @@ public class PIGeofencingManager {
      * @param maxDistance distance threshold for sigificant location changes.
      * Defines the bounding box for the monitored geofences: square box with a {@code maxDistance} side centered on the current location.
      */
-    PIGeofencingManager(Settings settings, int mode, Class<? extends PIGeofenceCallbackService> callbackServiceClass, Context context,
-                        String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
+    PIGeofencingManager(Settings settings, int mode, Context context, String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
         log.debug("pi-geofence version " + BuildConfig.VERSION_NAME);
         this.mode = mode;
         this.maxDistance = maxDistance;
-        if (callbackServiceClass != null) {
-            this.callbackServiceName = callbackServiceClass.getName();
-        }
         this.httpService = new PIHttpService(context, baseURL, tenantCode, orgCode, username, password);
-        this.geofenceCallback = new DelegatingGeofenceCallback(this, null);
-        callbackMap.put(INTENT_ID, this.geofenceCallback);
         this.context = context;
         this.settings = (settings != null) ? settings : new Settings(context);
         log.debug("PIGeofencingService() settings = " + this.settings);
@@ -223,7 +203,7 @@ public class PIGeofencingManager {
      * @param fences the geofences for which to send a notification.
      * @param type the type of geofence notification: either {@link GeofenceNotificationType#IN IN} or {@link GeofenceNotificationType#OUT OUT}.
      */
-    void postGeofenceEvent(final List<PIGeofence> fences, final GeofenceNotificationType type) {
+    void postGeofenceEvent(final List<PersistentGeofence> fences, final GeofenceNotificationType type) {
         if (httpService.getTenantCode() == null) {
             log.warn("cannot send geofence notification because the tenant code is undefined");
         } else if (httpService.getOrgCode() == null) {
@@ -280,7 +260,6 @@ public class PIGeofencingManager {
             }
             registerFencesForMonitoring(list, GeofencingRequest.INITIAL_TRIGGER_ENTER);
             registerFencesForMonitoring(noTriggerList, 0);
-            geofenceCallback.onGeofencesMonitored(PersistentGeofence.toPIGeofences(geofences));
         }
     }
 
@@ -311,7 +290,6 @@ public class PIGeofencingManager {
                 uuidsToRemove.add(g.getCode());
             }
             LocationServices.GeofencingApi.removeGeofences(googleApiClient, uuidsToRemove);
-            geofenceCallback.onGeofencesUnmonitored(PersistentGeofence.toPIGeofences(geofences));
         }
     }
 
@@ -461,14 +439,11 @@ public class PIGeofencingManager {
                             setInitialLocation();
                         }
                         if (!geofences.isEmpty() || !list.getDeletedGeofenceCodes().isEmpty()) {
-                            ServiceConfig config = new ServiceConfig().fromGeofencingManager(PIGeofencingManager.this);
-                            Class<? extends PIGeofenceCallbackService> clazz = config.loadCallbackServiceClass(context);
-                            Intent callbackIntent = new Intent(context, clazz);
-                            config.geofences = geofences;
-                            config.eventType = ServiceConfig.EventType.SERVER_SYNC;
-                            config.toIntent(callbackIntent);
-                            log.debug(String.format("sending config for server sync event: %s", config));
-                            context.startService(callbackIntent);
+                            Intent broadcastIntent = new Intent(PIGeofenceEvent.ACTION_GEOFENCE_EVENT);
+                            broadcastIntent.setPackage(context.getPackageName());
+                            PIGeofenceEvent.toIntent(broadcastIntent, PIGeofenceEvent.Type.SERVER_SYNC, geofences, list.getDeletedGeofenceCodes());
+                            //LocalBroadcastManager.getInstance(context).sendBroadcast(broadcastIntent);
+                            context.sendBroadcast(broadcastIntent);
                         }
                         log.debug("loadGeofences() got " + list.getGeofences().size() + " geofences");
                     } catch (Exception e) {
@@ -531,7 +506,6 @@ public class PIGeofencingManager {
         settings.putString(ServiceConfig.EXTRA_ORG_CODE, httpService.getOrgCode());
         settings.putString(ServiceConfig.EXTRA_USERNAME, httpService.getUsername());
         settings.putString(ServiceConfig.EXTRA_PASSWORD, httpService.getPassword());
-        settings.putString(ServiceConfig.EXTRA_CALLBACK_SERVICE_NAME, callbackServiceName);
         settings.putInt(ServiceConfig.EXTRA_MAX_DISTANCE, maxDistance);
         settings.commit();
     }
