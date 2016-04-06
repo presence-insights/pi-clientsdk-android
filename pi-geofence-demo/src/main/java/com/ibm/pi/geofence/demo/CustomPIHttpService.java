@@ -107,7 +107,7 @@ public class CustomPIHttpService extends PIHttpService {
                         log.error("error parsing JSON response: ", e);
                     }
                     if (updated != null) {
-                        manager.loadGeofences();
+                        DemoUtils.loadGeofences(manager);
                         //updated.save();
                         //setInitialLocation();
                     }
@@ -155,7 +155,7 @@ public class CustomPIHttpService extends PIHttpService {
                         log.error("error parsing JSON response: ", e);
                     }
                     if (updated != null) {
-                        manager.loadGeofences();
+                        DemoUtils.loadGeofences(manager);
                         //updated.save();
                         //setInitialLocation();
                     }
@@ -197,7 +197,7 @@ public class CustomPIHttpService extends PIHttpService {
                 @Override
                 public void onSuccess(JSONObject result) {
                     log.debug("sucessfully deleted geofence " + fence);
-                    manager.loadGeofences();
+                    DemoUtils.loadGeofences(manager);
                     //setInitialLocation();
                     if (userCallback != null) {
                         try {

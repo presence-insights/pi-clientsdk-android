@@ -24,6 +24,7 @@ import android.os.SystemClock;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.ibm.pi.geofence.PIGeofence;
+import com.ibm.pi.geofence.PIGeofencingManager;
 import com.orm.SugarDb;
 
 import org.apache.log4j.Logger;
@@ -257,8 +258,18 @@ public class DemoUtils {
                 result.add((PIGeofence) toPIGeofenceMethod.invoke(o));
             }
         } catch(Exception e) {
-            log.debug("error getting list of geofences: ", e);
+            log.debug("error getting list of geofences from DB: ", e);
         }
         return result;
+    }
+
+    static void loadGeofences(PIGeofencingManager manager) {
+        try {
+            Method m = PIGeofencingManager.class.getDeclaredMethod("loadGeofences");
+            m.setAccessible(true);
+            m.invoke(manager);
+        } catch(Exception e) {
+            log.debug("error getting list of geofences: ", e);
+        }
     }
 }

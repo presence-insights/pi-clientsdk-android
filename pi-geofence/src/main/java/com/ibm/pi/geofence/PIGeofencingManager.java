@@ -234,8 +234,8 @@ public class PIGeofencingManager {
      * @param geofences the geofences to add.
      */
     void monitorGeofences(List<PersistentGeofence> geofences) {
-        log.debug("monitorGeofences(" + geofences + ")");
         if (!geofences.isEmpty()) {
+            log.debug("monitorGeofences(" + geofences + ")");
             List<Geofence> list = new ArrayList<>(geofences.size());
             List<Geofence> noTriggerList = new ArrayList<>(geofences.size());
             Location last = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
@@ -399,7 +399,7 @@ public class PIGeofencingManager {
     /**
      * Load geofences from the local database if they are present, or from the server if not.
      */
-    public void loadGeofences() {
+    void loadGeofences() {
         if (httpService.getServerURL() != null) {
             log.debug("loadGeofences() loading geofences from the server");
             loadGeofencesFromServer();
