@@ -386,6 +386,7 @@ public class PIGeofencingManager {
     private PendingIntent getPendingIntent(String geofenceCallbackUuid) {
         if (pendingIntent == null) {
             Intent intent = new Intent(context, GeofenceTransitionsService.class);
+            intent.setPackage(context.getPackageName());
             ServiceConfig config = new ServiceConfig().fromGeofencingManager(this);
             config.populateFromSettings(settings);
             config.toIntent(intent);

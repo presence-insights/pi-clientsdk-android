@@ -86,6 +86,7 @@ public class LocationUpdateReceiver extends BroadcastReceiver {
         if ((d > maxDistance) || force) {
             log.debug(String.format(Locale.US, "onLocationChanged() detected significant location change, distance to ref = %,.0f m, new location = %s", d, location));
             Intent intent = new Intent(context, SignificantLocationChangeService.class);
+            intent.setPackage(context.getPackageName());
             config.newLocation = new LatLng(location.getLatitude(), location.getLongitude());
             config.toIntent(intent);
             context.startService(intent);

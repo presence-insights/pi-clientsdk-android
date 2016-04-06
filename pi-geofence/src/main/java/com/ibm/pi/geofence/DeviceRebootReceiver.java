@@ -44,6 +44,7 @@ public class DeviceRebootReceiver extends BroadcastReceiver {
             config.populateFromSettings(settings);
             config.packageName = context.getPackageName();
             Intent newIntent = new Intent(context, SignificantLocationChangeService.class);
+            newIntent.setPackage(config.packageName);
             newIntent.putExtra(ServiceConfig.EXTRA_REBOOT_EVENT_FLAG, true);
             config.toIntent(newIntent);
             context.startService(newIntent);
