@@ -165,23 +165,19 @@ public class MapsActivity extends FragmentActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        /*
         if (receiver == null) {
-            receiver = new MyGeofenceReceiver();
+            receiver = new MyGeofenceReceiver(this);
         }
         IntentFilter filter = new IntentFilter(PIGeofenceEvent.ACTION_GEOFENCE_EVENT);
         registerReceiver(receiver, filter);
-        */
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        /*
         if (receiver != null) {
             unregisterReceiver(receiver);
         }
-        */
     }
 
     @Override

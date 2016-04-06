@@ -162,7 +162,7 @@ public class PIGeofencingManager {
         this.context = context;
         this.settings = (settings != null) ? settings : new Settings(context);
         log.debug("PIGeofencingService() settings = " + this.settings);
-        this.minHoursBetweenServerSyncs = settings.getInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, 24);
+        this.minHoursBetweenServerSyncs = this.settings.getInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, 24);
         this.deviceDescriptor = retrieveDeviceDescriptor();
         int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
         log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));

@@ -44,8 +44,14 @@ public class MyGeofenceReceiver extends BroadcastReceiver {
     //#private static final String SLACK_CHANNEL = "@lolo4j";
     private final SlackHTTPService slackService;
     private Settings settings;
+    private final MapsActivity activity;
 
     public MyGeofenceReceiver() {
+        this(null);
+    }
+
+    public MyGeofenceReceiver(MapsActivity activity) {
+        this.activity = activity;
         this.slackService = new SlackHTTPService(null);
     }
 
@@ -57,7 +63,7 @@ public class MyGeofenceReceiver extends BroadcastReceiver {
             case ENTER:
                 log.debug("entering geofence(s) " + geofences);
                 if (getSettings(context).getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
-                    //updateUI(geofences, true);
+                    updateUI(geofences, true);
                     sendNotification(context, geofences, "enter");
                     slackService.postGeofenceMessages(geofences, "enter", SLACK_CHANNEL);
                 }
@@ -65,7 +71,7 @@ public class MyGeofenceReceiver extends BroadcastReceiver {
             case EXIT:
                 log.debug("exiting geofence(s) " + geofences);
                 if (getSettings(context).getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
-                    //updateUI(geofences, false);
+                    updateUI(geofences, false);
                     sendNotification(context, geofences, "exit");
                     slackService.postGeofenceMessages(geofences, "exit", SLACK_CHANNEL);
                 }
@@ -76,6 +82,13 @@ public class MyGeofenceReceiver extends BroadcastReceiver {
         }
     }
 
+    private void updateUI(List<PIGeofence> geofences, boolean active) {
+        if (activity != null) {
+            for (PIGeofence geofence: geofences) {
+                activity.refreshGeofenceInfo(geofence, active);
+            }
+        }
+    }
 
     private void sendNotification(Context context, List<PIGeofence> fences, String type) {
         String title = "Geofence: " + type;
