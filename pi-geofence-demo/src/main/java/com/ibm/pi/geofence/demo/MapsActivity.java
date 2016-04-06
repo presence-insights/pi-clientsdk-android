@@ -225,6 +225,7 @@ public class MapsActivity extends FragmentActivity {
         log.debug(String.format("found orgCode = %s from settings", orgCode));
         //manager = PIGeofencingManager.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
         manager = new PIGeofencingManager(this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        manager.setMinHoursBetweenServerSyncs(1);
         /*
         // testing the loading from a zip resource
         manager.loadGeofencesFromResource("com/ibm/pisdk/geofencing/geofence_2016-03-18_14_38_04.zip", new PIRequestCallback<List<PIGeofence>>() {
