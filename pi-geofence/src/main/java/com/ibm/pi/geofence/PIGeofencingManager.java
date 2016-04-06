@@ -123,6 +123,10 @@ public class PIGeofencingManager {
      * A callback that immplements the Google API connection callback interfaces.
      */
     GoogleLocationAPICallback googleAPICallback;
+    /**
+     * The minimum delay between two synchronizations with the server.
+     */
+    int minHoursBetweenServerSyncs = 24;
 
     /**
      * Initialize this service.
@@ -158,6 +162,7 @@ public class PIGeofencingManager {
         this.context = context;
         this.settings = (settings != null) ? settings : new Settings(context);
         log.debug("PIGeofencingService() settings = " + this.settings);
+        this.minHoursBetweenServerSyncs = settings.getInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, 24);
         this.deviceDescriptor = retrieveDeviceDescriptor();
         int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
         log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
@@ -294,6 +299,26 @@ public class PIGeofencingManager {
     }
 
     /**
+     * Get the minimum delay in hours between two synchronizations with the server.
+     * When not already set, the default value is 24 hours.
+     * @return the minimum number of hours between two server synchronizations.
+     */
+    public int getMinHoursBetweenServerSyncs() {
+        return minHoursBetweenServerSyncs;
+    }
+
+    /**
+     * Set the minimum delay in hours between two synchronizations with the server.
+     * if (the specified value is less than 1, then this method has no effect.
+     * @param minHoursBetweenServerSyncs the minimum number of hours between two server synchronizations.
+     */
+    public void setMinHoursBetweenServerSyncs(int minHoursBetweenServerSyncs) {
+        if (minHoursBetweenServerSyncs >= 1) {
+            this.minHoursBetweenServerSyncs = minHoursBetweenServerSyncs;
+        }
+    }
+
+    /**
      * Load a set of geofences from a reosurce file.
      * @param resource the path to the resource to load the geofences from.
      */
@@ -339,7 +364,7 @@ public class PIGeofencingManager {
                         }
                     }
                     if (maxSyncDate != null) {
-                        settings.putString(ServiceConfig.EXTRA_LAST_SYNC_DATE, maxSyncDate).commit();
+                        settings.putString(ServiceConfig.LAST_SYNC_DATE, maxSyncDate).commit();
                     }
                     geofenceList = new GeofenceList(new ArrayList<>(allGeofences.values()));
                     log.debug(String.format(Locale.US, "loaded %,d geofences from resource '[%s]', maxSyncDate=%s",
@@ -386,7 +411,7 @@ public class PIGeofencingManager {
     private PendingIntent getPendingIntent(String geofenceCallbackUuid) {
         if (pendingIntent == null) {
             Intent intent = new Intent(context, GeofenceTransitionsService.class);
-            intent.setPackage(context.getPackageName());
+            //intent.setPackage(context.getPackageName());
             ServiceConfig config = new ServiceConfig().fromGeofencingManager(this);
             config.populateFromSettings(settings);
             config.toIntent(intent);
@@ -417,7 +442,11 @@ public class PIGeofencingManager {
         if (PersistentGeofence.count(PersistentGeofence.class) <= 0) {
             loadGeofencesFromServer(null);
         } else {
-            loadGeofencesFromServer(settings.getString(ServiceConfig.EXTRA_LAST_SYNC_DATE, null));
+            long now = System.currentTimeMillis();
+            long lastTimeStamp = settings.getLong(ServiceConfig.SERVER_SYNC_LOCAL_TIMESTAMP, -1L);
+            if ((lastTimeStamp < 0L) || (now - lastTimeStamp >= minHoursBetweenServerSyncs * 3600L * 1000L)) {
+                loadGeofencesFromServer(settings.getString(ServiceConfig.LAST_SYNC_DATE, null));
+            }
         }
     }
 
@@ -432,7 +461,7 @@ public class PIGeofencingManager {
                     try {
                         GeofenceList list = GeofencingJSONUtils.parseGeofences(result);
                         if (list.getLastSyncDate() != null) {
-                            settings.putString(ServiceConfig.EXTRA_LAST_SYNC_DATE, list.getLastSyncDate()).commit();
+                            settings.putString(ServiceConfig.LAST_SYNC_DATE, list.getLastSyncDate()).commit();
                         }
                         List<PersistentGeofence> geofences = list.getGeofences();
                         if (!geofences.isEmpty()) {
@@ -446,6 +475,7 @@ public class PIGeofencingManager {
                             //LocalBroadcastManager.getInstance(context).sendBroadcast(broadcastIntent);
                             context.sendBroadcast(broadcastIntent);
                         }
+                        settings.putLong(ServiceConfig.SERVER_SYNC_LOCAL_TIMESTAMP, System.currentTimeMillis()).commit();
                         log.debug("loadGeofences() got " + list.getGeofences().size() + " geofences");
                     } catch (Exception e) {
                         PIRequestError error = new PIRequestError(-1, e, "error while parsing JSON");
@@ -502,12 +532,13 @@ public class PIGeofencingManager {
     }
 
     private void updateSettings() {
-        settings.putString(ServiceConfig.EXTRA_SERVER_URL, httpService.getServerURL());
-        settings.putString(ServiceConfig.EXTRA_TENANT_CODE, httpService.getTenantCode());
-        settings.putString(ServiceConfig.EXTRA_ORG_CODE, httpService.getOrgCode());
-        settings.putString(ServiceConfig.EXTRA_USERNAME, httpService.getUsername());
-        settings.putString(ServiceConfig.EXTRA_PASSWORD, httpService.getPassword());
-        settings.putInt(ServiceConfig.EXTRA_MAX_DISTANCE, maxDistance);
+        settings.putString(ServiceConfig.SERVER_URL, httpService.getServerURL());
+        settings.putString(ServiceConfig.TENANT_CODE, httpService.getTenantCode());
+        settings.putString(ServiceConfig.ORG_CODE, httpService.getOrgCode());
+        settings.putString(ServiceConfig.USERNAME, httpService.getUsername());
+        settings.putString(ServiceConfig.PASSWORD, httpService.getPassword());
+        settings.putInt(ServiceConfig.MAX_DISTANCE, maxDistance);
+        settings.putInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, minHoursBetweenServerSyncs);
         settings.commit();
     }
 

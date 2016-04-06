@@ -57,7 +57,7 @@ public class SignificantLocationChangeService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        boolean locationUpdate = intent.getExtras().get(ServiceConfig.EXTRA_LOCATION_UPDATE_FLAG) != null;
+        boolean locationUpdate = intent.getExtras().get(ServiceConfig.LOCATION_UPDATE_FLAG) != null;
         if (locationUpdate) {
             config = new ServiceConfig().fromIntent(intent);
             log.debug("onHandleIntent() config=" + config);
@@ -77,7 +77,7 @@ public class SignificantLocationChangeService extends IntentService {
             location.setLatitude(config.newLocation.latitude);
             location.setLongitude(config.newLocation.longitude);
             processNewLocation(location);
-        } else if (intent.getBooleanExtra(ServiceConfig.EXTRA_REBOOT_EVENT_FLAG, false)) {
+        } else if (intent.getBooleanExtra(ServiceConfig.REBOOT_EVENT_FLAG, false)) {
             try {
                 ServiceConfig config = new ServiceConfig().fromIntent(intent);
                 log.debug("onHandleIntent(reboot_event) config=" + config);

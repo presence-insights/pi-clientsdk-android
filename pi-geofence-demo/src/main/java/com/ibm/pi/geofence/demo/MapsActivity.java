@@ -189,6 +189,7 @@ public class MapsActivity extends FragmentActivity {
         log.debug("***************************************************************************************");
         super.onCreate(savedInstanceState);
         settings = new Settings(this);
+        DemoUtils.updateSettingsIfNeeded(settings);
         setContentView(R.layout.maps_activity);
         mapCrossHair = (ImageView) findViewById(R.id.map_cross_hair);
         trackingEnabled = settings.getBoolean(TRACKING_ENABLED_KEY, true);

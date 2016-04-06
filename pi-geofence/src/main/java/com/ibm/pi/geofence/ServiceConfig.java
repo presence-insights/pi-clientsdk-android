@@ -23,21 +23,23 @@ class ServiceConfig implements Serializable {
     private static final Logger log = LoggingConfiguration.getLogger(ServiceConfig.class.getSimpleName());
     //static final String GEOFENCING_SERVICE_CONFIG = "geofencing_service_config";
     private static final String PREFIX = "com.ibm.pi.sdk.";
-    static final String EXTRA_LOCATION_UPDATE_FLAG =  PREFIX + "extra.location_update";
-    static final String EXTRA_SERVER_URL =            PREFIX + "extra.server";
-    static final String EXTRA_TENANT_CODE =           PREFIX + "extra.tenant";
-    static final String EXTRA_ORG_CODE =              PREFIX + "extra.org";
-    static final String EXTRA_USERNAME =              PREFIX + "extra.username";
-    static final String EXTRA_PASSWORD =              PREFIX + "extra.password";
-    static final String EXTRA_MAX_DISTANCE =          PREFIX + "extra.max_distance";
-    static final String EXTRA_PACKAGE_NAME =          PREFIX + "extra.package";
-    static final String EXTRA_GEOFENCES =             PREFIX + "extra.geofences";
-    static final String EXTRA_DELETED_GEOFENCES =     PREFIX + "extra.deleted_geofences";
-    static final String EXTRA_EVENT_TYPE =            PREFIX + "extra.event_type";
-    static final String EXTRA_LATITUDE =              PREFIX + "extra.latitude";
-    static final String EXTRA_LONGITUDE =             PREFIX + "extra.longitude";
-    static final String EXTRA_REBOOT_EVENT_FLAG =     PREFIX + "extra.reboot_event";
-    static final String EXTRA_LAST_SYNC_DATE =        PREFIX + "extra.last_sync_date";
+    static final String LOCATION_UPDATE_FLAG =        PREFIX + "location_update";
+    static final String SERVER_URL =                  PREFIX + "server";
+    static final String TENANT_CODE =                 PREFIX + "tenant";
+    static final String ORG_CODE =                    PREFIX + "org";
+    static final String USERNAME =                    PREFIX + "username";
+    static final String PASSWORD =                    PREFIX + "password";
+    static final String MAX_DISTANCE =                PREFIX + "max_distance";
+    static final String PACKAGE_NAME =                PREFIX + "package";
+    static final String GEOFENCES =                   PREFIX + "geofences";
+    static final String DELETED_GEOFENCES =           PREFIX + "deleted_geofences";
+    static final String EVENT_TYPE =                  PREFIX + "event_type";
+    static final String LATITUDE =                    PREFIX + "latitude";
+    static final String LONGITUDE =                   PREFIX + "longitude";
+    static final String REBOOT_EVENT_FLAG =           PREFIX + "reboot_event";
+    static final String LAST_SYNC_DATE =              PREFIX + "last_sync_date";
+    static final String SERVER_SYNC_LOCAL_TIMESTAMP = PREFIX + "server_sync_local_timestamp";
+    static final String SERVER_SYNC_MIN_DELAY_HOURS = PREFIX + "server_sync_min_delay_hours";
 
     String serverUrl;
     String tenantCode;
@@ -101,31 +103,31 @@ class ServiceConfig implements Serializable {
      * Set the values of the fields in this class from extras stored in the specified intent.
      */
     ServiceConfig fromIntent(Intent intent) {
-        serverUrl = intent.getStringExtra(EXTRA_SERVER_URL);
-        tenantCode = intent.getStringExtra(EXTRA_TENANT_CODE);
-        orgCode = intent.getStringExtra(EXTRA_ORG_CODE);
-        username = intent.getStringExtra(EXTRA_USERNAME);
-        password = intent.getStringExtra(EXTRA_PASSWORD);
-        packageName = intent.getStringExtra(EXTRA_PACKAGE_NAME);
-        maxDistance = intent.getDoubleExtra(EXTRA_MAX_DISTANCE, 10_000d);
-        if (intent.getBooleanExtra(EXTRA_LOCATION_UPDATE_FLAG, false)) {
-            newLocation = new LatLng(intent.getDoubleExtra(EXTRA_LATITUDE, 0d), intent.getDoubleExtra(EXTRA_LONGITUDE, 0d));
+        serverUrl = intent.getStringExtra(SERVER_URL);
+        tenantCode = intent.getStringExtra(TENANT_CODE);
+        orgCode = intent.getStringExtra(ORG_CODE);
+        username = intent.getStringExtra(USERNAME);
+        password = intent.getStringExtra(PASSWORD);
+        packageName = intent.getStringExtra(PACKAGE_NAME);
+        maxDistance = intent.getDoubleExtra(MAX_DISTANCE, 10_000d);
+        if (intent.getBooleanExtra(LOCATION_UPDATE_FLAG, false)) {
+            newLocation = new LatLng(intent.getDoubleExtra(LATITUDE, 0d), intent.getDoubleExtra(LONGITUDE, 0d));
         }
-        String s = intent.getStringExtra(EXTRA_GEOFENCES);
+        String s = intent.getStringExtra(GEOFENCES);
         if (s != null) {
             String[] codes = s.split("\\|");
             if ((codes != null) && (codes.length > 0)) {
                 geofences = GeofencingUtils.geofencesFromCodes(Arrays.asList(codes));
             }
         }
-        s = intent.getStringExtra(EXTRA_DELETED_GEOFENCES);
+        s = intent.getStringExtra(DELETED_GEOFENCES);
         if (s != null) {
             String[] codes = s.split("\\|");
             if ((codes != null) && (codes.length > 0)) {
                 deletedGeofences = Arrays.asList(codes);
             }
         }
-        s = intent.getStringExtra(EXTRA_EVENT_TYPE);
+        s = intent.getStringExtra(EVENT_TYPE);
         if (s != null) {
             try {
                 eventType = PIGeofenceEvent.Type.valueOf(s);
@@ -141,17 +143,17 @@ class ServiceConfig implements Serializable {
      */
     ServiceConfig toIntent(Intent intent) {
         debugCheck();
-        intent.putExtra(EXTRA_SERVER_URL, serverUrl);
-        intent.putExtra(EXTRA_TENANT_CODE, tenantCode);
-        intent.putExtra(EXTRA_ORG_CODE, orgCode);
-        intent.putExtra(EXTRA_USERNAME, username);
-        intent.putExtra(EXTRA_PASSWORD, password);
-        intent.putExtra(EXTRA_PACKAGE_NAME, packageName);
-        intent.putExtra(EXTRA_MAX_DISTANCE, maxDistance);
+        intent.putExtra(SERVER_URL, serverUrl);
+        intent.putExtra(TENANT_CODE, tenantCode);
+        intent.putExtra(ORG_CODE, orgCode);
+        intent.putExtra(USERNAME, username);
+        intent.putExtra(PASSWORD, password);
+        intent.putExtra(PACKAGE_NAME, packageName);
+        intent.putExtra(MAX_DISTANCE, maxDistance);
         if (newLocation != null) {
-            intent.putExtra(EXTRA_LOCATION_UPDATE_FLAG, true);
-            intent.putExtra(EXTRA_LATITUDE, newLocation.latitude);
-            intent.putExtra(EXTRA_LONGITUDE, newLocation.longitude);
+            intent.putExtra(LOCATION_UPDATE_FLAG, true);
+            intent.putExtra(LATITUDE, newLocation.latitude);
+            intent.putExtra(LONGITUDE, newLocation.longitude);
         }
         if (geofences != null) {
             StringBuilder sb = new StringBuilder();
@@ -163,7 +165,7 @@ class ServiceConfig implements Serializable {
                 sb.append(fence.getCode());
                 count++;
             }
-            intent.putExtra(EXTRA_GEOFENCES, sb.toString());
+            intent.putExtra(GEOFENCES, sb.toString());
         }
         if (deletedGeofences != null) {
             StringBuilder sb = new StringBuilder();
@@ -175,10 +177,10 @@ class ServiceConfig implements Serializable {
                 sb.append(code);
                 count++;
             }
-            intent.putExtra(EXTRA_DELETED_GEOFENCES, sb.toString());
+            intent.putExtra(DELETED_GEOFENCES, sb.toString());
         }
         if( eventType != null) {
-            intent.putExtra(EXTRA_EVENT_TYPE, eventType.name());
+            intent.putExtra(EVENT_TYPE, eventType.name());
         }
         return this;
     }
@@ -195,10 +197,10 @@ class ServiceConfig implements Serializable {
     }
 
     void populateFromSettings(Settings settings) {
-        serverUrl = settings.getString(EXTRA_SERVER_URL, null);
-        tenantCode = settings.getString(EXTRA_TENANT_CODE, null);
-        orgCode = settings.getString(EXTRA_ORG_CODE, null);
-        username = settings.getString(EXTRA_USERNAME, null);
-        password = settings.getString(EXTRA_PASSWORD, null);
+        serverUrl = settings.getString(SERVER_URL, null);
+        tenantCode = settings.getString(TENANT_CODE, null);
+        orgCode = settings.getString(ORG_CODE, null);
+        username = settings.getString(USERNAME, null);
+        password = settings.getString(PASSWORD, null);
     }
 }

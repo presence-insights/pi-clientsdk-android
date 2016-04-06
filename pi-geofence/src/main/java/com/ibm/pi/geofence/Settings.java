@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
@@ -148,6 +149,22 @@ public class Settings {
 
     public Settings putBoolean(String key, boolean value) {
         return putString(key, Boolean.toString(value));
+    }
+
+    public Settings clear() {
+        properties.clear();
+        return this;
+    }
+
+    public Set<String> getPropertyNames() {
+        return properties.stringPropertyNames();
+    }
+
+    public Settings remove(String key) {
+        if (key != null) {
+            properties.remove(key);
+        }
+        return this;
     }
 
     /**

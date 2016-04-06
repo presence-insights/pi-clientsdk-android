@@ -25,6 +25,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofencingManager;
+import com.ibm.pi.geofence.Settings;
 import com.orm.SugarDb;
 
 import org.apache.log4j.Logger;
@@ -45,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -270,6 +272,29 @@ public class DemoUtils {
             m.invoke(manager);
         } catch(Exception e) {
             log.debug("error getting list of geofences: ", e);
+        }
+    }
+
+    static void updateSettingsIfNeeded(Settings settings) {
+        Set<String> names = settings.getPropertyNames();
+        String oldPrefix = "com.ibm.pi.sdk.extra.";
+        String newPrefix = "com.ibm.pi.sdk.";
+        int nbUpdates = 0;
+        for (String name: names) {
+            if (name.startsWith(oldPrefix)) {
+                String newName = newPrefix + name.substring(oldPrefix.length());
+                if (settings.getString(newName, null) == null) {
+                    String value = settings.getString(name, null);
+                    if (value != null) {
+                        settings.putString(newName, value);
+                    }
+                }
+                settings.remove(name);
+                nbUpdates++;
+            }
+        }
+        if (nbUpdates > 0) {
+            settings.commit();
         }
     }
 }

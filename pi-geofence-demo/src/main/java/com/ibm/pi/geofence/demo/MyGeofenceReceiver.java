@@ -51,7 +51,6 @@ public class MyGeofenceReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        //intent.add
         PIGeofenceEvent event = PIGeofenceEvent.fromIntent(intent);
         List<PIGeofence> geofences = event.getGeofences();
         switch(event.getEventType()) {
