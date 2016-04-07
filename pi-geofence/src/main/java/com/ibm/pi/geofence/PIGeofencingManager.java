@@ -206,9 +206,9 @@ public class PIGeofencingManager {
     /**
      * Send a notification to the PI geofence connector as an HTTP request.
      * @param fences the geofences for which to send a notification.
-     * @param type the type of geofence notification: either {@link GeofenceNotificationType#IN IN} or {@link GeofenceNotificationType#OUT OUT}.
+     * @param type the type of geofence notification: either {@link PIGeofenceEvent.Type#ENTER ENTER} or {@link PIGeofenceEvent.Type##EXIT EXIT}.
      */
-    void postGeofenceEvent(final List<PersistentGeofence> fences, final GeofenceNotificationType type) {
+    void postGeofenceEvent(final List<PersistentGeofence> fences, final PIGeofenceEvent.Type type) {
         if (httpService.getTenantCode() == null) {
             log.warn("cannot send geofence notification because the tenant code is undefined");
         } else if (httpService.getOrgCode() == null) {

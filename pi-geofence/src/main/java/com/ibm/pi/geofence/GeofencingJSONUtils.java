@@ -223,7 +223,7 @@ class GeofencingJSONUtils {
       "sdkVersion": "1.0.1"
     }
     */
-    static JSONObject toJSONGeofenceEvent(List<PersistentGeofence> fences, GeofenceNotificationType type, String deviceID, String sdkVersion) {
+    static JSONObject toJSONGeofenceEvent(List<PersistentGeofence> fences, PIGeofenceEvent.Type type, String deviceID, String sdkVersion) {
         JSONObject json = new JSONObject();
         try {
             json.put("sdkVersion", sdkVersion == null ? "" : sdkVersion);
@@ -239,7 +239,7 @@ class GeofencingJSONUtils {
         return json;
     }
 
-    static JSONObject toJSONGeofenceEvent(PersistentGeofence fence, String deviceID, String date, GeofenceNotificationType type) {
+    static JSONObject toJSONGeofenceEvent(PersistentGeofence fence, String deviceID, String date, PIGeofenceEvent.Type type) {
         JSONObject json = new JSONObject();
         try {
             json.put("descriptor", TMP_DESC);

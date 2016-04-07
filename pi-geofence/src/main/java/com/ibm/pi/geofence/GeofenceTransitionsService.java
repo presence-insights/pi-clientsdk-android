@@ -71,9 +71,9 @@ public class GeofenceTransitionsService extends IntentService {
             Context ctx = config.createContext(this);
             Settings settings = new Settings(ctx);
             config.populateFromSettings(settings);
-            PIGeofencingManager service = new PIGeofencingManager(settings, PIGeofencingManager.MODE_GEOFENCE_EVENT, ctx,
+            PIGeofencingManager manager = new PIGeofencingManager(settings, PIGeofencingManager.MODE_GEOFENCE_EVENT, ctx,
                 config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-            config.populateFromSettings(service.settings);
+            config.populateFromSettings(manager.settings);
             List<PersistentGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
             for (Geofence g : triggeringGeofences) {
                 String code = g.getRequestId();
@@ -83,17 +83,12 @@ public class GeofenceTransitionsService extends IntentService {
                 }
             }
             log.debug(String.format("triggered geofences = %s", geofences));
-            if (transition == Geofence.GEOFENCE_TRANSITION_ENTER) {
-                service.postGeofenceEvent(geofences, GeofenceNotificationType.IN);
-            } else {
-                service.postGeofenceEvent(geofences, GeofenceNotificationType.OUT);
-            }
+            PIGeofenceEvent.Type eventType = (transition == Geofence.GEOFENCE_TRANSITION_ENTER) ? PIGeofenceEvent.Type.ENTER : PIGeofenceEvent.Type.EXIT;
+            manager.postGeofenceEvent(geofences, eventType);
             try {
                 Intent broadcastIntent = new Intent(PIGeofenceEvent.ACTION_GEOFENCE_EVENT);
                 broadcastIntent.setPackage(ctx.getPackageName());
-                PIGeofenceEvent.toIntent(broadcastIntent,
-                    transition == Geofence.GEOFENCE_TRANSITION_ENTER ? PIGeofenceEvent.Type.ENTER : PIGeofenceEvent.Type.EXIT,
-                    geofences, null);
+                PIGeofenceEvent.toIntent(broadcastIntent, eventType, geofences, null);
                 log.debug(String.format("sending config=%s", config));
                 ctx.sendBroadcast(broadcastIntent);
             } catch(Exception e) {

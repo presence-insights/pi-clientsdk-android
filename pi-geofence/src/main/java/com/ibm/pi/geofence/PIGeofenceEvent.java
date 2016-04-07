@@ -40,15 +40,24 @@ public class PIGeofenceEvent {
         /**
          * Event type indicating entry within one or more geofences.
          */
-        ENTER,
+        ENTER("enter"),
         /**
          * Event type indicating exit from one or more geofences.
          */
-        EXIT,
+        EXIT("exit"),
         /**
          * Event type indicating results from a server synchronization request.
          */
-        SERVER_SYNC
+        SERVER_SYNC("server_sync");
+
+        private String op;
+        Type(String op) {
+            this.op = op;
+        }
+
+        public String operation() {
+            return op;
+        }
     }
     private final Type eventType;
     private final List<PIGeofence> geofences;

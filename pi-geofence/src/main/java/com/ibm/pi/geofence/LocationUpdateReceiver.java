@@ -46,7 +46,7 @@ public class LocationUpdateReceiver extends BroadcastReceiver {
     public LocationUpdateReceiver() {
     }
 
-    public LocationUpdateReceiver(PIGeofencingManager geofencingService) {
+    LocationUpdateReceiver(PIGeofencingManager geofencingService) {
         this();
         this.context = geofencingService.context;
         this.settings = geofencingService.settings;
