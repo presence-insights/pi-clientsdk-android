@@ -1,4 +1,3 @@
-
 # <img style="vertical-align: middle" src="src/main/res/mipmap-mdpi/world_globe.png"/> Presence Insights Geofence Android SDK
 
 ***The Android SDK is an Android API to retrieve geofences and emit entry/exit notifications to the PI server.***
@@ -7,8 +6,8 @@
 
 1. [Installation](#installation)
 2. [Getting started](#getting-started)
-    1. [Creating a geofencing manager](#Creating_a_geofencing_manager)
-    2. [Receiving local notifications](#receiving_local_notifications)
+    1. [Creating a geofencing manager](#creating-a-geofencing-manager)
+    2. [Receiving local notifications](#receiving-local-notifications)
 
 ## Installation
 
@@ -39,7 +38,7 @@ public class MyActivity extends Activity {
 ```
 
 Where:
-* the first`parameter must be of type [Context](http://developer.android.com/reference/android/content/Context.html) or one of its subclasses.
+* the first parameter must be of type [Context](http://developer.android.com/reference/android/content/Context.html) or one of its subclasses.
 * `myServerUrl` is a string expressing the URL to the PI server, including the protocol, server name or IP address, and an optional port number. For example: "https://myserver.mybluemix.net:3000"
 * `myTenantCode` represents the PI tenant code.
 * `myOrgCode` represents the PI org code.
@@ -79,12 +78,12 @@ public class MyGeofenceReceiver extends BroadcastReceiver {
         // get the affected geofences
         List<PIGeofence> geofences = event.getGeofences();
         switch(event.getEventType()) {
-            // entered one or more gefoences
+            // entered one or more geofences
             case ENTER:
                 ...
                 break;
 
-             // exited one or more gefoences
+             // exited one or more geofences
              case EXIT:
                 ...
                 break;
@@ -100,4 +99,5 @@ public class MyGeofenceReceiver extends BroadcastReceiver {
 }
 ```
 
-The [BroadcastReceiver](http://developer.android.com/reference/android/content/BroadcastReceiver.html) can then be dynamically registered within an [Activity](http://developer.android.com/reference/android/app/Activity.html)'s lifecycle, or declared in the app's Android manifest to receive notifications in the background, or both.
+The [BroadcastReceiver](http://developer.android.com/reference/android/content/BroadcastReceiver.html) can then be dynamically registered within an [Activity](http://developer.android.com/reference/android/app/Activity.html)'s lifecycle,
+or declared in the app's Android manifest to receive notifications in the background, or both.
