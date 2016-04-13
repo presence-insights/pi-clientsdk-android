@@ -43,7 +43,6 @@ public class MyGeofenceReceiver extends BroadcastReceiver {
     private static final AtomicInteger notifId = new AtomicInteger(0);
     //#private static final String SLACK_CHANNEL = "@lolo4j";
     private final SlackHTTPService slackService;
-    private Settings settings;
     private final MapsActivity activity;
 
     public MyGeofenceReceiver() {
@@ -59,21 +58,28 @@ public class MyGeofenceReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         PIGeofenceEvent event = PIGeofenceEvent.fromIntent(intent);
         List<PIGeofence> geofences = event.getGeofences();
+        Settings settings = (activity != null) ? activity.settings : loadSettings(context);
         switch(event.getEventType()) {
             case ENTER:
                 log.debug("entering geofence(s) " + geofences);
-                if (getSettings(context).getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
-                    updateUI(geofences, true);
-                    sendNotification(context, geofences, "enter");
-                    slackService.postGeofenceMessages(geofences, "enter", SLACK_CHANNEL);
+                if (settings.getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
+                    if (activity != null) {
+                        updateUI(geofences, true);
+                    } else {
+                        sendNotification(context, geofences, "enter");
+                        slackService.postGeofenceMessages(geofences, "enter", SLACK_CHANNEL);
+                    }
                 }
                 break;
             case EXIT:
                 log.debug("exiting geofence(s) " + geofences);
-                if (getSettings(context).getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
-                    updateUI(geofences, false);
-                    sendNotification(context, geofences, "exit");
-                    slackService.postGeofenceMessages(geofences, "exit", SLACK_CHANNEL);
+                if (settings.getBoolean(MapsActivity.TRACKING_ENABLED_KEY, true)) {
+                    if (activity != null) {
+                        updateUI(geofences, false);
+                    } else {
+                        sendNotification(context, geofences, "exit");
+                        slackService.postGeofenceMessages(geofences, "exit", SLACK_CHANNEL);
+                    }
                 }
                 break;
             case SERVER_SYNC:
@@ -120,10 +126,8 @@ public class MyGeofenceReceiver extends BroadcastReceiver {
         mNotificationManager.notify(notifId.incrementAndGet(), mBuilder.build());
     }
 
-    public Settings getSettings(Context context) {
-        if (settings == null) {
-            settings = new Settings(context);
-        }
-        return settings;
+    private Settings loadSettings(Context context) {
+        //return new Settings(context, DemoUtils.extractSettingsData(context));
+        return new Settings(context);
     }
 }

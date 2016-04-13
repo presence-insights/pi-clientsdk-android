@@ -17,15 +17,20 @@
 package com.ibm.pi.geofence.demo;
 
 import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.SystemClock;
+import android.view.MenuItem;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.ibm.pi.geofence.LoggingConfiguration;
 import com.ibm.pi.geofence.PIGeofence;
 import com.ibm.pi.geofence.PIGeofencingManager;
 import com.ibm.pi.geofence.Settings;
+import com.ibm.pisdk.geofencing.demo.R;
 import com.orm.SugarDb;
 
 import org.apache.log4j.Logger;
@@ -275,6 +280,17 @@ public class DemoUtils {
         }
     }
 
+    static String extractSettingsData(Context context) {
+        try {
+            Method m = PIGeofencingManager.class.getDeclaredMethod("extractSettingsData", Context.class);
+            m.setAccessible(true);
+            return (String) m.invoke(null, context);
+        } catch(Exception e) {
+            log.debug("error extracting data: ", e);
+        }
+        return null;
+    }
+
     static void updateSettingsIfNeeded(Settings settings) {
         Set<String> names = settings.getPropertyNames();
         String oldPrefix = "com.ibm.pi.sdk.extra.";
@@ -296,5 +312,53 @@ public class DemoUtils {
         if (nbUpdates > 0) {
             settings.commit();
         }
+    }
+
+    static void sendLogByMail(Context context) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("message/rfc822");
+            //intent.setData(Uri.parse("mailto:")); // only email apps should handle this
+            intent.putExtra(Intent.EXTRA_EMAIL, new String[] {"LAURENTC@fr.ibm.com"});
+            intent.putExtra(Intent.EXTRA_SUBJECT, "PI sdk log - " + new java.util.Date());
+            // zip the log file and send the zip as attachment
+            String path = DemoUtils.zipFile(LoggingConfiguration.getLogFile());
+            File file = new File(path);
+            intent.putExtra(Intent.EXTRA_TEXT, "See attached log file '" + file.getName() + "'");
+            Uri uri = Uri.parse(file.toURI().toString());
+            log.debug("log file uril = " + uri);
+            intent.putExtra(Intent.EXTRA_STREAM, uri);
+            if (intent.resolveActivity(context.getPackageManager()) != null) {
+                context.startActivity(intent);
+            }
+        } catch(Exception e) {
+            log.debug(e.getMessage(), e);
+        }
+    }
+
+    private final static char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
+
+    public static String toHexString(byte[] bytes) {
+        char[] result = new char[2 * bytes.length];
+        for (int i=0; i<bytes.length; i++) {
+            int a = (bytes[i] & 0xF0) >>> 4;
+            int b = bytes[i] & 0x0F;
+            result[2*i] = HEX_DIGITS[a];
+            result[2*i+1] = HEX_DIGITS[b];
+        }
+        return new String(result);
+    }
+
+    public static byte[] fromHexString(String hexString) {
+        char[] chars = hexString.toCharArray();
+        byte[] result = new byte[chars.length/2];
+        for (int i=0; i<result.length; i++) {
+            char c = chars[2*i];
+            int a = ((Character.isDigit(c) ?  c - '0' : c - 'A' + 10) << 4) & 0xF0;
+            c = chars[2*i+1];
+            int b = (Character.isDigit(c) ?  c - '0' : c - 'A' + 10) & 0x0F;
+            result[i] = (byte) ((a | b) & 0xFF);
+        }
+        return result;
     }
 }

@@ -18,6 +18,7 @@ package com.ibm.pi.geofence;
 
 import android.location.Location;
 import android.location.LocationManager;
+import android.util.Base64;
 
 import org.apache.log4j.Logger;
 

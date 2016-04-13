@@ -184,11 +184,9 @@ public class MapsActivity extends FragmentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         log.debug("***************************************************************************************");
         super.onCreate(savedInstanceState);
-        settings = new Settings(this);
-        DemoUtils.updateSettingsIfNeeded(settings);
+        String pwd = "8xdr5vfh";
         setContentView(R.layout.maps_activity);
         mapCrossHair = (ImageView) findViewById(R.id.map_cross_hair);
-        trackingEnabled = settings.getBoolean(TRACKING_ENABLED_KEY, true);
         log.debug("in onCreate() tracking is " + (trackingEnabled ? "enabled" : "disabled"));
         addFenceButton = (Button) findViewById(R.id.addFenceButton);
         addFenceButton.setOnClickListener(new View.OnClickListener() {
@@ -214,14 +212,16 @@ public class MapsActivity extends FragmentActivity {
             dbDeleted = true;
             DemoUtils.deleteGeofenceDB(this);
         }
-        settings.putString("orgCode", "6x07ykw");
-        settings.commit();
         */
+        settings = new Settings(this);
+        settings.putString("orgCode", "6x07ykw").commit();
         String orgCode = settings.getString("orgCode", null);
         log.debug(String.format("found orgCode = %s from settings", orgCode));
         //manager = PIGeofencingManager.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
-        manager = new PIGeofencingManager(this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
+        manager = new PIGeofencingManager(this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", pwd, 10_000);
         manager.setMinHoursBetweenServerSyncs(1);
+        DemoUtils.updateSettingsIfNeeded(settings);
+        trackingEnabled = settings.getBoolean(TRACKING_ENABLED_KEY, true);
         /*
         // testing the loading from a zip resource
         manager.loadGeofencesFromResource("com/ibm/pisdk/geofencing/geofence_2016-03-18_14_38_04.zip", new PIRequestCallback<List<PIGeofence>>() {
@@ -236,7 +236,7 @@ public class MapsActivity extends FragmentActivity {
             }
         });
         */
-        customHttpService = new CustomPIHttpService(manager, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh");
+        customHttpService = new CustomPIHttpService(manager, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", pwd);
         if (orgCode == null) {
             //String orgName = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
             String orgName = "android-" + UUID.randomUUID().toString();
@@ -540,25 +540,7 @@ public class MapsActivity extends FragmentActivity {
                 log.debug(String.format("onOptionsItemSelected() tracking is now %s", trackingEnabled ? "enabled" : "disabled"));
                 break;
             case R.id.action_mail_log:
-                try {
-                    Intent intent = new Intent(Intent.ACTION_SEND);
-                    intent.setType("message/rfc822");
-                    //intent.setData(Uri.parse("mailto:")); // only email apps should handle this
-                    intent.putExtra(Intent.EXTRA_EMAIL, new String[] {"LAURENTC@fr.ibm.com"});
-                    intent.putExtra(Intent.EXTRA_SUBJECT, "PI sdk log - " + new java.util.Date());
-                    // zip the log file and send the zip as attachment
-                    String path = DemoUtils.zipFile(LoggingConfiguration.getLogFile());
-                    File file = new File(path);
-                    intent.putExtra(Intent.EXTRA_TEXT, "See attached log file '" + file.getName() + "'");
-                    Uri uri = Uri.parse(file.toURI().toString());
-                    log.debug("log file uril = " + uri);
-                    intent.putExtra(Intent.EXTRA_STREAM, uri);
-                    if (intent.resolveActivity(getPackageManager()) != null) {
-                        startActivity(intent);
-                    }
-                } catch(Exception e) {
-                    log.debug(e.getMessage(), e);
-                }
+                DemoUtils.sendLogByMail(this);
                 break;
         }
         return super.onOptionsItemSelected(item);

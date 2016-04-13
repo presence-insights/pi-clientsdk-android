@@ -46,9 +46,16 @@
             android:name="com.ibm.pi.geofence.demo.LoginActivity"
             android:label="@string/title_activity_maps"
             android:parentActivityName="com.ibm.pi.geofence.demo.MapsActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.ibm.pi.geofence.demo.MapsActivity"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.ibm.pi.geofence.demo.LoginActivity"
+            android:label="@string/title_activity_maps"
+            android:parentActivityName="com.ibm.pi.geofence.demo.MapsActivity">
+            <meta-data android:name="android.support.PARENT_ACTIVITY" android:value="com.ibm.pi.geofence.demo.MapsActivity"/>
         </activity>
         -->
     </application>

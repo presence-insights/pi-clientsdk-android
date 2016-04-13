@@ -51,14 +51,16 @@ public class PIGeofenceEvent {
         SERVER_SYNC("server_sync");
 
         private String op;
+
         Type(String op) {
             this.op = op;
         }
 
-        public String operation() {
+        String operation() {
             return op;
         }
     }
+
     private final Type eventType;
     private final List<PIGeofence> geofences;
     private final List<String> deletedGeofenceCodes;
@@ -102,7 +104,7 @@ public class PIGeofenceEvent {
     /**
      * Extract intelligible geofence data from the specified intent.
      * @param intent the intent delivered to an optional user-defined broadcast receiver.
-     * @return a {@code PIGeofenceEvent} object populated form the intent.
+     * @return a {@code PIGeofenceEvent} object populated from the intent.
      */
     public static PIGeofenceEvent fromIntent(Intent intent) {
         String typeStr = intent.getStringExtra(EVENT_TYPE_KEY);

@@ -30,12 +30,22 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.ibm.pi.geofence.LoggingConfiguration;
+import com.ibm.pi.geofence.Settings;
 import com.ibm.pisdk.geofencing.demo.R;
+
+import org.apache.log4j.Logger;
+
+import java.util.Date;
 
 /**
  * A login screen that offers login via username/password.
  */
 public class LoginActivity extends Activity {
+    /**
+     * Logger for this class.
+     */
+    private static final Logger log = LoggingConfiguration.getLogger(LoginActivity.class.getSimpleName());
     // UI references.
     AutoCompleteTextView serverView;
     AutoCompleteTextView tenantView;
@@ -45,6 +55,7 @@ public class LoginActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        log.debug(String.format("****************************** %s ******************************", new Date()));
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
@@ -62,11 +73,13 @@ public class LoginActivity extends Activity {
         signInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                attemptLogin();
+                DemoUtils.sendLogByMail(LoginActivity.this);
+                //attemptLogin();
             }
         });
         loginFormView = findViewById(R.id.login_form);
         progressView = findViewById(R.id.login_progress);
+        testSettings();
     }
 
     /**
@@ -112,5 +125,39 @@ public class LoginActivity extends Activity {
             progressView.setVisibility(show ? View.VISIBLE : View.GONE);
             loginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
+    }
+
+    private void testSettings() {
+        try {
+            /*
+            byte[] bytes1 = new byte[20];
+            for (int i=0; i<bytes1.length; i++) {
+                bytes1[i] = (byte) i;
+            }
+            String s1 = convertBytes(bytes1);
+            String hex1 = Settings.toHexString(bytes1);
+            byte[] bytes2 = Settings.fromHexString(hex1);
+            String s2 = convertBytes(bytes2);
+            log.debug(String.format("s1=%s, hex1=%s, s2=%s, s1 equals s2=%b", s1, hex1, s2, s1.equals(s2)));
+            */
+            String pwd = "8xdr5vfh";
+            Settings settings = new Settings(this);
+            log.debug("settings opened");
+            settings.putString("prop.1", "value.1").putString("prop.2", "value.2").commit();
+            log.debug("settings saved");
+            settings = new Settings(this);
+            log.debug("settings opened again: " + settings);
+        } catch(Exception e) {
+            log.error("error while testing settings: ", e);
+        }
+    }
+
+    private String convertBytes(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (int i=0; i<bytes.length; i++) {
+            if (i > 0) sb.append(", ");
+            sb.append((int) (bytes[i] & 0xFF));
+        }
+        return sb.toString();
     }
 }

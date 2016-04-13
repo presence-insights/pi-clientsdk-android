@@ -167,6 +167,7 @@ public class PIGeofencingManager {
         int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
         log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
         if (this.mode == MODE_APP) {
+            //initSettingsData();
             updateSettings();
         }
         connectGoogleAPI();
@@ -309,12 +310,13 @@ public class PIGeofencingManager {
 
     /**
      * Set the minimum delay in hours between two synchronizations with the server.
-     * if (the specified value is less than 1, then this method has no effect.
+     * If (the specified value is less than 1, then this method has no effect.
      * @param minHoursBetweenServerSyncs the minimum number of hours between two server synchronizations.
      */
     public void setMinHoursBetweenServerSyncs(int minHoursBetweenServerSyncs) {
         if (minHoursBetweenServerSyncs >= 1) {
             this.minHoursBetweenServerSyncs = minHoursBetweenServerSyncs;
+            updateSettings();
         }
     }
 
@@ -532,18 +534,18 @@ public class PIGeofencingManager {
     }
 
     private void updateSettings() {
-        settings.putString(ServiceConfig.SERVER_URL, httpService.getServerURL());
-        settings.putString(ServiceConfig.TENANT_CODE, httpService.getTenantCode());
-        settings.putString(ServiceConfig.ORG_CODE, httpService.getOrgCode());
-        settings.putString(ServiceConfig.USERNAME, httpService.getUsername());
-        settings.putString(ServiceConfig.PASSWORD, httpService.getPassword());
-        settings.putInt(ServiceConfig.MAX_DISTANCE, maxDistance);
-        settings.putInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, minHoursBetweenServerSyncs);
-        settings.commit();
+        settings.putString(ServiceConfig.SERVER_URL, httpService.getServerURL())
+            .putString(ServiceConfig.TENANT_CODE, httpService.getTenantCode())
+            .putString(ServiceConfig.ORG_CODE, httpService.getOrgCode())
+            .putString(ServiceConfig.USERNAME, httpService.getUsername())
+            .putString(ServiceConfig.PASSWORD, httpService.getPassword())
+            .putInt(ServiceConfig.MAX_DISTANCE, maxDistance)
+            .putInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, minHoursBetweenServerSyncs)
+            .commit();
     }
 
     /**
-     * Retrieve the last used device descritpor, if any. If none exist, one is created from the {@link com.ibm.pi.core.PIDeviceInfo PIDeviceInfo} API.
+     * Retrieve the last used device descritpor, if any. If none exists, one is created from the {@link com.ibm.pi.core.PIDeviceInfo PIDeviceInfo} API.
      * @return the device descriptor.
      */
     String retrieveDeviceDescriptor() {
@@ -560,4 +562,28 @@ public class PIGeofencingManager {
         }
         return result;
     }
+
+    /*
+    private final static String PREF_NAME = "com.ibm.pi.shared_prefs";
+    private void initSettingsData() {
+        try {
+            String name = Settings.encode(PREF_NAME);
+            SharedPreferences prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE);
+            prefs.edit().putString(Settings.encode("settings.data"), Settings.encode(httpService.getPassword())).apply();
+        } catch(Exception e) {
+            log.debug("error setting settings data", e);
+        }
+    }
+
+    static String extractSettingsData(Context context) {
+        try {
+            String name = Settings.encode(PREF_NAME);
+            SharedPreferences prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE);
+            return Settings.decode(prefs.getString(Settings.encode("settings.data"), null));
+        } catch(Exception e) {
+            log.debug("error getting settings data", e);
+        }
+        return null;
+    }
+    */
 }
