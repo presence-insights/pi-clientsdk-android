@@ -49,12 +49,10 @@ Where:
 Once created, the `PIGeofenceManager` object will be able to:
 * register or unregister gefoences based on the bounding box defined by the current location and `maxDistance`, i.e. a square box with a side of `maxDistance` and centered on the current location
 * communicate with the PI server to emit geofence entry or exit events
-* synchronize with the PI server to keep an up-to-date list of gefoences
+* synchronize with the PI server to keep an up-to-date list of geofences
 
-The minimum delay between synchronizations with the server can be controlled with the `getMinHoursBetweenServerSyncs()` and `getMinHoursBetweenServerSyncs(int)` methods,
-wich respectively enable retrieving and setting the minimum number of hours between synchronizations with the server. When not set explicitely, this attribute has a default value of 24 hours.
-
-Example usage:
+The minimum delay between synchronizations with the server can be controlled with the `getMinHoursBetweenServerSyncs()` and `setMinHoursBetweenServerSyncs(int)` methods,
+wich respectively enable retrieving and setting the minimum number of hours between synchronizations with the server. When not set explicitely, this attribute has a default value of 24 hours. Example usage:
 
 ```java
 PIGeofencingManager manager = new PIGeofencingManager(
