@@ -5,9 +5,11 @@
 ### Table Of Contents
 
 1. [Installation](#installation)
-2. [Getting started](#getting-started)
+2. [Usage](#usage)
     1. [Creating a geofencing manager](#creating-a-geofencing-manager)
     2. [Receiving local notifications](#receiving-local-notifications)
+    3. [Initializing the list of geofences from a resource](#initializing-the-list-of-geofences-from-a-resource)
+    4. [Logging](#logging)
 
 ## Installation
 
@@ -20,7 +22,7 @@ dependencies {
 }
 ```
 
-## Getting started
+## Usage
 
 ### Creating a geofencing manager
 
@@ -51,14 +53,14 @@ Once created, the `PIGeofenceManager` object will be able to:
 * communicate with the PI server to emit geofence entry or exit events
 * synchronize with the PI server to keep an up-to-date list of geofences
 
-The minimum delay between synchronizations with the server can be controlled with the `getMinHoursBetweenServerSyncs()` and `setMinHoursBetweenServerSyncs(int)` methods,
-wich respectively enable retrieving and setting the minimum number of hours between synchronizations with the server. When not set explicitely, this attribute has a default value of 24 hours. Example usage:
+The minimum delay between synchronizations with the server can be controlled with the `getIntervakBetweenDownloads()` and `setIntervakBetweenDownloads(int)` methods,
+wich respectively enable retrieving and setting the minimum number of hours between synchronizations. When not set explicitely, this attribute has a default value of 24 hours. Example usage:
 
 ```java
 PIGeofencingManager manager = new PIGeofencingManager(
   this, myServerUrl, myTenantCode, myOrgCode, myUsername, myPassword, maxDistance);
-if (manager.getMinHoursBetweenServerSyncs() < 12) {
-  manager.setMinHoursBetweenServerSyncs(12);
+if (manager.getIntervakBetweenDownloads() < 12) {
+  manager.setIntervakBetweenDownloads(12);
 }
 ```
 
@@ -99,3 +101,24 @@ public class MyGeofenceReceiver extends BroadcastReceiver {
 
 The [BroadcastReceiver](http://developer.android.com/reference/android/content/BroadcastReceiver.html) can then be dynamically registered within an [Activity](http://developer.android.com/reference/android/app/Activity.html)'s lifecycle,
 or declared in the app's Android manifest to receive notifications in the background, or both.
+
+### Initializing the list of geofences from a resource
+
+You can embed a zipped geojson file as a resource to initialize the list of geofences to monitor.
+
+```java
+PIGeofencingManager manager = ...;
+manager.loadGeofencesFromResource("some/resource/folder/my_geofences.zip");
+```
+
+The operation is performed asynchronously and the method returns immediately. Upon completion of the operation, a broadcast message of type `PIGeofenceEvent.Type.SERVER_SYNC` is sent.
+
+### Logging
+
+The PI Geofence SDK can log traces for debugging purposes, thanks to [Apache Log4j](http://logging.apache.org/log4j/1.2/).
+
+To get the path to the log file:
+
+```java
+String logPath = PIGeofencingManager.getLogFilePath();
+```

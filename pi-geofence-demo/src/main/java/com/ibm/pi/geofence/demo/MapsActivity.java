@@ -17,12 +17,10 @@
 package com.ibm.pi.geofence.demo;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
@@ -55,7 +53,6 @@ import com.ibm.pisdk.geofencing.demo.R;
 
 import org.apache.log4j.Logger;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -219,22 +216,12 @@ public class MapsActivity extends FragmentActivity {
         log.debug(String.format("found orgCode = %s from settings", orgCode));
         //manager = PIGeofencingManager.newInstance(MyCallbackService.class, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", "8xdr5vfh", 10_000);
         manager = new PIGeofencingManager(this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", pwd, 10_000);
-        manager.setMinHoursBetweenServerSyncs(1);
+        manager.setIntervalBetweenDowloads(1);
         DemoUtils.updateSettingsIfNeeded(settings);
         trackingEnabled = settings.getBoolean(TRACKING_ENABLED_KEY, true);
         /*
         // testing the loading from a zip resource
-        manager.loadGeofencesFromResource("com/ibm/pisdk/geofencing/geofence_2016-03-18_14_38_04.zip", new PIRequestCallback<List<PIGeofence>>() {
-            @Override
-            public void onSuccess(List<PIGeofence> result) {
-                log.debug("successfully loaded geofences from resource: " + result);
-            }
-
-            @Override
-            public void onError(PIRequestError error) {
-                log.debug("error loading geofences from resource: " + error);
-            }
-        });
+        manager.loadGeofencesFromResource("com/ibm/pisdk/geofencing/geofence_2016-03-18_14_38_04.zip");
         */
         customHttpService = new CustomPIHttpService(manager, this, "http://pi-outdoor-proxy.mybluemix.net", "xf504jy", orgCode, "a6su7f", pwd);
         if (orgCode == null) {

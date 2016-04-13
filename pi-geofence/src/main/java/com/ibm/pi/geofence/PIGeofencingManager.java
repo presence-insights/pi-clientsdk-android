@@ -126,7 +126,7 @@ public class PIGeofencingManager {
     /**
      * The minimum delay between two synchronizations with the server.
      */
-    int minHoursBetweenServerSyncs = 24;
+    int intervalBetweenDowloads = 24;
 
     /**
      * Initialize this service.
@@ -162,7 +162,7 @@ public class PIGeofencingManager {
         this.context = context;
         this.settings = (settings != null) ? settings : new Settings(context);
         log.debug("PIGeofencingService() settings = " + this.settings);
-        this.minHoursBetweenServerSyncs = this.settings.getInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, 24);
+        this.intervalBetweenDowloads = this.settings.getInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, 24);
         this.deviceDescriptor = retrieveDeviceDescriptor();
         int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
         log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
@@ -304,18 +304,18 @@ public class PIGeofencingManager {
      * When not already set, the default value is 24 hours.
      * @return the minimum number of hours between two server synchronizations.
      */
-    public int getMinHoursBetweenServerSyncs() {
-        return minHoursBetweenServerSyncs;
+    public int getIntervalBetweenDowloads() {
+        return intervalBetweenDowloads;
     }
 
     /**
      * Set the minimum delay in hours between two synchronizations with the server.
      * If (the specified value is less than 1, then this method has no effect.
-     * @param minHoursBetweenServerSyncs the minimum number of hours between two server synchronizations.
+     * @param intervalBetweenDowloads the minimum number of hours between two server synchronizations.
      */
-    public void setMinHoursBetweenServerSyncs(int minHoursBetweenServerSyncs) {
-        if (minHoursBetweenServerSyncs >= 1) {
-            this.minHoursBetweenServerSyncs = minHoursBetweenServerSyncs;
+    public void setIntervalBetweenDowloads(int intervalBetweenDowloads) {
+        if (intervalBetweenDowloads >= 1) {
+            this.intervalBetweenDowloads = intervalBetweenDowloads;
             updateSettings();
         }
     }
@@ -324,7 +324,7 @@ public class PIGeofencingManager {
      * Load a set of geofences from a reosurce file.
      * @param resource the path to the resource to load the geofences from.
      */
-    public void loadGeofencesFromResource(final String resource, final PIRequestCallback<List<PIGeofence>> userCallback) {
+    public void loadGeofencesFromResource(final String resource) {
         AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
             private GeofenceList geofenceList;
             private PIRequestError error;
@@ -372,7 +372,6 @@ public class PIGeofencingManager {
                     log.debug(String.format(Locale.US, "loaded %,d geofences from resource '[%s]', maxSyncDate=%s",
                         allGeofences.size(), resource, maxSyncDate));
                 } catch(Exception e) {
-                    log.error(String.format("error loading resource %s", resource), e);
                     error = new PIRequestError(-1, e, String.format("error loading resource '%s'", resource));
                 } finally {
                     try {
@@ -389,20 +388,29 @@ public class PIGeofencingManager {
 
             @Override
             protected void onPostExecute(Void aVoid) {
-                if (userCallback != null) {
-                    if (error != null) {
-                        userCallback.onError(error);
-                    } else {
-                        List<PIGeofence> geofences = new ArrayList<>(geofenceList.getGeofences().size());
-                        for (PersistentGeofence pg: geofenceList.getGeofences()) {
-                            geofences.add(pg.toPIGeofence());
-                        }
-                        userCallback.onSuccess(geofences);
+                if (error != null) {
+                    log.error(String.format("error loading resource %s : %s", resource, error));
+                } else {
+                    try {
+                        Intent broadcastIntent = new Intent(PIGeofenceEvent.ACTION_GEOFENCE_EVENT);
+                        broadcastIntent.setPackage(context.getPackageName());
+                        PIGeofenceEvent.toIntent(broadcastIntent, PIGeofenceEvent.Type.SERVER_SYNC, geofenceList.getGeofences(), null);
+                        context.sendBroadcast(broadcastIntent);
+                    } catch(Exception e) {
+                        log.error("error sending broadcast event", e);
                     }
                 }
             }
         };
         task.execute();
+    }
+
+    /**
+     * Get the path to the log file.
+     * @return the full path to the log file on the file system.
+     */
+    public static String getLogFilePath() {
+        return LoggingConfiguration.getLogFile();
     }
 
     /**
@@ -446,7 +454,7 @@ public class PIGeofencingManager {
         } else {
             long now = System.currentTimeMillis();
             long lastTimeStamp = settings.getLong(ServiceConfig.SERVER_SYNC_LOCAL_TIMESTAMP, -1L);
-            if ((lastTimeStamp < 0L) || (now - lastTimeStamp >= minHoursBetweenServerSyncs * 3600L * 1000L)) {
+            if ((lastTimeStamp < 0L) || (now - lastTimeStamp >= intervalBetweenDowloads * 3600L * 1000L)) {
                 loadGeofencesFromServer(settings.getString(ServiceConfig.LAST_SYNC_DATE, null));
             }
         }
@@ -540,7 +548,7 @@ public class PIGeofencingManager {
             .putString(ServiceConfig.USERNAME, httpService.getUsername())
             .putString(ServiceConfig.PASSWORD, httpService.getPassword())
             .putInt(ServiceConfig.MAX_DISTANCE, maxDistance)
-            .putInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, minHoursBetweenServerSyncs)
+            .putInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, intervalBetweenDowloads)
             .commit();
     }
 
