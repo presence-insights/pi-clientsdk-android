@@ -30,20 +30,24 @@ public class PIFloor {
     private static final String JSON_CODE = "@code";
     private static final String JSON_NAME = "name";
     private static final String JSON_Z = "z";
+    private static final String JSON_PIXELS_TO_METER = "pixelsToMeter";
 
     // required
     private String code;
     private String name;
     private long z;
+    private String pixelsToMeter;
     private Point barriers;
 
     public PIFloor(JSONObject floorObj) {
         JSONObject geometry = (JSONObject)floorObj.get("geometry");
         JSONObject properties = (JSONObject)floorObj.get("properties");
+        JSONObject map = (JSONObject)properties.get("map");
 
         code = (String) properties.get(JSON_CODE);
         name = (String) properties.get(JSON_NAME);
         z = (Long) properties.get(JSON_Z);
+        pixelsToMeter = (String) map.get(JSON_PIXELS_TO_METER);
 
         JSONArray coordinates = (JSONArray) geometry.get("coordinates");
         barriers = new Point(((Long) coordinates.get(0)).intValue(),
@@ -60,6 +64,10 @@ public class PIFloor {
 
     public long getZ() {
         return z;
+    }
+
+    public String getPixelsToMeter() {
+        return pixelsToMeter;
     }
 
     // Currently not implemented. This is a place holder for future work.
