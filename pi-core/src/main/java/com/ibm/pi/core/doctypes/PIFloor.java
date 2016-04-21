@@ -36,7 +36,7 @@ public class PIFloor {
     private String code;
     private String name;
     private long z;
-    private String pixelsToMeter;
+    private Double pixelsToMeter;
     private Point barriers;
 
     public PIFloor(JSONObject floorObj) {
@@ -47,7 +47,7 @@ public class PIFloor {
         code = (String) properties.get(JSON_CODE);
         name = (String) properties.get(JSON_NAME);
         z = (Long) properties.get(JSON_Z);
-        pixelsToMeter = (String) map.get(JSON_PIXELS_TO_METER);
+        pixelsToMeter = (Double) map.get(JSON_PIXELS_TO_METER);
 
         JSONArray coordinates = (JSONArray) geometry.get("coordinates");
         barriers = new Point(((Long) coordinates.get(0)).intValue(),
@@ -66,7 +66,7 @@ public class PIFloor {
         return z;
     }
 
-    public String getPixelsToMeter() {
+    public Double getPixelsToMeter() {
         return pixelsToMeter;
     }
 
