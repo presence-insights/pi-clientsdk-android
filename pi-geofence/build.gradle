@@ -30,8 +30,7 @@ android {
 }
 
 dependencies {
-    //compile 'com.android.support:appcompat-v7:22.2.1'
-
+    // PI dependencies
     compile project(':pi-core')
 
     // Google Play Services location API
@@ -40,24 +39,9 @@ dependencies {
     // Sugar ORM
     compile 'com.github.satyan:sugar:1.4'
 
-    // unit tests dependencies
-    compile 'com.android.support.test:runner:0.2'
-    compile 'com.android.support.test:rules:0.2'
-    compile 'com.android.support.test.espresso:espresso-core:2.1'
-
     // Log4j logging
     compile 'de.mindpipe.android:android-logging-log4j:1.0.3'
     compile 'log4j:log4j:1.2.17'
-
-}
-
-assembleRelease << {
-//    copy {
-//        from 'build/outputs/aar'
-//        into '../dist'
-//        rename { String fileName -> fileName.replace('geofencing', 'pi-client-sdk-android-geofencing') }
-//        include '**/geofencing-release.aar'
-//    }
 }
 
 task androidJavadocs(type: Javadoc) {
