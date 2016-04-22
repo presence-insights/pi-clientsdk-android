@@ -54,7 +54,7 @@ Once created, the `PIGeofenceManager` object will be able to:
 * synchronize with the PI server to keep an up-to-date list of geofences
 
 The minimum delay between synchronizations with the server can be controlled with the `getIntervalBetweenDownloads()` and `setIntervalBetweenDownloads(int)` methods,
-which eill enable retrieving and setting the minimum number of hours between synchronizations, respectively. When not set explicitly, this attribute has a default value of 24 hours. Example usage:
+which will enable retrieving and setting the minimum number of hours between synchronizations, respectively. When not set explicitly, this attribute has a default value of 24 hours. Example usage:
 
 ```java
 PIGeofencingManager manager = new PIGeofencingManager(
