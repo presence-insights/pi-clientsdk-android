@@ -21,11 +21,11 @@ package com.ibm.pi.geofence.rest;
  * Multiple <code>QueryParameter</code> objects with the same name can coexist in a list.
  */
 class QueryParameter {
-    final String name;
-    final String value;
+    final String mName;
+    final String mValue;
 
     QueryParameter(String name, String value) {
-        this.name = name;
-        this.value = value;
+        this.mName = name;
+        this.mValue = value;
     }
 }

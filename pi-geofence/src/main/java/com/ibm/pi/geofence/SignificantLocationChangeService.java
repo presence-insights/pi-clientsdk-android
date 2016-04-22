@@ -43,9 +43,9 @@ public class SignificantLocationChangeService extends IntentService {
      * Logger for this class.
      */
     private static final Logger log = LoggingConfiguration.getLogger(SignificantLocationChangeService.class.getSimpleName());
-    private PIGeofencingManager geofencingService;
-    private Settings settings;
-    private ServiceConfig config;
+    private PIGeofencingManager mGeofencingService;
+    private Settings mSettings;
+    private ServiceConfig mConfig;
 
     public SignificantLocationChangeService() {
         super(SignificantLocationChangeService.class.getSimpleName());
@@ -59,23 +59,19 @@ public class SignificantLocationChangeService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         boolean locationUpdate = intent.getExtras().get(ServiceConfig.LOCATION_UPDATE_FLAG) != null;
         if (locationUpdate) {
-            config = new ServiceConfig().fromIntent(intent);
-            log.debug("onHandleIntent() config=" + config);
-            if (geofencingService == null) {
-                Context ctx = config.createContext(this);
-                this.settings = new Settings(ctx);
-                /*
-                this.geofencingService = PIGeofencingManager.newInstance(settings, PIGeofencingManager.MODE_MONITORING_REQUEST, config.loadCallbackServiceClass(ctx), ctx,
-                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-                */
-                this.geofencingService = new PIGeofencingManager(settings, PIGeofencingManager.MODE_MONITORING_REQUEST, ctx,
-                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-                log.debug("onHandleIntent() settings=" + settings);
+            mConfig = new ServiceConfig().fromIntent(intent);
+            log.debug("onHandleIntent() config=" + mConfig);
+            if (mGeofencingService == null) {
+                Context ctx = mConfig.createContext(this);
+                this.mSettings = new Settings(ctx);
+                this.mGeofencingService = new PIGeofencingManager(mSettings, PIGeofencingManager.MODE_MONITORING_REQUEST, ctx,
+                    mConfig.mServerUrl, mConfig.mTenantCode, mConfig.mOrgCode, mConfig.mUsername, mConfig.mPassword, (int) mConfig.mMaxDistance);
+                log.debug("onHandleIntent() settings=" + mSettings);
             }
-            config.populateFromSettings(settings);
+            mConfig.populateFromSettings(mSettings);
             Location location = new Location(LocationManager.NETWORK_PROVIDER);
-            location.setLatitude(config.newLocation.latitude);
-            location.setLongitude(config.newLocation.longitude);
+            location.setLatitude(mConfig.mNewLocation.latitude);
+            location.setLongitude(mConfig.mNewLocation.longitude);
             processNewLocation(location);
         } else if (intent.getBooleanExtra(ServiceConfig.REBOOT_EVENT_FLAG, false)) {
             try {
@@ -84,12 +80,8 @@ public class SignificantLocationChangeService extends IntentService {
                 Context context = config.createContext(this);
                 Settings settings = new Settings(context);
                 config.populateFromSettings(settings);
-                /*
-                PIGeofencingManager geofencingService = PIGeofencingManager.newInstance(settings, PIGeofencingManager.MODE_REBOOT, null, context,
-                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-                */
                 PIGeofencingManager geofencingService = new PIGeofencingManager(settings, PIGeofencingManager.MODE_REBOOT, context,
-                    config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
+                    config.mServerUrl, config.mTenantCode, config.mOrgCode, config.mUsername, config.mPassword, (int) config.mMaxDistance);
                 List<PersistentGeofence> geofences = GeofencingUtils.extractGeofences(settings);
                 geofencingService.monitorGeofences(geofences);
             } catch(Exception e) {
@@ -105,7 +97,7 @@ public class SignificantLocationChangeService extends IntentService {
      */
     void processNewLocation(Location location) {
         // where clause to find all geofences whose distance to the new location is < maxDistance
-        String where = createWhereClause(location.getLatitude(), location.getLongitude(), config.maxDistance / 2);
+        String where = createWhereClause(location.getLatitude(), location.getLongitude(), mConfig.mMaxDistance / 2);
         List<PersistentGeofence> bboxFences = PersistentGeofence.find(PersistentGeofence.class, where);
         log.debug(String.format("where clause=%s, found fences: %s", where, bboxFences));
         TreeMap<Float, PersistentGeofence> map = new TreeMap<>();
@@ -125,7 +117,7 @@ public class SignificantLocationChangeService extends IntentService {
             count++;
             if (count >= 100) break;
         }
-        List<PersistentGeofence> monitoredFences = GeofencingUtils.extractGeofences(settings);
+        List<PersistentGeofence> monitoredFences = GeofencingUtils.extractGeofences(mSettings);
         List<PersistentGeofence> toAdd = new ArrayList<>();
         List<PersistentGeofence> toRemove = new ArrayList<>();
         for (PersistentGeofence fence: bboxFences) {
@@ -138,12 +130,12 @@ public class SignificantLocationChangeService extends IntentService {
                 toRemove.add(fence);
             }
         }
-        geofencingService.unmonitorGeofences(toRemove);
-        geofencingService.monitorGeofences(toAdd);
-        GeofencingUtils.updateGeofences(settings, bboxFences);
-        GeofencingUtils.storeReferenceLocation(settings, location);
-        log.debug("committing settings=" + settings);
-        settings.commit();
+        mGeofencingService.unmonitorGeofences(toRemove);
+        mGeofencingService.monitorGeofences(toAdd);
+        GeofencingUtils.updateGeofences(mSettings, bboxFences);
+        GeofencingUtils.storeReferenceLocation(mSettings, location);
+        log.debug("committing settings=" + mSettings);
+        mSettings.commit();
     }
 
     /**

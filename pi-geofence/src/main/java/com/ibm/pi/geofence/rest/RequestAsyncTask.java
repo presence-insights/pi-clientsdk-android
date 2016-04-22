@@ -48,27 +48,27 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
     /**
      * The request to execute.
      */
-    private final PIRequest<T> request;
+    private final PIRequest<T> mRequest;
     /**
      * The service which executes the request.
      */
-    private final PIHttpService service;
+    private final PIHttpService mService;
     /**
      * The result to return if the query succeeds.
      */
-    private T result = null;
+    private T mResult = null;
     //private AERequestResult<T> result = null;
     /**
      * The error to return if the query fails.
      */
-    private PIRequestError error = null;
-    int statusCode = -1;
-    int nbTries = 0;
-    boolean reauthenticationRequired = false;
+    private PIRequestError mError = null;
+    int mStatusCode = -1;
+    int mNbTries = 0;
+    boolean mReauthenticationRequired = false;
 
     RequestAsyncTask(PIHttpService service, PIRequest<T> request) {
-        this.request = request;
-        this.service = service;
+        this.mRequest = request;
+        this.mService = service;
     }
 
     @Override
@@ -76,20 +76,20 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
         boolean done = false;
         CookieHandler tmpManager = CookieHandler.getDefault();
         try {
-            CookieHandler.setDefault(service.getCookieManager());
+            CookieHandler.setDefault(mService.getCookieManager());
             StringBuilder sb = new StringBuilder();
-            String query = request.buildQuery(service);
+            String query = mRequest.buildQuery(mService);
             sb.append(query);
             URL url = new URL(sb.toString());
-            while (!done && (nbTries < MAX_TRIES)) {
-                nbTries++;
-                log.debug("request attempt #" + nbTries);
+            while (!done && (mNbTries < MAX_TRIES)) {
+                mNbTries++;
+                log.debug("request attempt #" + mNbTries);
                 done = sendRequest(url);
             }
         } catch (ConnectException | SocketTimeoutException e) {
             log.debug("detected loss of connectivity with the server", e);
         } catch (Exception e) {
-            error = new PIRequestError(statusCode, e, e.getMessage());
+            mError = new PIRequestError(mStatusCode, e, e.getMessage());
         } finally {
             CookieHandler.setDefault(tmpManager);
         }
@@ -97,21 +97,21 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
     }
 
     private boolean sendRequest(URL url) throws Exception {
-        HttpURLConnection connection = service.handleConnection((HttpURLConnection) url.openConnection());
+        HttpURLConnection connection = mService.handleConnection((HttpURLConnection) url.openConnection());
         connection.setRequestProperty(Utils.HTTP_HEADER_ACCEPT_LANGUAGE, Locale.getDefault().toString());
-        service.setUserAgentHeader(connection);
-        log.debug("HTTP method = " + request.getMethod() + ", request url = " + connection.getURL() + ", payload = " + request.getPayload());
+        mService.setUserAgentHeader(connection);
+        log.debug("HTTP method = " + mRequest.getMethod() + ", request url = " + connection.getURL() + ", payload = " + mRequest.getPayload());
         connection.setInstanceFollowRedirects(true);
         connection.setConnectTimeout(30_000);
         connection.setReadTimeout(30_000);
-        if (request.isBasicAuthRequired()) service.setAuthHeader(connection);
-        HttpMethod method = request.getMethod();
+        if (mRequest.isBasicAuthRequired()) mService.setAuthHeader(connection);
+        HttpMethod method = mRequest.getMethod();
         connection.setRequestMethod(method.name());
         Utils.logRequestHeaders(connection);
         try {
             if ((method == HttpMethod.POST) || (method == HttpMethod.PUT)) {
-                String payload = request.getPayload();
-                log.debug(request.getMethod() + " method request url = " + connection.getURL() + ", payload = " + payload);
+                String payload = mRequest.getPayload();
+                log.debug(mRequest.getMethod() + " method request url = " + connection.getURL() + ", payload = " + payload);
                 if (payload != null && (payload.length() > 0)) {
                     connection.setDoOutput(true);
                     connection.setRequestProperty("Content-Type", "application/json");
@@ -124,51 +124,51 @@ class RequestAsyncTask<T> extends AsyncTask<Void, Void, Void> {
             return false;
         }
         try {
-            statusCode = connection.getResponseCode();
+            mStatusCode = connection.getResponseCode();
         } catch (ConnectException | SocketTimeoutException e) {
-            if (nbTries >= MAX_TRIES) {
-                log.error("code " + statusCode + ", exception: ", e);
+            if (mNbTries >= MAX_TRIES) {
+                log.error("code " + mStatusCode + ", exception: ", e);
             }
             return false;
         } catch (IOException e) {
             // workaround for issue described at http://stackoverflow.com/q/17121213
-            statusCode = connection.getResponseCode();
-            if (statusCode != 401) {
-                log.error("code " + statusCode + ", exception: ", e);
+            mStatusCode = connection.getResponseCode();
+            if (mStatusCode != 401) {
+                log.error("code " + mStatusCode + ", exception: ", e);
             }
         } finally {
             Utils.logResponseHeaders(connection);
         }
-        if (statusCode >= 400) {
-            service.logErrorBody(connection);
+        if (mStatusCode >= 400) {
+            mService.logErrorBody(connection);
             // if version is >= JellyBean and an authentication challenge is issued, then handle re-authentication and resend the request
-            if ((statusCode == 401) && !reauthenticationRequired) {
+            if ((mStatusCode == 401) && !mReauthenticationRequired) {
                 log.debug("re-authenticating due to auth challenge...");
-                reauthenticationRequired = true;
+                mReauthenticationRequired = true;
                 return false;
             } else {
-                error = new PIRequestError(statusCode, null, "query failure");
+                mError = new PIRequestError(mStatusCode, null, "query failure");
             }
         }
-        if (error == null) {
+        if (mError == null) {
             byte[] body = Utils.readBytes(connection);
             if (Utils.isTextResponseBody(connection)) {
                 String bodyStr = new String(body, Utils.UTF_8);
                 log.debug("doInBackground() response body = " + bodyStr);
             }
-            result = request.resultFromResponse(body);
+            mResult = mRequest.resultFromResponse(body);
         }
-        log.debug(String.format("status code for " + request.getMethod() + " request = %d, url = %s", statusCode, url));
+        log.debug(String.format("status code for " + mRequest.getMethod() + " request = %d, url = %s", mStatusCode, url));
         return true;
     }
 
     @Override
     protected void onPostExecute(Void obj) {
-        PIRequestCallback<T> callback = request.getCallback();
-        if (error != null) {
-            callback.onError(error);
-        } else if (result != null) {
-            callback.onSuccess(result);
+        PIRequestCallback<T> callback = mRequest.getCallback();
+        if (mError != null) {
+            callback.onError(mError);
+        } else if (mResult != null) {
+            callback.onSuccess(mResult);
         }
     }
 }

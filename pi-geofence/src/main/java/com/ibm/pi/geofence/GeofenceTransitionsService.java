@@ -72,8 +72,8 @@ public class GeofenceTransitionsService extends IntentService {
             Settings settings = new Settings(ctx);
             config.populateFromSettings(settings);
             PIGeofencingManager manager = new PIGeofencingManager(settings, PIGeofencingManager.MODE_GEOFENCE_EVENT, ctx,
-                config.serverUrl, config.tenantCode, config.orgCode, config.username, config.password, (int) config.maxDistance);
-            config.populateFromSettings(manager.settings);
+                config.mServerUrl, config.mTenantCode, config.mOrgCode, config.mUsername, config.mPassword, (int) config.mMaxDistance);
+            config.populateFromSettings(manager.mSettings);
             List<PersistentGeofence> geofences = new ArrayList<>(triggeringGeofences.size());
             for (Geofence g : triggeringGeofences) {
                 String code = g.getRequestId();

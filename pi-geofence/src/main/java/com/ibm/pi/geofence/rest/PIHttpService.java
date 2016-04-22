@@ -49,41 +49,41 @@ public class PIHttpService {
      * Logger for this class.
      */
     private static final Logger log = LoggingConfiguration.getLogger(PIHttpService.class.getSimpleName());
-    private CookieManager manager = new CookieManager();
+    private CookieManager mCookieManager = new CookieManager();
     /**
      * Used to queue the http requests.
      */
-    ExecutorService executor = Executors.newSingleThreadExecutor();
+    ExecutorService mExecutor = Executors.newSingleThreadExecutor();
     /**
      * The base server URL, for instance <code>http[s]://hostname[:port]</code>.
      */
-    String serverURL;
+    String mServerURL;
     /**
-     * The tenantCode id.
+     * The mTenantCode id.
      */
-    String tenantCode;
+    String mTenantCode;
     /**
      * The app id.
      */
-    String orgCode;
+    String mOrgCode;
     /**
      * User name.
      */
-    String username;
+    String mUsername;
     /**
      * User password.
      */
-    String password;
+    String mPassword;
     /**
      * Android application <code>Context</code> required to access location services.
      */
-    Context androidContext = null;
+    Context mAndroidContext = null;
     /**
      * Whether to allow untrusted certificates for HTTPS connections.
      */
-    boolean allowUntrustedCertificates = false;
+    boolean mAllowUntrustedCertificates = false;
     /**
-     * Validates any host name, used only when {@link #allowUntrustedCertificates} is <code>true</code>.
+     * Validates any host name, used only when {@link #mAllowUntrustedCertificates} is <code>true</code>.
      */
     private static HostnameVerifier untrustedHostNameVerifier = new HostnameVerifier() {
         public boolean verify(String hostname, SSLSession session) {
@@ -91,7 +91,7 @@ public class PIHttpService {
         }
     };
     /**
-     * Validates any certificate chain, used only when {@link #allowUntrustedCertificates} is <code>true</code>.
+     * Validates any certificate chain, used only when {@link #mAllowUntrustedCertificates} is <code>true</code>.
      */
     private static TrustManager[] untrustedTrustManagers = new TrustManager[]{new X509TrustManager() {
         @Override
@@ -108,7 +108,7 @@ public class PIHttpService {
         }
     }};
     /**
-     * SSL socket factory that validates any certificate chain, used only when {@link #allowUntrustedCertificates} is <code>true</code>.
+     * SSL socket factory that validates any certificate chain, used only when {@link #mAllowUntrustedCertificates} is <code>true</code>.
      */
     private static SSLSocketFactory untrustedSocketFactory = null;
 
@@ -123,17 +123,17 @@ public class PIHttpService {
     }
 
     /**
-     * Initialize this service with the specified server URL, context root, tenantCode name and credentials.
+     * Initialize this service with the specified server URL, context root, mTenantCode name and credentials.
      * @param serverURL the base server URL in the form <code>http[s]://hostname[:port]</code>.
      * @param username the user name for HTTP authentication.
      * @param password the password for HTTP authentication.
      */
     public PIHttpService(Context context, String serverURL, String tenantCode, String orgCode, String username, String password) {
-        this.username = username;
-        this.password = password;
-        this.serverURL = serverURL;
-        this.tenantCode = tenantCode;
-        this.orgCode = orgCode;
+        this.mUsername = username;
+        this.mPassword = password;
+        this.mServerURL = serverURL;
+        this.mTenantCode = tenantCode;
+        this.mOrgCode = orgCode;
     }
 
 
@@ -142,41 +142,41 @@ public class PIHttpService {
      * @return a string representing the base server URL in the form <code>http[s]://hostname[:port]</code>.
      */
     public String getServerURL() {
-        return serverURL;
+        return mServerURL;
     }
 
     /**
      * Get the Android application <code>Context</code> required to access location services.
      */
     public Context getAndroidContext() {
-        return androidContext;
+        return mAndroidContext;
     }
 
     /**
-     * Get the tenantCode id.
+     * Get the mTenantCode id.
      */
     public String getTenantCode() {
-        return tenantCode;
+        return mTenantCode;
     }
 
     /**
      * Get the app id.
      */
     public String getOrgCode() {
-        return orgCode;
+        return mOrgCode;
     }
 
     public void setOrgCode(String orgCode) {
-        this.orgCode = orgCode;
+        this.mOrgCode = orgCode;
     }
 
 
     public String getUsername() {
-        return username;
+        return mUsername;
     }
 
     public String getPassword() {
-        return password;
+        return mPassword;
     }
 
     /**
@@ -186,7 +186,7 @@ public class PIHttpService {
      */
     public <T> void executeRequest(final PIRequest<T> request) {
         log.debug("executeRequest()");
-        executor.execute(new RequestTask<>(request));
+        mExecutor.execute(new RequestTask<>(request));
     }
 
     /**
@@ -195,7 +195,7 @@ public class PIHttpService {
      * @return <code>true</code> if untrusted certificates are alloowed, <code>false</code> otherwise.
      */
     public boolean isAllowUntrustedCertificates() {
-        return allowUntrustedCertificates;
+        return mAllowUntrustedCertificates;
     }
 
     /**
@@ -204,7 +204,7 @@ public class PIHttpService {
      * @param allowUntrustedCertificates <code>true</code> to allow untrusted certificates are alloowed, <code>false</code> to deny them.
      */
     public void setAllowUntrustedCertificates(boolean allowUntrustedCertificates) {
-        this.allowUntrustedCertificates = allowUntrustedCertificates;
+        this.mAllowUntrustedCertificates = allowUntrustedCertificates;
     }
 
     /**
@@ -213,7 +213,7 @@ public class PIHttpService {
      * @return A {@link CookieManager} instance.
      */
     public CookieManager getCookieManager() {
-        return manager;
+        return mCookieManager;
     }
 
     /**
@@ -222,7 +222,7 @@ public class PIHttpService {
      * @throws Exception if any error occurs.
      */
     void setAuthHeader(HttpURLConnection connection) throws Exception {
-        String credentials = username + ":" + password;
+        String credentials = mUsername + ":" + mPassword;
         String encoded = Base64.encodeToString(credentials.getBytes(Utils.UTF_8), Base64.NO_WRAP);
         connection.setRequestProperty("Authorization", "Basic " + encoded);
     }
@@ -264,7 +264,7 @@ public class PIHttpService {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder(getClass().getSimpleName()).append('[');
-        sb.append("serverURL=").append(serverURL);
+        sb.append("mServerURL=").append(mServerURL);
         sb.append(']');
         return sb.toString();
     }
@@ -276,7 +276,7 @@ public class PIHttpService {
      * @throws Exception if any error occurs.
      */
     HttpURLConnection handleConnection(HttpURLConnection connection) throws Exception {
-        if (allowUntrustedCertificates && "https".equalsIgnoreCase(connection.getURL().getProtocol())) {
+        if (mAllowUntrustedCertificates && "https".equalsIgnoreCase(connection.getURL().getProtocol())) {
             ((HttpsURLConnection) connection).setHostnameVerifier(untrustedHostNameVerifier);
             ((HttpsURLConnection) connection).setSSLSocketFactory(untrustedSocketFactory);
         }
@@ -288,15 +288,15 @@ public class PIHttpService {
      * @param <T> the type of the result of the request.
      */
     class RequestTask<T> implements Runnable {
-        final PIRequest<T> request;
+        final PIRequest<T> mRequest;
 
         RequestTask(final PIRequest<T> request) {
-            this.request = request;
+            this.mRequest = request;
         }
 
         @Override
         public void run() {
-            new RequestAsyncTask<>(PIHttpService.this, request).execute();
+            new RequestAsyncTask<>(PIHttpService.this, mRequest).execute();
         }
     }
 }

@@ -22,52 +22,52 @@ import java.io.Serializable;
  * Instances of this class represent geofences.
  */
 public class PIGeofence implements Serializable {
-    private String code = "";
-    private String name;
-    private String description;
-    private double latitude;
-    private double longitude;
-    private double radius;
+    private String mCode = "";
+    private String mName;
+    private String mDescription;
+    private double mLatitude;
+    private double mLongitude;
+    private double mRadius;
 
     public PIGeofence() {
     }
 
     public PIGeofence(String code, String name, String description, double latitude, double longitude, double radius) {
-        this.code = code;
-        this.name = name;
-        this.description = description;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.radius = radius;
+        this.mCode = code;
+        this.mName = name;
+        this.mDescription = description;
+        this.mLatitude = latitude;
+        this.mLongitude = longitude;
+        this.mRadius = radius;
     }
 
     public String getCode() {
-        return code;
+        return mCode;
     }
 
     public String getName() {
-        return name;
+        return mName;
     }
 
     public String getDescription() {
-        return description;
+        return mDescription;
     }
 
     public double getLatitude() {
-        return latitude;
+        return mLatitude;
     }
 
     public double getLongitude() {
-        return longitude;
+        return mLongitude;
     }
 
     public double getRadius() {
-        return radius;
+        return mRadius;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + name + "]";
+        return getClass().getSimpleName() + "[" + mName + "]";
     }
 
     @Override
@@ -75,11 +75,11 @@ public class PIGeofence implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PIGeofence that = (PIGeofence) o;
-        return code.equals(that.code);
+        return mCode.equals(that.mCode);
     }
 
     @Override
     public int hashCode() {
-        return code.hashCode();
+        return mCode.hashCode();
     }
 }

@@ -37,22 +37,22 @@ public class LocationUpdateReceiver extends BroadcastReceiver {
      * Logger for this class.
      */
     private static final Logger log = LoggingConfiguration.getLogger(LocationUpdateReceiver.class.getSimpleName());
-    private Context context;
-    private Location referenceLocation = null;
-    private double maxDistance;
-    private Settings settings;
-    private ServiceConfig config;
+    private Context mContext;
+    private Location mReferenceLocation = null;
+    private double mMaxDistance;
+    private Settings mSettings;
+    private ServiceConfig mConfig;
 
     public LocationUpdateReceiver() {
     }
 
     LocationUpdateReceiver(PIGeofencingManager geofencingService) {
         this();
-        this.context = geofencingService.context;
-        this.settings = geofencingService.settings;
-        this.maxDistance = geofencingService.maxDistance;
-        this.referenceLocation = GeofencingUtils.retrieveReferenceLocation(settings);
-        this.config = new ServiceConfig().fromGeofencingManager(geofencingService);
+        this.mContext = geofencingService.mContext;
+        this.mSettings = geofencingService.mSettings;
+        this.mMaxDistance = geofencingService.mMaxDistance;
+        this.mReferenceLocation = GeofencingUtils.retrieveReferenceLocation(mSettings);
+        this.mConfig = new ServiceConfig().fromGeofencingManager(geofencingService);
         //log.debug(String.format("GeofenceManager() config=%s, settings=%s", config, settings));
     }
 
@@ -60,11 +60,11 @@ public class LocationUpdateReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         boolean shouldProcess = intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED) != null;
         if (shouldProcess) {
-            this.config = new ServiceConfig().fromIntent(intent);
-            this.context = context;
-            this.maxDistance = config.maxDistance;
-            this.settings = new Settings(context);
-            this.referenceLocation = GeofencingUtils.retrieveReferenceLocation(settings);
+            this.mConfig = new ServiceConfig().fromIntent(intent);
+            this.mContext = context;
+            this.mMaxDistance = mConfig.mMaxDistance;
+            this.mSettings = new Settings(context);
+            this.mReferenceLocation = GeofencingUtils.retrieveReferenceLocation(mSettings);
             Location location = (Location) intent.getExtras().get(LocationManager.KEY_LOCATION_CHANGED);
             //log.debug(String.format("onReceive() config=%s, settings=%s", config, settings));
             onLocationChanged(location, false);
@@ -78,18 +78,18 @@ public class LocationUpdateReceiver extends BroadcastReceiver {
      *  which is needed after a sync of the fences with the server.
      */
     void onLocationChanged(Location location, boolean force) {
-        double d = maxDistance + 1d;
-        if (referenceLocation != null) {
-            d = referenceLocation.distanceTo(location);
+        double d = mMaxDistance + 1d;
+        if (mReferenceLocation != null) {
+            d = mReferenceLocation.distanceTo(location);
         }
         //log.debug(String.format("onLocationChanged(location=%s; d=%,.0f)", location, d));
-        if ((d > maxDistance) || force) {
+        if ((d > mMaxDistance) || force) {
             log.debug(String.format(Locale.US, "onLocationChanged() detected significant location change, distance to ref = %,.0f m, new location = %s", d, location));
-            Intent intent = new Intent(context, SignificantLocationChangeService.class);
-            intent.setPackage(context.getPackageName());
-            config.newLocation = new LatLng(location.getLatitude(), location.getLongitude());
-            config.toIntent(intent);
-            context.startService(intent);
+            Intent intent = new Intent(mContext, SignificantLocationChangeService.class);
+            intent.setPackage(mContext.getPackageName());
+            mConfig.mNewLocation = new LatLng(location.getLatitude(), location.getLongitude());
+            mConfig.toIntent(intent);
+            mContext.startService(intent);
         }
     }
 

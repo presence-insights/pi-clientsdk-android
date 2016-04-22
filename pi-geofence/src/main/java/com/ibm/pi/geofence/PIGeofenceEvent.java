@@ -61,14 +61,14 @@ public class PIGeofenceEvent {
         }
     }
 
-    private final Type eventType;
-    private final List<PIGeofence> geofences;
-    private final List<String> deletedGeofenceCodes;
+    private final Type mEventType;
+    private final List<PIGeofence> mGeofences;
+    private final List<String> mDeletedGeofenceCodes;
 
     private PIGeofenceEvent(final Type eventType, List<PIGeofence> geofences, final List<String> deletedGeofenceCodes) {
-        this.eventType = eventType;
-        this.geofences = geofences;
-        this.deletedGeofenceCodes = deletedGeofenceCodes;
+        this.mEventType = eventType;
+        this.mGeofences = geofences;
+        this.mDeletedGeofenceCodes = deletedGeofenceCodes;
     }
 
     /**
@@ -77,7 +77,7 @@ public class PIGeofenceEvent {
      * {@code getEventType() != PIGeofenceEvent.Type.SERVER_SYNC}.
      */
     public List<String> getDeletedGeofenceCodes() {
-        return deletedGeofenceCodes;
+        return mDeletedGeofenceCodes;
     }
 
     /**
@@ -85,7 +85,7 @@ public class PIGeofenceEvent {
      * @return one of the elements in the {@link Type} enum.
      */
     public Type getEventType() {
-        return eventType;
+        return mEventType;
     }
 
     /**
@@ -98,7 +98,7 @@ public class PIGeofenceEvent {
      * @return a list of {@link PIGeofence} objects, possibly {@code null}.
      */
     public List<PIGeofence> getGeofences() {
-        return geofences;
+        return mGeofences;
     }
 
     /**

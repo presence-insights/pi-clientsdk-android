@@ -23,21 +23,21 @@ import java.util.List;
  * Encapsulates a list of geofences a returned by the PI server upon a get or sync request.
  */
 class GeofenceList {
-    private final List<PersistentGeofence> geofences;
-    int totalGeofences;
-    String lastSyncDate;
-    List<String> deletedGeofenceCodes;
+    private final List<PersistentGeofence> mGeofences;
+    int mTotalGeofences;
+    String mLastSyncDate;
+    List<String> mDeletedGeofenceCodes;
 
     GeofenceList(final List<PersistentGeofence> geofences) {
-        this.geofences = (geofences == null) ? Collections.<PersistentGeofence>emptyList() : geofences;
-        this.deletedGeofenceCodes = Collections.emptyList();
+        this.mGeofences = (geofences == null) ? Collections.<PersistentGeofence>emptyList() : geofences;
+        this.mDeletedGeofenceCodes = Collections.emptyList();
     }
 
     GeofenceList(final List<PersistentGeofence> geofences, int totalGeofences, String lastSyncDate, List<String> deletedGeofenceCodes) {
-        this.geofences = (geofences == null) ? Collections.<PersistentGeofence>emptyList() : geofences;
-        this.totalGeofences = totalGeofences;
-        this.lastSyncDate = lastSyncDate;
-        this.deletedGeofenceCodes = (deletedGeofenceCodes == null) ? Collections.<String>emptyList() : deletedGeofenceCodes;
+        this.mGeofences = (geofences == null) ? Collections.<PersistentGeofence>emptyList() : geofences;
+        this.mTotalGeofences = totalGeofences;
+        this.mLastSyncDate = lastSyncDate;
+        this.mDeletedGeofenceCodes = (deletedGeofenceCodes == null) ? Collections.<String>emptyList() : deletedGeofenceCodes;
     }
 
     /**
@@ -45,15 +45,15 @@ class GeofenceList {
      * @return a list of {@link PIGeofence} objects, possibly empty.
      */
     List<PersistentGeofence> getGeofences() {
-        return geofences;
+        return mGeofences;
     }
 
     int getTotalGeofences() {
-        return totalGeofences;
+        return mTotalGeofences;
     }
 
     String getLastSyncDate() {
-        return lastSyncDate;
+        return mLastSyncDate;
     }
 
     /**
@@ -61,6 +61,6 @@ class GeofenceList {
      * @return a list of geofence codes, possibly empty.
      */
     List<String> getDeletedGeofenceCodes() {
-        return deletedGeofenceCodes;
+        return mDeletedGeofenceCodes;
     }
 }

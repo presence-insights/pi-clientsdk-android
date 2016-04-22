@@ -89,44 +89,44 @@ public class PIGeofencingManager {
     /**
      * The restful service which connects to and communicates with the Adaptive Experience server.
      */
-    final PIHttpService httpService;
+    final PIHttpService mHttpService;
     /**
      * The Google API client.
      */
-    GoogleApiClient googleApiClient;
+    GoogleApiClient mGoogleApiClient;
     /**
      * The Android application context.
      */
-    Context context;
+    Context mContext;
     /**
      * Handles the geofences that are currently monitored.
      */
-    final int maxDistance;
+    final int mMaxDistance;
     /**
      * Pending intent used to register a set of geofences.
      */
-    private PendingIntent pendingIntent;
+    private PendingIntent mPendingIntent;
     /**
      * Provides uniquely identifying information for the device.
      */
-    private final String deviceDescriptor;
+    private final String mDeviceDescriptor;
     /**
      * The settings of the application.
      */
-    Settings settings;
+    Settings mSettings;
     /**
      * The execution mode for this gefoence manager;
      * one of {@link #MODE_APP}, {@link #MODE_GEOFENCE_EVENT}, {@link #MODE_MONITORING_REQUEST} or {@link #MODE_REBOOT}.
      */
-    final int mode;
+    final int mMode;
     /**
      * A callback that immplements the Google API connection callback interfaces.
      */
-    GoogleLocationAPICallback googleAPICallback;
+    GoogleLocationAPICallback mGoogleAPICallback;
     /**
      * The minimum delay between two synchronizations with the server.
      */
-    int intervalBetweenDowloads = 24;
+    int mIntervalBetweenDowloads = 24;
 
     /**
      * Initialize this service.
@@ -156,17 +156,17 @@ public class PIGeofencingManager {
      */
     PIGeofencingManager(Settings settings, int mode, Context context, String baseURL, String tenantCode, String orgCode, String username, String password, int maxDistance) {
         log.debug("pi-geofence version " + BuildConfig.VERSION_NAME);
-        this.mode = mode;
-        this.maxDistance = maxDistance;
-        this.httpService = new PIHttpService(context, baseURL, tenantCode, orgCode, username, password);
-        this.context = context;
-        this.settings = (settings != null) ? settings : new Settings(context);
-        log.debug("PIGeofencingService() settings = " + this.settings);
-        this.intervalBetweenDowloads = this.settings.getInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, 24);
-        this.deviceDescriptor = retrieveDeviceDescriptor();
+        this.mMode = mode;
+        this.mMaxDistance = maxDistance;
+        this.mHttpService = new PIHttpService(context, baseURL, tenantCode, orgCode, username, password);
+        this.mContext = context;
+        this.mSettings = (settings != null) ? settings : new Settings(context);
+        log.debug("PIGeofencingService() settings = " + this.mSettings);
+        this.mIntervalBetweenDowloads = this.mSettings.getInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, 24);
+        this.mDeviceDescriptor = retrieveDeviceDescriptor();
         int n = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
         log.debug("google play service availability = " + getGoogleAvailabilityAsText(n));
-        if (this.mode == MODE_APP) {
+        if (this.mMode == MODE_APP) {
             //initSettingsData();
             updateSettings();
         }
@@ -174,32 +174,32 @@ public class PIGeofencingManager {
     }
 
     /**
-     * Connect the Google API client. The synchronous / asynchronous mode depends on the {@link #mode} of this geofence manager.
+     * Connect the Google API client. The synchronous / asynchronous mode depends on the {@link #mMode} of this geofence manager.
      */
     private void connectGoogleAPI() {
-        if ((context != null) && (mode != MODE_GEOFENCE_EVENT)) {
-            googleAPICallback = new GoogleLocationAPICallback(this);
-            googleApiClient = new GoogleApiClient.Builder(context)
+        if ((mContext != null) && (mMode != MODE_GEOFENCE_EVENT)) {
+            mGoogleAPICallback = new GoogleLocationAPICallback(this);
+            mGoogleApiClient = new GoogleApiClient.Builder(mContext)
                 .addApi(LocationServices.API)
-                .addConnectionCallbacks(googleAPICallback)
-                .addOnConnectionFailedListener(googleAPICallback)
+                .addConnectionCallbacks(mGoogleAPICallback)
+                .addOnConnectionFailedListener(mGoogleAPICallback)
                 .build();
             log.debug("initGms() connecting to google play services ...");
-            if ((mode == MODE_MONITORING_REQUEST) || (mode == MODE_REBOOT)) {
+            if ((mMode == MODE_MONITORING_REQUEST) || (mMode == MODE_REBOOT)) {
                 try {
                     // can't run blockingConnect() on the UI thread
                     ConnectionResult result = new AsyncTask<Void, Void, ConnectionResult>() {
                         @Override
                         protected ConnectionResult doInBackground(Void... params) {
-                            return googleApiClient.blockingConnect(60_000L, TimeUnit.MILLISECONDS);
+                            return mGoogleApiClient.blockingConnect(60_000L, TimeUnit.MILLISECONDS);
                         }
                     }.execute().get();
                     log.debug(String.format("google api connection %s, result=%s", (result.isSuccess() ? "success" : "error"), result));
                 } catch(Exception e) {
                     log.error("error while attempting connection to google api", e);
                 }
-            } else if (mode == MODE_APP) {
-                googleApiClient.connect();
+            } else if (mMode == MODE_APP) {
+                mGoogleApiClient.connect();
             }
         }
     }
@@ -210,9 +210,9 @@ public class PIGeofencingManager {
      * @param type the type of geofence notification: either {@link PIGeofenceEvent.Type#ENTER ENTER} or {@link PIGeofenceEvent.Type##EXIT EXIT}.
      */
     void postGeofenceEvent(final List<PersistentGeofence> fences, final PIGeofenceEvent.Type type) {
-        if (httpService.getTenantCode() == null) {
+        if (mHttpService.getTenantCode() == null) {
             log.warn("cannot send geofence notification because the tenant code is undefined");
-        } else if (httpService.getOrgCode() == null) {
+        } else if (mHttpService.getOrgCode() == null) {
             log.warn("cannot send geofence notification because the org code is undefined");
         } else {
             PIRequestCallback<JSONObject> callback = new PIRequestCallback<JSONObject>() {
@@ -226,12 +226,12 @@ public class PIGeofencingManager {
                     log.error("error notifying connector for geofences " + fences + " : " + error.toString());
                 }
             };
-            JSONObject payload = GeofencingJSONUtils.toJSONGeofenceEvent(fences, type, deviceDescriptor, BuildConfig.VERSION_NAME);
+            JSONObject payload = GeofencingJSONUtils.toJSONGeofenceEvent(fences, type, mDeviceDescriptor, BuildConfig.VERSION_NAME);
             PIRequest<JSONObject> request = new PIJSONPayloadRequest(callback, HttpMethod.POST, payload.toString());
-            String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s", GEOFENCE_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode());
+            String path = String.format(Locale.US, "%s/tenants/%s/orgs/%s", GEOFENCE_CONNECTOR_PATH, mHttpService.getTenantCode(), mHttpService.getOrgCode());
             request.setPath(path);
             request.setBasicAuthRequired(true);
-            httpService.executeRequest(request);
+            mHttpService.executeRequest(request);
         }
     }
 
@@ -244,7 +244,7 @@ public class PIGeofencingManager {
             log.debug("monitorGeofences(" + geofences + ")");
             List<Geofence> list = new ArrayList<>(geofences.size());
             List<Geofence> noTriggerList = new ArrayList<>(geofences.size());
-            Location last = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+            Location last = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             for (PersistentGeofence geofence : geofences) {
                 Geofence fence = new Geofence.Builder().setRequestId(geofence.getCode())
                     .setCircularRegion(geofence.getLatitude(), geofence.getLongitude(), (float) geofence.getRadius())
@@ -257,7 +257,7 @@ public class PIGeofencingManager {
                 Location location = new Location(LocationManager.NETWORK_PROVIDER);
                 location.setLatitude(geofence.getLatitude());
                 location.setLongitude(geofence.getLongitude());
-                if ((mode != MODE_REBOOT) || (last == null) || (location.distanceTo(last) > geofence.getRadius())) {
+                if ((mMode != MODE_REBOOT) || (last == null) || (location.distanceTo(last) > geofence.getRadius())) {
                     list.add(fence);
                 } else {
                     // if already in geofence, do not trigger upon registration.
@@ -275,7 +275,7 @@ public class PIGeofencingManager {
                 .setInitialTrigger(initialTrigger)
                 .addGeofences(fences).build();
             PendingIntent pi = getPendingIntent(INTENT_ID);
-            LocationServices.GeofencingApi.addGeofences(googleApiClient, request, pi).setResultCallback(new ResultCallback<Status>() {
+            LocationServices.GeofencingApi.addGeofences(mGoogleApiClient, request, pi).setResultCallback(new ResultCallback<Status>() {
                 @Override
                 public void onResult(Status status) {
                     log.debug("add geofence request status " + status);
@@ -295,7 +295,7 @@ public class PIGeofencingManager {
             for (PersistentGeofence g : geofences) {
                 uuidsToRemove.add(g.getCode());
             }
-            LocationServices.GeofencingApi.removeGeofences(googleApiClient, uuidsToRemove);
+            LocationServices.GeofencingApi.removeGeofences(mGoogleApiClient, uuidsToRemove);
         }
     }
 
@@ -305,7 +305,7 @@ public class PIGeofencingManager {
      * @return the minimum number of hours between two server synchronizations.
      */
     public int getIntervalBetweenDowloads() {
-        return intervalBetweenDowloads;
+        return mIntervalBetweenDowloads;
     }
 
     /**
@@ -315,7 +315,7 @@ public class PIGeofencingManager {
      */
     public void setIntervalBetweenDowloads(int intervalBetweenDowloads) {
         if (intervalBetweenDowloads >= 1) {
-            this.intervalBetweenDowloads = intervalBetweenDowloads;
+            this.mIntervalBetweenDowloads = intervalBetweenDowloads;
             updateSettings();
         }
     }
@@ -366,7 +366,7 @@ public class PIGeofencingManager {
                         }
                     }
                     if (maxSyncDate != null) {
-                        settings.putString(ServiceConfig.LAST_SYNC_DATE, maxSyncDate).commit();
+                        mSettings.putString(ServiceConfig.LAST_SYNC_DATE, maxSyncDate).commit();
                     }
                     geofenceList = new GeofenceList(new ArrayList<>(allGeofences.values()));
                     log.debug(String.format(Locale.US, "loaded %,d geofences from resource '[%s]', maxSyncDate=%s",
@@ -393,9 +393,9 @@ public class PIGeofencingManager {
                 } else {
                     try {
                         Intent broadcastIntent = new Intent(PIGeofenceEvent.ACTION_GEOFENCE_EVENT);
-                        broadcastIntent.setPackage(context.getPackageName());
+                        broadcastIntent.setPackage(mContext.getPackageName());
                         PIGeofenceEvent.toIntent(broadcastIntent, PIGeofenceEvent.Type.SERVER_SYNC, geofenceList.getGeofences(), null);
-                        context.sendBroadcast(broadcastIntent);
+                        mContext.sendBroadcast(broadcastIntent);
                     } catch(Exception e) {
                         log.error("error sending broadcast event", e);
                     }
@@ -419,24 +419,24 @@ public class PIGeofencingManager {
      * @return a <code>PendingIntent</code> instance.
      */
     private PendingIntent getPendingIntent(String geofenceCallbackUuid) {
-        if (pendingIntent == null) {
-            Intent intent = new Intent(context, GeofenceTransitionsService.class);
+        if (mPendingIntent == null) {
+            Intent intent = new Intent(mContext, GeofenceTransitionsService.class);
             //intent.setPackage(context.getPackageName());
             ServiceConfig config = new ServiceConfig().fromGeofencingManager(this);
-            config.populateFromSettings(settings);
+            config.populateFromSettings(mSettings);
             config.toIntent(intent);
             intent.putExtra(INTENT_ID, geofenceCallbackUuid);
-            intent.setClass(context, GeofenceTransitionsService.class);
-            pendingIntent = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            intent.setClass(mContext, GeofenceTransitionsService.class);
+            mPendingIntent = PendingIntent.getService(mContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         }
-        return pendingIntent;
+        return mPendingIntent;
     }
 
     /**
      * Load geofences from the local database if they are present, or from the server if not.
      */
     void loadGeofences() {
-        if (httpService.getServerURL() != null) {
+        if (mHttpService.getServerURL() != null) {
             log.debug("loadGeofences() loading geofences from the server");
             loadGeofencesFromServer();
         } else {
@@ -453,9 +453,9 @@ public class PIGeofencingManager {
             loadGeofencesFromServer(null);
         } else {
             long now = System.currentTimeMillis();
-            long lastTimeStamp = settings.getLong(ServiceConfig.SERVER_SYNC_LOCAL_TIMESTAMP, -1L);
-            if ((lastTimeStamp < 0L) || (now - lastTimeStamp >= intervalBetweenDowloads * 3600L * 1000L)) {
-                loadGeofencesFromServer(settings.getString(ServiceConfig.LAST_SYNC_DATE, null));
+            long lastTimeStamp = mSettings.getLong(ServiceConfig.SERVER_SYNC_LOCAL_TIMESTAMP, -1L);
+            if ((lastTimeStamp < 0L) || (now - lastTimeStamp >= mIntervalBetweenDowloads * 3600L * 1000L)) {
+                loadGeofencesFromServer(mSettings.getString(ServiceConfig.LAST_SYNC_DATE, null));
             }
         }
     }
@@ -464,14 +464,14 @@ public class PIGeofencingManager {
      * Query the geofences from the server, based on the current last sync date.
      */
     private void loadGeofencesFromServer(String lastSyncDate) {
-        if ((httpService.getTenantCode() != null) && (httpService.getOrgCode() != null)) {
+        if ((mHttpService.getTenantCode() != null) && (mHttpService.getOrgCode() != null)) {
             PIRequestCallback<JSONObject> cb = new PIRequestCallback<JSONObject>() {
                 @Override
                 public void onSuccess(JSONObject result) {
                     try {
                         GeofenceList list = GeofencingJSONUtils.parseGeofences(result);
                         if (list.getLastSyncDate() != null) {
-                            settings.putString(ServiceConfig.LAST_SYNC_DATE, list.getLastSyncDate()).commit();
+                            mSettings.putString(ServiceConfig.LAST_SYNC_DATE, list.getLastSyncDate()).commit();
                         }
                         List<PersistentGeofence> geofences = list.getGeofences();
                         if (!geofences.isEmpty()) {
@@ -480,12 +480,12 @@ public class PIGeofencingManager {
                         }
                         if (!geofences.isEmpty() || !list.getDeletedGeofenceCodes().isEmpty()) {
                             Intent broadcastIntent = new Intent(PIGeofenceEvent.ACTION_GEOFENCE_EVENT);
-                            broadcastIntent.setPackage(context.getPackageName());
+                            broadcastIntent.setPackage(mContext.getPackageName());
                             PIGeofenceEvent.toIntent(broadcastIntent, PIGeofenceEvent.Type.SERVER_SYNC, geofences, list.getDeletedGeofenceCodes());
                             //LocalBroadcastManager.getInstance(context).sendBroadcast(broadcastIntent);
-                            context.sendBroadcast(broadcastIntent);
+                            mContext.sendBroadcast(broadcastIntent);
                         }
-                        settings.putLong(ServiceConfig.SERVER_SYNC_LOCAL_TIMESTAMP, System.currentTimeMillis()).commit();
+                        mSettings.putLong(ServiceConfig.SERVER_SYNC_LOCAL_TIMESTAMP, System.currentTimeMillis()).commit();
                         log.debug("loadGeofences() got " + list.getGeofences().size() + " geofences");
                     } catch (Exception e) {
                         PIRequestError error = new PIRequestError(-1, e, "error while parsing JSON");
@@ -499,11 +499,11 @@ public class PIGeofencingManager {
                 }
             };
             PIJSONPayloadRequest request = new PIJSONPayloadRequest(cb, HttpMethod.GET, null);
-            request.setPath(String.format("%s/tenants/%s/orgs/%s/geofences", CONFIG_CONNECTOR_PATH, httpService.getTenantCode(), httpService.getOrgCode()));
+            request.setPath(String.format("%s/tenants/%s/orgs/%s/geofences", CONFIG_CONNECTOR_PATH, mHttpService.getTenantCode(), mHttpService.getOrgCode()));
             if (lastSyncDate != null) {
                 request.addParameter("lastSyncDate", lastSyncDate);
             }
-            httpService.executeRequest(request);
+            mHttpService.executeRequest(request);
         }
     }
 
@@ -514,7 +514,7 @@ public class PIGeofencingManager {
         Runnable r = new Runnable() {
             @Override
             public void run() {
-                Location last = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+                Location last = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
                 log.debug("setInitialLocation() last location = " + last);
                 if (last != null) {
                     new LocationUpdateReceiver(PIGeofencingManager.this).onLocationChanged(last, true);
@@ -542,13 +542,13 @@ public class PIGeofencingManager {
     }
 
     private void updateSettings() {
-        settings.putString(ServiceConfig.SERVER_URL, httpService.getServerURL())
-            .putString(ServiceConfig.TENANT_CODE, httpService.getTenantCode())
-            .putString(ServiceConfig.ORG_CODE, httpService.getOrgCode())
-            .putString(ServiceConfig.USERNAME, httpService.getUsername())
-            .putString(ServiceConfig.PASSWORD, httpService.getPassword())
-            .putInt(ServiceConfig.MAX_DISTANCE, maxDistance)
-            .putInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, intervalBetweenDowloads)
+        mSettings.putString(ServiceConfig.SERVER_URL, mHttpService.getServerURL())
+            .putString(ServiceConfig.TENANT_CODE, mHttpService.getTenantCode())
+            .putString(ServiceConfig.ORG_CODE, mHttpService.getOrgCode())
+            .putString(ServiceConfig.USERNAME, mHttpService.getUsername())
+            .putString(ServiceConfig.PASSWORD, mHttpService.getPassword())
+            .putInt(ServiceConfig.MAX_DISTANCE, mMaxDistance)
+            .putInt(ServiceConfig.SERVER_SYNC_MIN_DELAY_HOURS, mIntervalBetweenDowloads)
             .commit();
     }
 
@@ -557,41 +557,17 @@ public class PIGeofencingManager {
      * @return the device descriptor.
      */
     String retrieveDeviceDescriptor() {
-        String result = settings.getString(GeofencingDeviceInfo.PI_DESCRIPTOR_KEY, null);
+        String result = mSettings.getString(GeofencingDeviceInfo.PI_DESCRIPTOR_KEY, null);
         if (result == null) {
-            SharedPreferences prefs = context.getSharedPreferences(GeofencingDeviceInfo.PI_SHARED_PREF, Context.MODE_PRIVATE);
+            SharedPreferences prefs = mContext.getSharedPreferences(GeofencingDeviceInfo.PI_SHARED_PREF, Context.MODE_PRIVATE);
             result = prefs.getString(GeofencingDeviceInfo.PI_DESCRIPTOR_KEY, null);
             if (result == null) {
-                GeofencingDeviceInfo info = new GeofencingDeviceInfo(context);
+                GeofencingDeviceInfo info = new GeofencingDeviceInfo(mContext);
                 result = info.getDescriptor();
                 prefs.edit().putString(GeofencingDeviceInfo.PI_DESCRIPTOR_KEY, result).apply();
             }
-            settings.putString(GeofencingDeviceInfo.PI_DESCRIPTOR_KEY, result).commit();
+            mSettings.putString(GeofencingDeviceInfo.PI_DESCRIPTOR_KEY, result).commit();
         }
         return result;
     }
-
-    /*
-    private final static String PREF_NAME = "com.ibm.pi.shared_prefs";
-    private void initSettingsData() {
-        try {
-            String name = Settings.encode(PREF_NAME);
-            SharedPreferences prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE);
-            prefs.edit().putString(Settings.encode("settings.data"), Settings.encode(httpService.getPassword())).apply();
-        } catch(Exception e) {
-            log.debug("error setting settings data", e);
-        }
-    }
-
-    static String extractSettingsData(Context context) {
-        try {
-            String name = Settings.encode(PREF_NAME);
-            SharedPreferences prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE);
-            return Settings.decode(prefs.getString(Settings.encode("settings.data"), null));
-        } catch(Exception e) {
-            log.debug("error getting settings data", e);
-        }
-        return null;
-    }
-    */
 }

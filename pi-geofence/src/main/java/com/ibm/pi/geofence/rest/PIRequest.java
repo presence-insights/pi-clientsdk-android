@@ -26,27 +26,27 @@ public abstract class PIRequest<C> {
     /**
      * The callback associated with the request.
      */
-    protected final PIRequestCallback<C> callback;
+    protected final PIRequestCallback<C> mCallback;
     /**
      * Additional arbitrary parameters that can be added to the query.
      */
-    final List<QueryParameter> parameters = new ArrayList<>();
+    final List<QueryParameter> mParameters = new ArrayList<>();
     /**
      * Path to the content item(s) retrieved by path.
      */
-    String path = null;
+    String mPath = null;
     /**
      * HTTP request method to use.
      */
-    HttpMethod method = HttpMethod.GET;
+    HttpMethod mMethod = HttpMethod.GET;
     /**
      * The payload to send along with the request (for PUT and POST requests).
      */
-    String payload;
+    String mPayload;
     /**
      * Whether basic authentication is required for this request.
      */
-    boolean basicAuthRequired = true;
+    boolean mBasicAuthRequired = true;
 
     /**
      * Initialize this request with the specified identifier and callback.
@@ -55,9 +55,9 @@ public abstract class PIRequest<C> {
      * @param payload the payload to send along with the request (for PUT and POST requests).
      */
     public PIRequest(PIRequestCallback<C> callback, HttpMethod method, String payload) {
-        this.callback = callback;
-        this.method = method;
-        this.payload = payload;
+        this.mCallback = callback;
+        this.mMethod = method;
+        this.mPayload = payload;
     }
 
     /**
@@ -65,7 +65,7 @@ public abstract class PIRequest<C> {
      * @return the path string.
      */
     public String getPath() {
-        return path;
+        return mPath;
     }
 
     /**
@@ -73,7 +73,7 @@ public abstract class PIRequest<C> {
      * @param path the path string.
      */
     public void setPath(String path) {
-        this.path = path;
+        this.mPath = path;
     }
 
     /**
@@ -85,7 +85,7 @@ public abstract class PIRequest<C> {
     String buildQuery(PIHttpService service) throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append(service.getBaseQueryURI());
-        if (!Utils.isNullOrBlank(path)) sb.append('/').append(path);
+        if (!Utils.isNullOrBlank(mPath)) sb.append('/').append(mPath);
         addParams(sb);
         return sb.toString();
     }
@@ -103,21 +103,21 @@ public abstract class PIRequest<C> {
      * @return an instance of an implementation of {@link PIRequestCallback}.
      */
     public PIRequestCallback<C> getCallback() {
-        return callback;
+        return mCallback;
     }
 
     /**
      * Get the HTTP request method to use.
      */
     public HttpMethod getMethod() {
-        return method;
+        return mMethod;
     }
 
     /**
      * Get the payload to send along with the request (for PUT and POST requests).
      */
     public String getPayload() {
-        return payload;
+        return mPayload;
     }
 
     /**
@@ -139,7 +139,7 @@ public abstract class PIRequest<C> {
      * @param value the parameter value.
      */
     public void addParameter(String name, String value) {
-        parameters.add(new QueryParameter(name, value));
+        mParameters.add(new QueryParameter(name, value));
     }
 
     /**
@@ -150,8 +150,8 @@ public abstract class PIRequest<C> {
      */
     StringBuilder addParams(StringBuilder query) throws Exception {
         int count = 0;
-        for (QueryParameter param : parameters) {
-            query.append(count > 0 ? '&' : '?').append(encodeParam(param.name, param.value));
+        for (QueryParameter param : mParameters) {
+            query.append(count > 0 ? '&' : '?').append(encodeParam(param.mName, param.mValue));
             count++;
         }
         return query;
@@ -162,7 +162,7 @@ public abstract class PIRequest<C> {
      * @return {@code true} if basic auth is needed, {@code false} otherwise.
      */
     public boolean isBasicAuthRequired() {
-        return basicAuthRequired;
+        return mBasicAuthRequired;
     }
 
     /**
@@ -170,6 +170,6 @@ public abstract class PIRequest<C> {
      * @param basicAuthRequired  {@code true} if basic auth is needed, {@code false} otherwise.
      */
     public void setBasicAuthRequired(boolean basicAuthRequired) {
-        this.basicAuthRequired = basicAuthRequired;
+        this.mBasicAuthRequired = basicAuthRequired;
     }
 }

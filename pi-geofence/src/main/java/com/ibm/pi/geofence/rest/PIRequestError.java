@@ -25,15 +25,15 @@ public class PIRequestError {
     /**
      * The HTTP status code of the qsery.
      */
-    private final int statusCode;
+    private final int mStatusCode;
     /**
      * The exception for this error, if any.
      */
-    private final Exception exception;
+    private final Exception mException;
     /**
      * The error message, if any.
      */
-    private final String message;
+    private final String mMessage;
 
     /**
      * Initialize this error result with the specified status code, optional exception and error message.
@@ -42,9 +42,9 @@ public class PIRequestError {
      * @param message the error message.
      */
     public PIRequestError(int statusCode, Exception exception, String message) {
-        this.statusCode = statusCode;
-        this.exception = exception;
-        this.message = message;
+        this.mStatusCode = statusCode;
+        this.mException = exception;
+        this.mMessage = message;
     }
 
     /**
@@ -52,28 +52,28 @@ public class PIRequestError {
      * A value of -1 or less indicates that the request did not go through and therefore no status code could be captured.
      */
     public int getStatusCode() {
-        return statusCode;
+        return mStatusCode;
     }
 
     /**
      * Get the exception that occurred while executing the request, if any.
      */
     public Exception getException() {
-        return exception;
+        return mException;
     }
 
     /**
      * Return the error message.
      */
     public String getMessage() {
-        return message;
+        return mMessage;
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("status code: ").append(statusCode);
-        if (message != null) sb.append(", message: ").append(message);
-        if (exception != null) sb.append(", exception:\n").append(Log.getStackTraceString(exception));
+        sb.append("status code: ").append(mStatusCode);
+        if (mMessage != null) sb.append(", message: ").append(mMessage);
+        if (mException != null) sb.append(", exception:\n").append(Log.getStackTraceString(mException));
         return sb.toString();
     }
 }

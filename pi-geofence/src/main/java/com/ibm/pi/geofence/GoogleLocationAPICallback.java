@@ -35,20 +35,20 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
      * Logger for this class.
      */
     private static final Logger log = LoggingConfiguration.getLogger(GoogleLocationAPICallback.class.getSimpleName());
-    private final PIGeofencingManager geofencingService;
-    private PendingIntent pendingIntent = null;
+    private final PIGeofencingManager mGeofencingService;
+    private PendingIntent mPendingIntent = null;
 
     public GoogleLocationAPICallback(PIGeofencingManager geofencingService) {
-        this.geofencingService = geofencingService;
+        this.mGeofencingService = geofencingService;
     }
 
     @Override
     public void onConnected(Bundle bundle) {
         log.debug("connected to google API");
-        if (geofencingService.mode == PIGeofencingManager.MODE_APP) {
-            geofencingService.loadGeofences();
+        if (mGeofencingService.mMode == PIGeofencingManager.MODE_APP) {
+            mGeofencingService.loadGeofences();
         }
-        if (geofencingService.mode != PIGeofencingManager.MODE_REBOOT) {
+        if (mGeofencingService.mMode != PIGeofencingManager.MODE_REBOOT) {
             // register a location change listener
             /*
             // doesn't work due to android issue https://code.google.com/p/android/issues/detail?id=197296
@@ -58,7 +58,7 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
                 LocationServices.FusedLocationApi.requestLocationUpdates(geofencingService.googleApiClient, locationRequest, getPendingIntent());
             */
             log.debug("registering location listener service");
-            LocationManager lm = (LocationManager) geofencingService.context.getSystemService(Context.LOCATION_SERVICE);
+            LocationManager lm = (LocationManager) mGeofencingService.mContext.getSystemService(Context.LOCATION_SERVICE);
             PendingIntent pi = getPendingIntent();
             String[] providers = { LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER };
             for (String provider: providers) {
@@ -86,15 +86,15 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
      * @return a <code>PendingIntent</code> instance.
      */
     private PendingIntent getPendingIntent() {
-        if (pendingIntent == null) {
+        if (mPendingIntent == null) {
             Class<?> clazz = LocationUpdateReceiver.class;
             //Class<?> clazz = FusedGeofenceManager.class;
-            Intent intent = new Intent(geofencingService.context, clazz);
+            Intent intent = new Intent(mGeofencingService.mContext, clazz);
             //intent.setPackage(geofencingService.context.getPackageName());
-            new ServiceConfig().fromGeofencingManager(geofencingService).toIntent(intent);
-            intent.setClass(geofencingService.context, clazz);
-            pendingIntent = PendingIntent.getBroadcast(geofencingService.context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            new ServiceConfig().fromGeofencingManager(mGeofencingService).toIntent(intent);
+            intent.setClass(mGeofencingService.mContext, clazz);
+            mPendingIntent = PendingIntent.getBroadcast(mGeofencingService.mContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         }
-        return pendingIntent;
+        return mPendingIntent;
     }
 }

@@ -28,94 +28,94 @@ import java.util.List;
  */
 public class PersistentGeofence extends SugarRecord implements Serializable {
     @Unique
-    private String code = "";
-    private String name;
-    private String description;
-    private double latitude;
-    private double longitude;
-    private double radius;
-    private long createdTimestamp;
-    private long updatedTimestamp;
+    private String mCode = "";
+    private String mName;
+    private String mDescription;
+    private double mLatitude;
+    private double mLongitude;
+    private double mRadius;
+    private long mCreatedTimestamp;
+    private long mUpdatedTimestamp;
 
     public PersistentGeofence() {
     }
 
     PersistentGeofence(String code, String name, String description, double latitude, double longitude, double radius) {
-        this.code = code;
-        this.name = name;
-        this.description = description;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.radius = radius;
+        this.mCode = code;
+        this.mName = name;
+        this.mDescription = description;
+        this.mLatitude = latitude;
+        this.mLongitude = longitude;
+        this.mRadius = radius;
     }
 
     String getCode() {
-        return code;
+        return mCode;
     }
 
     void setCode(String code) {
-        this.code = code;
+        this.mCode = code;
     }
 
     String getName() {
-        return name;
+        return mName;
     }
 
     void setName(String name) {
-        this.name = name;
+        this.mName = name;
     }
 
     String getDescription() {
-        return description;
+        return mDescription;
     }
 
     void setDescription(String description) {
-        this.description = description;
+        this.mDescription = description;
     }
 
     double getLatitude() {
-        return latitude;
+        return mLatitude;
     }
 
     void setLatitude(double latitude) {
-        this.latitude = latitude;
+        this.mLatitude = latitude;
     }
 
     double getLongitude() {
-        return longitude;
+        return mLongitude;
     }
 
     void setLongitude(double longitude) {
-        this.longitude = longitude;
+        this.mLongitude = longitude;
     }
 
     double getRadius() {
-        return radius;
+        return mRadius;
     }
 
     void setRadius(double radius) {
-        this.radius = radius;
+        this.mRadius = radius;
     }
 
     long getCreatedTimestamp() {
-        return createdTimestamp;
+        return mCreatedTimestamp;
     }
 
     void setCreatedTimestamp(long createdTimestamp) {
-        this.createdTimestamp = createdTimestamp;
+        this.mCreatedTimestamp = createdTimestamp;
     }
 
     long getUpdatedTimestamp() {
-        return updatedTimestamp;
+        return mUpdatedTimestamp;
     }
 
     void setUpdatedTimestamp(long updatedTimestamp) {
-        this.updatedTimestamp = updatedTimestamp;
+        this.mUpdatedTimestamp = updatedTimestamp;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + name + "]";
+        return getClass().getSimpleName() + "[" + mName + "]";
     }
 
     @Override
@@ -123,16 +123,16 @@ public class PersistentGeofence extends SugarRecord implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PersistentGeofence that = (PersistentGeofence) o;
-        return code.equals(that.code);
+        return mCode.equals(that.mCode);
     }
 
     @Override
     public int hashCode() {
-        return code.hashCode();
+        return mCode.hashCode();
     }
 
     PIGeofence toPIGeofence() {
-        return new PIGeofence(code, name, description, latitude, longitude, radius);
+        return new PIGeofence(mCode, mName, mDescription, mLatitude, mLongitude, mRadius);
     }
 
     static PersistentGeofence fromPIGeofence(PIGeofence piGeofence) {

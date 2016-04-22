@@ -78,19 +78,19 @@ public class Settings {
     /**
      * The name of the backing file. It is computed by encoding the app's package name in Bas64 (without padding).
      */
-    private final String fileName;
+    private final String mFileName;
     /**
      * Contains the properties. To persist any change, {@link #commit()} must be called.
      */
-    private final Properties properties = new Properties();
+    private final Properties mProperties = new Properties();
     /**
      * Used for synchronization of baking file access.
      */
-    private final Lock lock = new ReentrantLock();
-    private SecretKey secretKey;
-    private boolean keyError = false;
-    private final String pwd;
-    private final boolean encryptionEnabled;
+    private final Lock mLock = new ReentrantLock();
+    private SecretKey mSecretKey;
+    private boolean mKeyError = false;
+    private final String mPwd;
+    private final boolean mEncryptionEnabled;
 
     /*
     // for debugging purposes only
@@ -121,8 +121,8 @@ public class Settings {
      * @param context used to compute the file name from the app package name.
      */
     Settings(Context context, String pwd) {
-        this.encryptionEnabled = pwd != null;
-        this.pwd = pwd;
+        this.mEncryptionEnabled = pwd != null;
+        this.mPwd = pwd;
         String name;
         try {
             // encode the app's package name to Base64 in a filename-safe way
@@ -131,16 +131,16 @@ public class Settings {
         } catch(Exception e) {
             name = PROPS_PATH;
         }
-        this.fileName = name;
+        this.mFileName = name;
         loadProperties();
     }
 
     public String getString(String key, String defValue) {
-        return properties.getProperty(key, defValue);
+        return mProperties.getProperty(key, defValue);
     }
 
     public Settings putString(String key, String value) {
-        properties.setProperty(key, value);
+        mProperties.setProperty(key, value);
         return this;
     }
 
@@ -165,7 +165,7 @@ public class Settings {
             sb.append(s);
             count++;
         }
-        properties.setProperty(key, sb.toString());
+        mProperties.setProperty(key, sb.toString());
         return this;
     }
 
@@ -202,17 +202,17 @@ public class Settings {
     }
 
     public Settings clear() {
-        properties.clear();
+        mProperties.clear();
         return this;
     }
 
     public Set<String> getPropertyNames() {
-        return properties.stringPropertyNames();
+        return mProperties.stringPropertyNames();
     }
 
     public Settings remove(String key) {
         if (key != null) {
-            properties.remove(key);
+            mProperties.remove(key);
         }
         return this;
     }
@@ -229,13 +229,13 @@ public class Settings {
      */
     private void loadProperties() {
         File file = null;
-        lock.lock();
+        mLock.lock();
         try {
-            file = new File(Environment.getExternalStorageDirectory(), File.separator + fileName);
+            file = new File(Environment.getExternalStorageDirectory(), File.separator + mFileName);
             //log.debug("loading properties from " + file);
             if (file.exists()) {
                 InputStream is = new BufferedInputStream(new FileInputStream(file));
-                if (encryptionEnabled) {
+                if (mEncryptionEnabled) {
                     byte[] salt = new byte[SALT_LENGTH];
                     int count = 0;
                     while (count < SALT_LENGTH) {
@@ -250,7 +250,7 @@ public class Settings {
                     cipher.init(Cipher.DECRYPT_MODE, getSecretKey(), params);
                     is = new CipherInputStream(is, cipher);
                 }
-                properties.load(is);
+                mProperties.load(is);
                 is.close();
                 //log.debug("successfully loaded properties from " + file);
             }
@@ -259,7 +259,7 @@ public class Settings {
             log.error(String.format("error loading properties from %s : %s", file, Log.getStackTraceString(e)));
             clear();
         } finally {
-            lock.unlock();
+            mLock.unlock();
         }
     }
 
@@ -267,12 +267,12 @@ public class Settings {
      * Store the properties to file.
      */
     private void storeProperties() {
-        File file = new File(Environment.getExternalStorageDirectory(), File.separator + fileName);
-        lock.lock();
+        File file = new File(Environment.getExternalStorageDirectory(), File.separator + mFileName);
+        mLock.lock();
         try {
             //log.debug("storing properties to " + file);
             OutputStream os = new BufferedOutputStream(new FileOutputStream(file));
-            if (encryptionEnabled) {
+            if (mEncryptionEnabled) {
                 byte[] salt = new byte[SALT_LENGTH];
                 new SecureRandom().nextBytes(salt);
                 os.write(salt);
@@ -282,41 +282,41 @@ public class Settings {
                 cipher.init(Cipher.ENCRYPT_MODE, getSecretKey(), params);
                 os = new CipherOutputStream(os, cipher);
             }
-            properties.store(os, null);
+            mProperties.store(os, null);
             os.close();
             //log.debug("successfully stored properties to " + file);
         } catch(Exception e) {
             //log.error(String.format("error storing properties to %s", file), e);
             log.error(String.format("error storing properties to %s : %s", file, Log.getStackTraceString(e)));
         } finally {
-            lock.unlock();
+            mLock.unlock();
         }
     }
 
     @Override
     public String toString() {
         Properties props = new Properties();
-        Enumeration names = properties.propertyNames();
+        Enumeration names = mProperties.propertyNames();
         while (names.hasMoreElements()) {
             String name = (String) names.nextElement();
             if (!name.toLowerCase().contains("password")) {
-                props.put(name, properties.getProperty(name));
+                props.put(name, mProperties.getProperty(name));
             }
         }
-        return String.format("%s[filename=%s, properties=%s]", getClass().getSimpleName(), fileName, props);
+        return String.format("%s[filename=%s, properties=%s]", getClass().getSimpleName(), mFileName, props);
     }
 
     private SecretKey getSecretKey() {
-        if (!keyError && (secretKey == null)) {
+        if (!mKeyError && (mSecretKey == null)) {
             try {
                 SecretKeyFactory skf = SecretKeyFactory.getInstance(ALGO);
-                secretKey = skf.generateSecret(new PBEKeySpec(pwd.toCharArray()));
+                mSecretKey = skf.generateSecret(new PBEKeySpec(mPwd.toCharArray()));
             } catch(Exception e) {
-                keyError = true;
+                mKeyError = true;
                 log.error("error getting secret key: " + Log.getStackTraceString(e));
             }
         }
-        return secretKey;
+        return mSecretKey;
     }
 
     private static String encode(String source) throws Exception {
