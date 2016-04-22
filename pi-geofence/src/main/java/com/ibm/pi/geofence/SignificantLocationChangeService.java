@@ -166,6 +166,6 @@ public class SignificantLocationChangeService extends IntentService {
         LatLng pos2 = calculateDerivedPosition(latitude, longitude, radius, 90d);
         LatLng pos3 = calculateDerivedPosition(latitude, longitude, radius, 180d);
         LatLng pos4 = calculateDerivedPosition(latitude, longitude, radius, 270d);
-        return String.format(Locale.US, "latitude < %f AND longitude < %f AND latitude > %f AND longitude > %f", pos1.latitude, pos2.longitude, pos3.latitude, pos4.longitude);
+        return String.format(Locale.US, "m_latitude < %f AND m_longitude < %f AND m_latitude > %f AND m_longitude > %f", pos1.latitude, pos2.longitude, pos3.latitude, pos4.longitude);
     }
 }

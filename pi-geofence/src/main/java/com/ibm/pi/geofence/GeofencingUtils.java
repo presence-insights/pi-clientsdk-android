@@ -18,7 +18,6 @@ package com.ibm.pi.geofence;
 
 import android.location.Location;
 import android.location.LocationManager;
-import android.util.Base64;
 
 import org.apache.log4j.Logger;
 
@@ -120,7 +119,7 @@ class GeofencingUtils {
         int size = geofenceCodes.length;
         List<PersistentGeofence> geofences = new ArrayList<>(size);
         // build the "code in (?, ..., ?)" where clause
-        StringBuilder where = new StringBuilder("code in (");
+        StringBuilder where = new StringBuilder("m_code in (");
         for (int count=0; count<size; count++) {
             if (count > 0) {
                 where.append(", ");
@@ -133,7 +132,7 @@ class GeofencingUtils {
     }
 
     static PersistentGeofence geofenceFromCode(String geofenceCode) {
-        List<PersistentGeofence> list = PersistentGeofence.find(PersistentGeofence.class, "code = ?", geofenceCode);
+        List<PersistentGeofence> list = PersistentGeofence.find(PersistentGeofence.class, "m_code = ?", geofenceCode);
         if (!list.isEmpty()) {
             return list.get(0);
         }
@@ -156,7 +155,7 @@ class GeofencingUtils {
     static int deleteGeofences(Collection<String> geofenceCodes) {
         int size = geofenceCodes.size(); // in case size() has a non-constant cost
         // build the "code in (?, ..., ?)" where clause
-        StringBuilder where = new StringBuilder("code in (");
+        StringBuilder where = new StringBuilder("m_code in (");
         for (int count = 0; count < size; count++) {
             if (count > 0) {
                 where.append(", ");
