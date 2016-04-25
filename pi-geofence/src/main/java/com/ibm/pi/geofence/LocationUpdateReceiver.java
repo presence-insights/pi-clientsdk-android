@@ -74,7 +74,7 @@ public class LocationUpdateReceiver extends BroadcastReceiver {
     /**
      * Determine whether a significant location change occurred, based on the provided location.
      * @param location the location to compare with the reference location stored in the {@link Settings}.
-     * @param force whether to force a reload of the fence in the bounding box regardless the current location,
+     * @param force whether to force a reload of the fence in the bounding box regardless of the current location,
      *  which is needed after a sync of the fences with the server.
      */
     void onLocationChanged(Location location, boolean force) {

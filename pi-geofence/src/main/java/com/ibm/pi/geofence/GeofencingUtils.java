@@ -102,7 +102,7 @@ class GeofencingUtils {
     }
 
     /**
-     * Get a set of geofoences from their codes, via a lookup in the local DB.
+     * Get a set of geofences from their codes, via a lookup in the local DB.
      * @param geofenceCodes the codes of the geofenes to retrieve.
      * @return a list of {@link PIGeofence} objects.
      */
@@ -111,7 +111,7 @@ class GeofencingUtils {
     }
 
     /**
-     * Get a set of geofoences from their codes, via a lookup in the local DB.
+     * Get a set of geofences from their codes, via a lookup in the local DB.
      * @param geofenceCodes the codes of the geofenes to retrieve.
      * @return a list of {@link PIGeofence} objects.
      */
@@ -176,7 +176,7 @@ class GeofencingUtils {
     }
 
     /**
-     * Load the ocntent of a resource from an input stream.
+     * Load the content of a resource from an input stream.
      * @param is the input stream to read from.
      * @return the resource content as a byte array, or {code null} if the resource could not be loaded.
      */

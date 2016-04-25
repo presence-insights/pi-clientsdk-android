@@ -27,7 +27,7 @@ import java.io.File;
 import de.mindpipe.android.logging.log4j.LogConfigurator;
 
 /**
- * This class configures Log4j logging and provide factory methods for creating loggers
+ * This class configures Log4j logging and provides factory methods for creating loggers
  * while ensuring the configuration is properly done.
  * <p>Example usage:
  * <pre>

@@ -22,15 +22,25 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- *
+ * This class provides and interface to extract intelligible geofence event data from
+ * events delivered as broadcast intents via a {@code BroadcastReceiver}.
  */
 public class PIGeofenceEvent {
     /**
-     * The name of the action used as filter for geofence events delivered as intents.
+     * The name of the action used as the filter for geofence events delivered as intents.
      */
     public static final String ACTION_GEOFENCE_EVENT = "com.ibm.pi.geofence.action.GEOFENCE_EVENT";
+    /**
+     * Key used to retrieve/store a list of geofences from/to an Intent's extras.
+     */
     private static final String GEOFENCES_KEY = "com.ibm.pi.geofence.geofences";
+    /**
+     * Key used to retrieve/store a list of deleted geofence codes from/to an Intent's extras.
+     */
     private static final String DELETED_GEOFENCES_KEY = "com.ibm.pi.geofence.deleted_geofences";
+    /**
+     * Key used to retrieve/store a type of geofence event from/to an Intent's extras.
+     */
     private static final String EVENT_TYPE_KEY = "com.ibm.pi.geofence.event_type";
 
     /**
@@ -50,6 +60,10 @@ public class PIGeofenceEvent {
          */
         SERVER_SYNC("server_sync");
 
+        /**
+         * The type of operation on the gefoences.
+         * "enter" and "exit" are used in the JSON payload when posting geoefence events to the PI server.
+         */
         private String op;
 
         Type(String op) {
@@ -61,10 +75,25 @@ public class PIGeofenceEvent {
         }
     }
 
+    /**
+     * The type of geofence event.
+     */
     private final Type mEventType;
+    /**
+     * The affected geofences.
+     */
     private final List<PIGeofence> mGeofences;
+    /**
+     * A list of deleted geofence codes.
+     */
     private final List<String> mDeletedGeofenceCodes;
 
+    /**
+     * Initialize the object with the specified parameters.
+     * @param eventType the type of geofence event.
+     * @param geofences the affected geofences.
+     * @param deletedGeofenceCodes a list of deleted geofence codes.
+     */
     private PIGeofenceEvent(final Type eventType, List<PIGeofence> geofences, final List<String> deletedGeofenceCodes) {
         this.mEventType = eventType;
         this.mGeofences = geofences;
@@ -91,8 +120,8 @@ public class PIGeofenceEvent {
     /**
      * Get the geofences this event relates to. The meaning of the result should can interpreted in two ways:
      * <ul>
-     *     <li>if {@link #getEventType()} returns {@link Type#ENTER} or {@link Type#EXIT} then these are gefoences that were entered or exited</li>
-     *     <li>if {@link #getEventType()} returns {@link Type#SERVER_SYNC}, then these are the gefoences that were created or updated
+     *     <li>if {@link #getEventType()} returns {@link Type#ENTER} or {@link Type#EXIT} then these are geofences that were entered or exited</li>
+     *     <li>if {@link #getEventType()} returns {@link Type#SERVER_SYNC}, then these are the geofences that were created or updated
      *     since the last server synchronization</li>
      * </ul>
      * @return a list of {@link PIGeofence} objects, possibly {@code null}.
@@ -127,6 +156,13 @@ public class PIGeofenceEvent {
         return new PIGeofenceEvent(eventType, geofences, deletedCodes);
     }
 
+    /**
+     * Convert the specified data to extras in the specified intent.
+     * @param intent the intent to update with extras.
+     * @param eventType the type of geofence event.
+     * @param geofences the affected geofences.
+     * @param deletedGeofenceCodes a list of deleted geofence codes.
+     */
     static void toIntent(Intent intent, final Type eventType, List<PersistentGeofence> geofences, final List<String> deletedGeofenceCodes) {
         intent.putExtra(EVENT_TYPE_KEY, eventType.name());
         if (geofences != null) {

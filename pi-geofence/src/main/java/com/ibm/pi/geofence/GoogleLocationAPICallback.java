@@ -65,7 +65,7 @@ class GoogleLocationAPICallback implements GoogleApiClient.ConnectionCallbacks, 
                 try {
                     lm.requestLocationUpdates(provider, 10_000L, 50f, pi);
                 } catch(SecurityException e) {
-                    log.debug("missing permission to request locations from " + provider +  "provider");
+                    log.debug("missing permission to request locations from " + provider +  " provider");
                 }
             }
         }
