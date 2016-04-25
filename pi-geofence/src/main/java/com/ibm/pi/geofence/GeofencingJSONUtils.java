@@ -67,8 +67,8 @@ class GeofencingJSONUtils {
                 }
             }
             int totalGeofences = properties.has("totalFeatures") ? properties.getInt("totalFeatures") : -1;
-            String lastSyncDate = properties.has("lastSyncDate") ? properties.getString("lastSyncDate") : null;
-            return new GeofenceList(result, totalGeofences, lastSyncDate, deletedCodes);
+            long lastSyncTimestamp = properties.has("updatedBefore") ? properties.getLong("updatedBefore") : -1L;
+            return new GeofenceList(result, totalGeofences, lastSyncTimestamp, deletedCodes);
         }
         return new GeofenceList(result);
     }

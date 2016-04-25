@@ -25,7 +25,7 @@ import java.util.List;
 class GeofenceList {
     private final List<PersistentGeofence> mGeofences;
     int mTotalGeofences;
-    String mLastSyncDate;
+    long mLastSyncTimestamp;
     List<String> mDeletedGeofenceCodes;
 
     GeofenceList(final List<PersistentGeofence> geofences) {
@@ -33,10 +33,10 @@ class GeofenceList {
         this.mDeletedGeofenceCodes = Collections.emptyList();
     }
 
-    GeofenceList(final List<PersistentGeofence> geofences, int totalGeofences, String lastSyncDate, List<String> deletedGeofenceCodes) {
+    GeofenceList(final List<PersistentGeofence> geofences, int totalGeofences, long lastSyncTimestamp, List<String> deletedGeofenceCodes) {
         this.mGeofences = (geofences == null) ? Collections.<PersistentGeofence>emptyList() : geofences;
         this.mTotalGeofences = totalGeofences;
-        this.mLastSyncDate = lastSyncDate;
+        this.mLastSyncTimestamp = lastSyncTimestamp;
         this.mDeletedGeofenceCodes = (deletedGeofenceCodes == null) ? Collections.<String>emptyList() : deletedGeofenceCodes;
     }
 
@@ -52,8 +52,8 @@ class GeofenceList {
         return mTotalGeofences;
     }
 
-    String getLastSyncDate() {
-        return mLastSyncDate;
+    long getLastSyncTimestamp() {
+        return mLastSyncTimestamp;
     }
 
     /**

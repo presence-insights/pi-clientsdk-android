@@ -53,7 +53,7 @@ class ServiceConfig implements Serializable {
     static final String LATITUDE =                    PREFIX + "latitude";
     static final String LONGITUDE =                   PREFIX + "longitude";
     static final String REBOOT_EVENT_FLAG =           PREFIX + "reboot_event";
-    static final String LAST_SYNC_DATE =              PREFIX + "last_sync_date";
+    static final String LAST_SYNC_TIMESTAMP =              PREFIX + "last_sync_date";
     static final String SERVER_SYNC_LOCAL_TIMESTAMP = PREFIX + "server_sync_local_timestamp";
     static final String SERVER_SYNC_MIN_DELAY_HOURS = PREFIX + "server_sync_min_delay_hours";
 

@@ -170,7 +170,11 @@ public class Settings {
     }
 
     public int getInt(String key, int defValue) {
-        return Integer.valueOf(getString(key, Integer.toString(defValue)));
+        try {
+            return Integer.valueOf(getString(key, Integer.toString(defValue)));
+        } catch(Exception e) {
+            return defValue;
+        }
     }
 
     public Settings putInt(String key, int value) {
@@ -178,7 +182,11 @@ public class Settings {
     }
 
     public long getLong(String key, long defValue) {
-        return Long.valueOf(getString(key, Long.toString(defValue)));
+        try {
+            return Long.valueOf(getString(key, Long.toString(defValue)));
+        } catch(Exception e) {
+            return defValue;
+        }
     }
 
     public Settings putLong(String key, long value) {
@@ -186,7 +194,11 @@ public class Settings {
     }
 
     public double getDouble(String key, double defValue) {
-        return Double.valueOf(getString(key, Double.toString(defValue)));
+        try {
+            return Double.valueOf(getString(key, Double.toString(defValue)));
+        } catch(Exception e) {
+            return defValue;
+        }
     }
 
     public Settings putDouble(String key, double value) {
@@ -194,7 +206,11 @@ public class Settings {
     }
 
     public boolean getBoolean(String key, boolean defValue) {
-        return Boolean.valueOf(getString(key, Boolean.toString(defValue)));
+        try {
+            return Boolean.valueOf(getString(key, Boolean.toString(defValue)));
+        } catch(Exception e) {
+            return defValue;
+        }
     }
 
     public Settings putBoolean(String key, boolean value) {

@@ -337,7 +337,7 @@ public class PIGeofencingManager {
                     zis = new ZipInputStream(is);
                     ZipEntry entry;
                     Map<String, PersistentGeofence> allGeofences = new HashMap<>();
-                    String maxSyncDate = null;
+                    long maxSyncTimestamp = 0L;
                     while ((entry = zis.getNextEntry()) != null) {
                         byte[] bytes = GeofencingUtils.loadBytes(zis);
                         if (bytes != null) {
@@ -352,9 +352,9 @@ public class PIGeofencingManager {
                                     geofences.size(), resource, entry.getName(), fileSize));
                             }
 
-                            if (list.getLastSyncDate() != null) {
-                                if ((maxSyncDate == null) || (list.getLastSyncDate().compareTo(maxSyncDate) > 0)) {
-                                    maxSyncDate = list.getLastSyncDate();
+                            if (list.getLastSyncTimestamp() >= 0L) {
+                                if (list.getLastSyncTimestamp() > maxSyncTimestamp) {
+                                    maxSyncTimestamp = list.getLastSyncTimestamp();
                                 }
                             }
                             for (PersistentGeofence pg: list.getGeofences()) {
@@ -365,12 +365,12 @@ public class PIGeofencingManager {
                             log.debug(String.format("the zip entry [%s]/%s is empty", resource, entry.getName()));
                         }
                     }
-                    if (maxSyncDate != null) {
-                        mSettings.putString(ServiceConfig.LAST_SYNC_DATE, maxSyncDate).commit();
+                    if (maxSyncTimestamp >= 0L) {
+                        mSettings.putLong(ServiceConfig.LAST_SYNC_TIMESTAMP, maxSyncTimestamp).commit();
                     }
                     geofenceList = new GeofenceList(new ArrayList<>(allGeofences.values()));
                     log.debug(String.format(Locale.US, "loaded %,d geofences from resource '[%s]', maxSyncDate=%s",
-                        allGeofences.size(), resource, maxSyncDate));
+                        allGeofences.size(), resource, maxSyncTimestamp));
                 } catch(Exception e) {
                     error = new PIRequestError(-1, e, String.format("error loading resource '%s'", resource));
                 } finally {
@@ -450,12 +450,12 @@ public class PIGeofencingManager {
      */
     private void loadGeofencesFromServer() {
         if (PersistentGeofence.count(PersistentGeofence.class) <= 0) {
-            loadGeofencesFromServer(null);
+            loadGeofencesFromServer(-1L);
         } else {
             long now = System.currentTimeMillis();
             long lastTimeStamp = mSettings.getLong(ServiceConfig.SERVER_SYNC_LOCAL_TIMESTAMP, -1L);
             if ((lastTimeStamp < 0L) || (now - lastTimeStamp >= mIntervalBetweenDowloads * 3600L * 1000L)) {
-                loadGeofencesFromServer(mSettings.getString(ServiceConfig.LAST_SYNC_DATE, null));
+                loadGeofencesFromServer(mSettings.getLong(ServiceConfig.LAST_SYNC_TIMESTAMP, -1L));
             }
         }
     }
@@ -463,15 +463,15 @@ public class PIGeofencingManager {
     /**
      * Query the geofences from the server, based on the current last sync date.
      */
-    private void loadGeofencesFromServer(String lastSyncDate) {
+    private void loadGeofencesFromServer(long lastSyncTimestamp) {
         if ((mHttpService.getTenantCode() != null) && (mHttpService.getOrgCode() != null)) {
             PIRequestCallback<JSONObject> cb = new PIRequestCallback<JSONObject>() {
                 @Override
                 public void onSuccess(JSONObject result) {
                     try {
                         GeofenceList list = GeofencingJSONUtils.parseGeofences(result);
-                        if (list.getLastSyncDate() != null) {
-                            mSettings.putString(ServiceConfig.LAST_SYNC_DATE, list.getLastSyncDate()).commit();
+                        if (list.getLastSyncTimestamp() >= 0L) {
+                            mSettings.putLong(ServiceConfig.LAST_SYNC_TIMESTAMP, list.getLastSyncTimestamp()).commit();
                         }
                         List<PersistentGeofence> geofences = list.getGeofences();
                         if (!geofences.isEmpty()) {
@@ -500,8 +500,9 @@ public class PIGeofencingManager {
             };
             PIJSONPayloadRequest request = new PIJSONPayloadRequest(cb, HttpMethod.GET, null);
             request.setPath(String.format("%s/tenants/%s/orgs/%s/geofences", CONFIG_CONNECTOR_PATH, mHttpService.getTenantCode(), mHttpService.getOrgCode()));
-            if (lastSyncDate != null) {
-                request.addParameter("lastSyncDate", lastSyncDate);
+            request.addParameter("paginate", "false");
+            if (lastSyncTimestamp >= 0L) {
+                request.addParameter("updatedAfter", Long.toString(lastSyncTimestamp));
             }
             mHttpService.executeRequest(request);
         }
