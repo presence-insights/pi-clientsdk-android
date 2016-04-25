@@ -5,21 +5,70 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        minSdkVersion 15
-        targetSdkVersion 23
+        minSdkVersion 18
+        targetSdkVersion 22
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.24"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // debug and verbose logs are obfuscated away in release aar
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+    packagingOptions {
+        exclude 'LICENSE.txt'
+        exclude 'META-INF/maven/com.google.guava/guava/pom.properties'
+        exclude 'META-INF/maven/com.google.guava/guava/pom.xml'
     }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:23.1.1'
+    // PI dependencies
+    compile project(':pi-core')
+
+    // Google Play Services location API
+    compile 'com.google.android.gms:play-services-location:8.1.0'
+
+    // Sugar ORM
+    compile 'com.github.satyan:sugar:1.4'
+
+    // Log4j logging
+    compile 'de.mindpipe.android:android-logging-log4j:1.0.3'
+    compile 'log4j:log4j:1.2.17'
+}
+
+task androidJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
+    classpath += files(ext.androidJar)
+    title = "IBM Adaptive Experience SDK"
+
+    options {
+        links "http://docs.oracle.com/javase/7/docs/api/"
+        def androidRefPath = "${android.sdkDirectory}/docs/reference".replace("\\", "/")
+        if (!androidRefPath.startsWith("/")) androidRefPath = "/" + androidRefPath
+        androidRefPath = "file://" + androidRefPath
+        linksOffline "http://d.android.com/reference", androidRefPath
+    }
+    include "**/PI*.java"
+    exclude "**/rest/*.java"
+    exclude '**/BuildConfig.java'
+    exclude '**/R.java'
+}
+
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+    classifier = 'javadoc'
+    from androidJavadocs.destinationDir
+}
+
+task androidSourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
 }

@@ -246,7 +246,7 @@ Finally, once the PIDeviceInfo object is ready to register, make the call to reg
 
     1.  The beacons are not configured correctly in the PI UI. Ensure that the Proximity UUID is set correctly. We retrieve that to create a region to range for beacons.
     2.  The beacon layout has not been set on the PIBeaconSensor. Please see the section on [beacon advertisement layout](#beacon_layout).
-    3.  The codes (username, password, tenant, org) used in creating the PIAPIAdapter may have been entered incorrectly.
+    3.  The codes (username, password, tenantCode, org) used in creating the PIAPIAdapter may have been entered incorrectly.
 
 *   I set up the callback for `beaconsInRange(ArrayList<Beacon>)`, but it is not being called. Make sure you set the listener for the callback you want.
 
