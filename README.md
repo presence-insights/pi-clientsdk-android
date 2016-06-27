@@ -1,6 +1,8 @@
 Presence Insights SDK for Android
 ========================
 
+Presence Insights is being retired. Please visit [our docs](https://presenceinsights.ibmcloud.com/pidocs/docs/en/introduction/whatsNew/) to learn more.
+
 This library contains classes that allows for easy integration with IBM [Presence Insights](https://console.ng.bluemix.net/catalog/presence-insights/) service available on [Bluemix](https://console.ng.bluemix.net/).
 
 This SDK supports Android 4.3+.
