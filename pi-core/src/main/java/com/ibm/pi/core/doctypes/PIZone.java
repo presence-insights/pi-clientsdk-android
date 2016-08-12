@@ -60,7 +60,7 @@ public class PIZone {
             ArrayList<Point> points = new ArrayList<Point>();
             for (int j = 0; j < polygon.size(); j++) {
                 JSONArray point = (JSONArray)polygon.get(j);
-                points.add(new Point(objToInt(point.get(0)), objToInt(point.get(0))));
+                points.add(new Point(objToInt(point.get(0)), objToInt(point.get(1))));
             }
             polygons.add(points);
         }
